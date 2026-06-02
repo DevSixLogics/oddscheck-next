@@ -1,0 +1,130 @@
+import Link from "next/link";
+import { getArticle } from "@/lib/api";
+import { timeAgo, initials } from "@/lib/format";
+
+export async function generateMetadata({ searchParams }) {
+  const sp = await searchParams;
+  const res = await getArticle(sp?.slug);
+  if (!res) return { title: "Article" };
+  return { title: res.article.headline, description: res.article.meta_description || res.article.strapline };
+}
+
+const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
+
+function MiniArticle({ a }) {
+  return (
+    <Link href={`/article?slug=${a.slug}`} className="flex gap-3" style={{ padding: "10px 0", borderBottom: "1px solid var(--border-soft)" }}>
+      <div style={{ width: 72, flexShrink: 0, height: 56, borderRadius: 8, overflow: "hidden", background: FALLBACK_GRAD }}>
+        {a.image_path && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={a.image_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35 }}>{a.headline}</div>
+        <div className="mute" style={{ fontSize: 11, marginTop: 4 }}>{a.authorName} · {timeAgo(a.start_date)}</div>
+      </div>
+    </Link>
+  );
+}
+
+export default async function ArticlePage({ searchParams }) {
+  const sp = await searchParams;
+  const res = await getArticle(sp?.slug);
+
+  if (!res) {
+    return (
+      <section className="section">
+        <div className="container" style={{ textAlign: "center", padding: "80px 0" }}>
+          <h1 style={{ fontSize: 28, marginBottom: 8 }}>Article not found</h1>
+          <p className="sub" style={{ marginBottom: 24 }}>This story may have moved or expired.</p>
+          <Link className="btn btn-primary btn-lg" href="/news">Back to news</Link>
+        </div>
+      </section>
+    );
+  }
+
+  const { article: a, related, random } = res;
+  const heroImg = a.image_path_jpg || a.image_path;
+
+  return (
+    <>
+      <section style={{ padding: "32px 0 24px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+        <div className="container">
+          <nav className="crumbs" aria-label="Breadcrumb">
+            <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <li><Link href="/">Home</Link></li>
+              <li className="sep" aria-hidden="true">/</li>
+              <li><Link href="/news">News</Link></li>
+              <li className="sep" aria-hidden="true">/</li>
+              <li><span className="current" aria-current="page">{a.categoryName}</span></li>
+            </ol>
+          </nav>
+          <div className="flex gap-2 mb-3" style={{ marginTop: 12 }}>
+            <span className="chip chip-muted">{a.categoryName}</span>
+            {a.is_premium && <span className="chip chip-gold">Premium</span>}
+          </div>
+          <h1 style={{ fontSize: "clamp(28px, 4vw, 40px)", lineHeight: 1.15, maxWidth: "22ch", marginBottom: 12 }}>{a.headline}</h1>
+          {a.strapline && <p style={{ fontSize: 17, color: "var(--text-2)", lineHeight: 1.55, maxWidth: 680 }}>{a.strapline}</p>}
+          <div className="flex items-center gap-3 mt-4 flex-wrap">
+            <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
+            <div>
+              <div style={{ fontWeight: 600 }}>{a.authorName}</div>
+              <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date)}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 48, alignItems: "start" }}>
+          <article>
+            {heroImg && (
+              <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 24, background: FALLBACK_GRAD }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroImg} alt={a.img_data?.alt_text || ""} style={{ width: "100%", display: "block" }} />
+              </div>
+            )}
+            <div className="prose" dangerouslySetInnerHTML={{ __html: a.editor || a.preview || "" }} />
+            {a.bio && (
+              <div className="card" style={{ padding: 18, marginTop: 28, display: "flex", gap: 12, alignItems: "center" }}>
+                <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{a.authorName}</div>
+                  <div className="mute" style={{ fontSize: 12, marginTop: 2 }}>{a.bio}</div>
+                </div>
+              </div>
+            )}
+          </article>
+
+          <aside className="flex-col gap-4">
+            {related.length > 0 && (
+              <div className="card" style={{ padding: 20 }}>
+                <h4 style={{ fontSize: 14, marginBottom: 6 }}>Related articles</h4>
+                {related.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} />)}
+              </div>
+            )}
+            {random.length > 0 && (
+              <div className="card" style={{ padding: 20 }}>
+                <h4 style={{ fontSize: 14, marginBottom: 6 }}>More stories</h4>
+                {random.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} />)}
+              </div>
+            )}
+            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(45,212,191,0.04), rgba(56,189,248,0.03))" }}>
+              <h4 style={{ fontSize: 15, marginBottom: 8 }}>News digest</h4>
+              <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>The day&apos;s biggest stories, in one email.</p>
+              <div className="flex-col gap-2">
+                <input className="input input-sm" type="email" placeholder="you@email.com" aria-label="Email" />
+                <Link className="btn btn-primary btn-sm btn-block" href="/signup">Subscribe</Link>
+              </div>
+            </div>
+            <div className="rg-banner" style={{ margin: 0 }}>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <div style={{ fontSize: 12 }}><b>18+ · Gamble responsibly.</b></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </>
+  );
+}

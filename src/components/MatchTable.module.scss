@@ -1,0 +1,113 @@
+@use "tokens" as t;
+
+.group {
+  margin-bottom: 18px;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: t.$text-primary;
+  border-bottom: 1px solid t.$border;
+
+  .count {
+    color: t.$text-secondary;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .cup {
+    @include t.pill(rgba(t.$accent, 0.12), t.$accent);
+    margin-left: 8px;
+    font-size: 10px;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 1.4fr 0.6fr;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid t.$divider;
+  min-width: 680px;
+
+  &:hover { background: rgba(white, 0.015); }
+}
+
+.teams {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.names {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.crests { display: flex; flex-direction: column; gap: 4px; }
+
+.score {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 700;
+  color: t.$text-primary;
+}
+
+.meta {
+  font-size: 12px;
+  color: t.$text-surface;
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 3px;
+    font-size: 11px;
+    color: t.$text-secondary;
+  }
+  .live { color: t.$live; font-weight: 700; }
+}
+
+// Odds are NOT in the feed (odds: null) — render an explicit disabled placeholder
+// instead of fake prices. See coverage-map docs.
+.odds {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+}
+.oddsCell {
+  border: 1px dashed t.$border-strong;
+  border-radius: t.$radius-sm;
+  padding: 6px 4px;
+  text-align: center;
+  background: rgba(t.$text-surface-alt, 0.06);
+
+  .sym { display: block; font-size: 10px; color: t.$text-secondary; }
+  .dash { font-size: 13px; color: t.$text-surface-alt; font-weight: 700; }
+  .price { font-size: 14px; font-weight: 700; color: t.$text-primary; font-variant-numeric: tabular-nums; }
+
+  // a real price is available -> solid cell
+  &.live {
+    border-style: solid;
+    border-color: t.$border-strong;
+    background: t.$surface-raised;
+  }
+  // shortest price (favourite)
+  &.fav {
+    border-color: t.$primary;
+    background: rgba(t.$primary, 0.10);
+    .price { color: t.$primary; }
+  }
+}
+
+.compare { display: flex; justify-content: flex-end; }
+
+.note {
+  font-size: 11px;
+  color: t.$text-surface-alt;
+  padding: 10px 14px;
+}
