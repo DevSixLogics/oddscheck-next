@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getArticles } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "./StaticNote";
+import styles from "./NewsSection.module.scss";
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
 
@@ -35,7 +36,7 @@ export default async function NewsSection() {
           <Link className="btn btn-outline btn-sm" href="/news">News hub →</Link>
         </div>
 
-        <div className="grid" style={{ gridTemplateColumns: "1.6fr 1fr", gap: 18 }}>
+        <div className={styles.grid}>
           {/* Featured article */}
           <article className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ height: 280, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
