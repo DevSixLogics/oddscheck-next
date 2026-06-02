@@ -6,7 +6,11 @@
 
 import sample from "./data/football-new-matches.sample.json";
 
-export const API_BASE = "https://cms-oddscheck.hneeds.com/api/v1";
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
+
+// Cache window (seconds) for feed fetches; override via NEXT_PUBLIC_API_REVALIDATE.
+const REVALIDATE = Number(process.env.NEXT_PUBLIC_API_REVALIDATE) || 60;
 
 // Sports known to expose the new-matches feed. Racing's endpoint is unstable.
 export const SPORTS = ["football", "tennis", "basketball", "cricket", "racing"];
@@ -22,8 +26,8 @@ export function todayISO() {
 async function fetchMatches(sport, date) {
   const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}`;
   const res = await fetch(url, {
-    // Treat as live-ish data; re-fetch at most once a minute.
-    next: { revalidate: 60 },
+    // Treat as live-ish data; re-fetch at most once per REVALIDATE window.
+    next: { revalidate: REVALIDATE },
     // Don't let a slow/unstable sport feed (e.g. racing) hang the request.
     signal: AbortSignal.timeout(8000),
   });
@@ -80,7 +84,7 @@ export async function getMatchDetail(sport = "football", id) {
   if (!id) return null;
   try {
     const res = await fetch(`${API_BASE}/${sport}/match/${id}/detail`, {
-      next: { revalidate: 60 },
+      next: { revalidate: REVALIDATE },
     });
     if (!res.ok) throw new Error(`${sport}/match/${id}/detail -> HTTP ${res.status}`);
     const json = await res.json();
