@@ -5,10 +5,12 @@ export const metadata = {
   description: "American football lines, totals and props.",
 };
 
-export default function Page() {
+export default async function Page({ searchParams }) {
+  const sp = await searchParams;
   return (
     <SportPage
       sport="nfl"
+      date={sp?.date}
       title="NFL odds"
       lead="American football lines, totals and props."
       subjectWord="matches"

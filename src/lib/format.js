@@ -52,10 +52,16 @@ export function statusLabel(match) {
 export function oddsTriple(match) {
   const o = match?.odds;
   if (!o || !Array.isArray(o.outcomes)) return null;
-  const by = {};
-  for (const x of o.outcomes) by[x.name] = x.odds;
-  if (by.H == null && by.D == null && by.A == null) return null;
-  return { home: by.H ?? null, draw: by.D ?? null, away: by.A ?? null, type: o.type };
+  const by = { home: null, draw: null, away: null };
+  for (const x of o.outcomes) {
+    const n = String(x.name ?? "").toUpperCase();
+    if (n === "H" || n === "1" || n === "HOME") by.home = x.odds;
+    else if (n === "A" || n === "2" || n === "AWAY") by.away = x.odds;
+    else if (n === "D" || n === "X" || n === "DRAW") by.draw = x.odds;
+  }
+  if (by.home == null && by.draw == null && by.away == null) return null;
+  // twoWay = a 2-outcome market (tennis, basketball moneyline) — no draw.
+  return { ...by, twoWay: by.draw == null, type: o.type };
 }
 
 /** "2026-06-02 07:51:55" -> "37 min ago" / "2h ago" / "3d ago" / "12 May". */

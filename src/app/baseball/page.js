@@ -2,15 +2,17 @@ import SportPage from "@/components/SportPage";
 
 export const metadata = {
   title: "Baseball odds",
-  description: "MLB and more — live scores and prices.",
+  description: "MLB and more â€” live scores and prices.",
 };
 
-export default function Page() {
+export default async function Page({ searchParams }) {
+  const sp = await searchParams;
   return (
     <SportPage
       sport="baseball"
+      date={sp?.date}
       title="Baseball odds"
-      lead="MLB and more — live scores and prices."
+      lead="MLB and more â€” live scores and prices."
       subjectWord="matches"
     />
   );

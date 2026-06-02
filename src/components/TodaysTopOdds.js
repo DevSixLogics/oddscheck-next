@@ -36,11 +36,10 @@ function Arrow({ dir }) {
 function Row({ match, sport }) {
   const c = match.competitors || {};
   const t = oddsTriple(match);
-  const cells = [
-    { sym: "1", price: t?.home },
-    { sym: "X", price: t?.draw },
-    { sym: "2", price: t?.away },
-  ];
+  const twoWay = t?.twoWay;
+  const cells = twoWay
+    ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
+    : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
   const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
   const fav = prices.length ? Math.min(...prices) : null;
   const out = prices.length ? Math.max(...prices) : null;
@@ -70,7 +69,7 @@ function Row({ match, sport }) {
         </div>
       </div>
 
-      <div className={styles.odds}>
+      <div className={styles.odds} style={twoWay ? { gridTemplateColumns: "1fr 1fr" } : undefined}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
           const isBest = has && x.price === fav;

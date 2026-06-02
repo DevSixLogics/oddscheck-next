@@ -96,6 +96,55 @@ export async function getMatchDetail(sport = "football", id) {
 }
 
 /**
+ * Golf tournaments + leaderboard for a date: /golf/matches?match_type=all&date=.
+ * Returns { tournaments, date }. Each tournament: { id, nm, st, et, par, matches:[player] }
+ * where player: { id, pid, nm, cnm (country), par (to-par), thru, strk, pos, st, scores:[round] }.
+ */
+export async function getGolfTournaments(date = todayISO()) {
+  const GOLF_SAMPLE = "2026-05-31";
+  async function fetchGolf(d) {
+    const res = await fetch(`${API_BASE}/golf/matches?match_type=all&date=${d}`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`golf/matches ${d} -> HTTP ${res.status}`);
+    const json = await res.json();
+    return Array.isArray(json?.data) ? json.data : [];
+  }
+  try {
+    let tournaments = await fetchGolf(date);
+    if (tournaments.length) return { tournaments, date, source: "live" };
+    if (date !== GOLF_SAMPLE) {
+      tournaments = await fetchGolf(GOLF_SAMPLE);
+      if (tournaments.length) return { tournaments, date: GOLF_SAMPLE, source: "sample-date" };
+    }
+  } catch (err) {
+    console.error("[api] getGolfTournaments failed:", err.message);
+  }
+  return { tournaments: [], date, source: "empty" };
+}
+
+/**
+ * Horse racing meetings for a date: /horseracing/meetings?date=YYYY-MM-DD.
+ * Returns { meetings, date }. Each meeting: { id, dt, cnm (course), co (country),
+ * wea (weather), go (going), nor (#races), races: [{ id, st, nm, nor, dis, status }] }.
+ */
+export async function getRacingMeetings(date = todayISO()) {
+  try {
+    const res = await fetch(`${API_BASE}/horseracing/meetings?date=${date}`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`horseracing/meetings -> HTTP ${res.status}`);
+    const json = await res.json();
+    return { meetings: Array.isArray(json?.data) ? json.data : [], date };
+  } catch (err) {
+    console.error("[api] getRacingMeetings failed:", err.message);
+    return { meetings: [], date };
+  }
+}
+
+/**
  * News articles from /articles?per_page=&page=.
  * Returns { articles, pagination } (pagination: { total, per_page, current_page, last_page }).
  */
@@ -138,6 +187,30 @@ export async function getArticle(slug) {
     };
   } catch (err) {
     console.error("[api] getArticle failed:", err.message);
+    return null;
+  }
+}
+
+/**
+ * Head-to-head for a match: /{sport}/match/{id}/h2h.
+ * Returns { stats, meetings } or null. stats = { homeTeam, awayTeam, wins, draws, average_goal_score, ... }.
+ */
+export async function getMatchH2H(sport = "football", id) {
+  if (!id) return null;
+  try {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/h2h`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`${sport}/match/${id}/h2h -> HTTP ${res.status}`);
+    const json = await res.json();
+    const d = json?.data;
+    if (!d) return null;
+    const meetings = [];
+    for (const g of d.h2h || []) for (const m of g.matches || []) meetings.push({ ...m, league: g.name || g.nm });
+    return { stats: d.h2h_stats || null, meetings };
+  } catch (err) {
+    console.error("[api] getMatchH2H failed:", err.message);
     return null;
   }
 }

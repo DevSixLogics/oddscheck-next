@@ -7,16 +7,16 @@ function Odds({ match }) {
   // The feed carries a single pre-match 1·X·2 market (one bookmaker) on upcoming
   // games, and null on finished ones. Render real prices when present, "—" when not.
   const t = oddsTriple(match);
-  const cells = [
-    { sym: "1", price: t?.home },
-    { sym: "X", price: t?.draw },
-    { sym: "2", price: t?.away },
-  ];
+  // 2-way market (tennis/basketball moneyline) → 1 / 2; otherwise 1 / X / 2.
+  const twoWay = t?.twoWay;
+  const cells = twoWay
+    ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
+    : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
   const prices = cells.map((c) => c.price).filter((p) => typeof p === "number");
   const fav = prices.length ? Math.min(...prices) : null; // shortest price = favourite
 
   return (
-    <div className={styles.odds} aria-label={t ? "1 X 2 odds" : "Odds not available"}>
+    <div className={styles.odds} style={twoWay ? { gridTemplateColumns: "1fr 1fr" } : undefined} aria-label={t ? "odds" : "Odds not available"}>
       {cells.map((c) => {
         const has = typeof c.price === "number";
         return (
@@ -90,7 +90,7 @@ export default function MatchTable({ groups, sport = "football" }) {
   return (
     <>
       {groups.map((g) => (
-        <div className={styles.group} key={g.id}>
+        <div className={styles.group} id={`group-${g.id}`} key={g.id} style={{ scrollMarginTop: 96 }}>
           <div className={styles.groupHead}>
             <span>
               {g.nm}

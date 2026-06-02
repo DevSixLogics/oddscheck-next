@@ -27,7 +27,7 @@ const SPORT_DEFS = [
 ];
 
 export default async function HomePage() {
-  const { groups, source } = await getFootballMatches();
+  const { groups } = await getFootballMatches();
   const matches = flattenMatches(groups);
   const liveCount = matches.filter((m) => statusOf(m) === "live").length;
 
@@ -50,7 +50,7 @@ export default async function HomePage() {
       <BestOffers />
       <FeaturedEvent matches={matches} />
       <TipsSection />
-      <ScoresSection matches={matches} source={source} />
+      <ScoresSection matches={matches} />
       <SmartTools />
       <NewsSection />
       <LearnToBet />

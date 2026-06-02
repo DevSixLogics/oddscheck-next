@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMatchDetail, getMatches, flattenMatches } from "@/lib/api";
+import { getMatchDetail, getMatchH2H, getMatches, flattenMatches } from "@/lib/api";
 import { oddsTriple, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
 import Crest from "@/components/Crest";
 
@@ -31,7 +31,7 @@ export default async function EventPage({ searchParams }) {
     id = m?.id;
   }
 
-  const d = await getMatchDetail(sport, id);
+  const [d, h2h] = await Promise.all([getMatchDetail(sport, id), getMatchH2H(sport, id)]);
 
   if (!d) {
     return (
@@ -187,6 +187,42 @@ export default async function EventPage({ searchParams }) {
                 </div>
               )}
             </div>
+
+            {h2h && (h2h.stats || h2h.meetings.length > 0) && (
+              <div className="card" style={{ padding: 22 }}>
+                <h3 style={{ fontSize: 18, marginBottom: 16 }}>Head to head</h3>
+                {h2h.stats && (
+                  <>
+                    <div className="flex justify-between" style={{ fontSize: 13, marginBottom: 8 }}>
+                      <span><b>{h2h.stats.wins.t1}</b> {h2h.stats.homeTeam} wins</span>
+                      <span><b>{h2h.stats.draws.tot}</b> draws</span>
+                      <span>{h2h.stats.awayTeam} wins <b>{h2h.stats.wins.t2}</b></span>
+                    </div>
+                    <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", background: "var(--bg-3)", marginBottom: 14 }}>
+                      <div style={{ width: `${h2h.stats.wins.t1p}%`, background: "var(--accent)" }} />
+                      <div style={{ width: `${h2h.stats.draws.perct}%`, background: "var(--border-strong)" }} />
+                      <div style={{ width: `${h2h.stats.wins.t2p}%`, background: "var(--gold)" }} />
+                    </div>
+                    <div className="mute" style={{ fontSize: 12, marginBottom: 16 }}>
+                      Avg goals — {h2h.stats.homeTeam}: <b className="num">{h2h.stats.average_goal_score?.t1}</b> · {h2h.stats.awayTeam}: <b className="num">{h2h.stats.average_goal_score?.t2}</b>
+                    </div>
+                  </>
+                )}
+                {h2h.meetings.length > 0 && (
+                  <>
+                    <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: 8 }}>Recent meetings</div>
+                    <div className="flex-col gap-1">
+                      {h2h.meetings.slice(0, 6).map((mm) => (
+                        <div key={mm.id} className="flex items-center" style={{ fontSize: 13, padding: "7px 0", borderBottom: "1px solid var(--border-soft)", gap: 10 }}>
+                          <span className="mute" style={{ fontSize: 11, minWidth: 64 }}>{kickoffDate(mm.dt)}</span>
+                          <span style={{ flex: 1, textAlign: "center" }}>{mm.competitors?.htn} <b className="num">{mm.cfs || mm.ft}</b> {mm.competitors?.atn}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <aside className="flex-col gap-4">

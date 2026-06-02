@@ -101,7 +101,7 @@ export default function GuidesPage() {
           </div>
 
           {/* Most popular guides */}
-          <div style={{ marginTop: 24 }}>
+          <div>
             <div className="section-head" style={{ marginBottom: 18 }}>
               <div>
                 <h2 style={{ fontSize: 24 }}>Most popular guides</h2>
@@ -125,7 +125,7 @@ export default function GuidesPage() {
           </div>
 
           {/* Email course CTA */}
-          <div className="card" style={{ marginTop: 24, padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #0B2419)", borderColor: "rgba(45,212,191,0.30)", position: "relative", overflow: "hidden" }}>
+          <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #0B2419)", borderColor: "rgba(45,212,191,0.30)", position: "relative", overflow: "hidden" }}>
             <div className="grid grid-2" style={{ gap: 40, alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: 28, marginBottom: 12 }}>Get the 7-day Betting Basics email course</h2>

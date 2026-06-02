@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { getMatches, flattenMatches } from "@/lib/api";
+import { getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import MatchTable from "@/components/MatchTable";
 import StaticNote from "@/components/StaticNote";
+import DateNav from "@/components/DateNav";
 
 /**
  * Generic sport landing page (fixtures/results + 1·X·2 odds where available).
  * Reused by /football, /tennis, /basketball, /cricket, /racing — same feed shape.
  */
-export default async function SportPage({ sport, title, lead, subjectWord = "matches" }) {
-  const { groups, date, source } = await getMatches(sport);
+export default async function SportPage({ sport, title, lead, subjectWord = "matches", date: dateProp }) {
+  const reqDate = dateProp || todayISO();
+  const { groups, date } = await getMatches(sport, reqDate);
   const matches = flattenMatches(groups);
   const liveCount = matches.filter((m) => statusOf(m) === "live").length;
 
@@ -42,6 +44,7 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
                 <span><b className="num" style={{ color: "var(--text)" }}>{liveCount}</b> live now</span>
               </div>
             </div>
+            <DateNav date={reqDate} />
           </div>
         </div>
       </section>
@@ -74,7 +77,6 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
                 <div className="flex items-center gap-2">
                   <h3 style={{ fontSize: 18 }}>Matches</h3>
                   <span className="chip chip-muted">{date}</span>
-                  {source !== "live" && <span className="chip chip-muted">{source}</span>}
                 </div>
               </div>
               {matches.length ? (

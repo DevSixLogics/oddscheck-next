@@ -1,9 +1,8 @@
 import Link from "next/link";
 import ScoresResults from "./ScoresResults";
-import StaticNote from "./StaticNote";
 
 /** "Scores & results" section — DATA-DRIVEN from the football feed. */
-export default function ScoresSection({ matches, source }) {
+export default function ScoresSection({ matches }) {
   return (
     <section className="section">
       <div className="container">
@@ -16,9 +15,6 @@ export default function ScoresSection({ matches, source }) {
           <Link className="btn btn-outline btn-sm" href="/live">All live →</Link>
         </div>
         <ScoresResults matches={matches} />
-        {source !== "live" && (
-          <StaticNote>Showing sample data ({source}) — live feed returned no matches for today.</StaticNote>
-        )}
       </div>
     </section>
   );
