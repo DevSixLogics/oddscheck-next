@@ -12,9 +12,9 @@ const TIPS = [
   { sport: "Football", when: "Today", match: "Man City vs Arsenal · Premier League", pick: "BTTS & Over 2.5 Goals", time: "Sat 20:00", odds: "1.85", bm: "BET365", cls: "bet365", initials: "JM", author: "James Murphy", conf: 4, av: "#A855F7" },
   { sport: "Horse Racing", when: "Today", match: "15:30 Ascot · 2m Hurdle", pick: "Stormrider · Each Way", time: "15:30", odds: "6.00", bm: "P.POWER", cls: "paddypower", initials: "NO", author: "Niamh O'Connor", conf: 3, av: "#EF4444" },
   { sport: "Tennis", when: "Today", match: "Sinner vs Alcaraz · Madrid Open Final", pick: "Sinner -1.5 sets", time: "14:00", odds: "2.40", bm: "W.HILL", cls: "williamhill", initials: "MC", author: "Mark Chen", conf: 5, av: "#0EA5E9" },
-  { sport: "Football", when: "Acca", match: "6-fold Premier League Acca", pick: "Saturday 3pm Acca", time: "Sat 15:00", odds: "14.50", bm: "BETFAIR", cls: "betfair", initials: "OA", author: "OddsCheck AI", conf: 4, av: "#2DD4BF" },
+  { sport: "Football", when: "Acca", match: "6-fold Premier League Acca", pick: "Saturday 3pm Acca", time: "Sat 15:00", odds: "14.50", bm: "BETFAIR", cls: "betfair", initials: "OA", author: "OddsCheck AI", conf: 4, av: "#FF8E00" },
   { sport: "NBA", when: "Tonight", match: "Lakers vs Celtics", pick: "LeBron Over 24.5 points", time: "02:30", odds: "1.95", bm: "UNIBET", cls: "unibet", initials: "TB", author: "Tyler Banks", conf: 4, av: "#F97316" },
-  { sport: "Cricket", when: "Tomorrow", match: "IND vs AUS · 3rd ODI", pick: "India to win", time: "Sun 09:00", odds: "1.72", bm: "888SPORT", cls: "888sport", initials: "PS", author: "Priya Shah", conf: 4, av: "#14B8A6" },
+  { sport: "Cricket", when: "Tomorrow", match: "IND vs AUS · 3rd ODI", pick: "India to win", time: "Sun 09:00", odds: "1.72", bm: "888SPORT", cls: "888sport", initials: "PS", author: "Priya Shah", conf: 4, av: "#F59E0B" },
   { sport: "Football", when: "Sun", match: "Liverpool vs Chelsea · Premier League", pick: "Salah anytime scorer", time: "Sun 17:30", odds: "2.05", bm: "SKY BET", cls: "skybet", initials: "JM", author: "James Murphy", conf: 4, av: "#A855F7" },
   { sport: "Horse Racing", when: "Today", match: "14:20 Newbury · 1m4f Listed", pick: "Bold Endeavour · Win", time: "14:20", odds: "3.50", bm: "CORAL", cls: "coral", initials: "NO", author: "Niamh O'Connor", conf: 4, av: "#EF4444" },
   { sport: "Football", when: "Today", match: "Real Madrid vs Barcelona", pick: "Bellingham anytime scorer", time: "Sat 22:00", odds: "2.10", bm: "LADBROKES", cls: "ladbrokes", initials: "MC", author: "Mark Chen", conf: 4, av: "#0EA5E9" },
@@ -24,7 +24,7 @@ const TIPSTERS = [
   { initials: "JM", name: "James Murphy", stat: "68% · 42 tips", units: "+12.3 units", av: "#A855F7" },
   { initials: "NO", name: "Niamh O'Connor", stat: "64% · 38 tips", units: "+9.8 units", av: "#EF4444" },
   { initials: "MC", name: "Mark Chen", stat: "59% · 30 tips", units: "+7.2 units", av: "#0EA5E9" },
-  { initials: "PS", name: "Priya Shah", stat: "55% · 24 tips", units: "+4.6 units", av: "#14B8A6" },
+  { initials: "PS", name: "Priya Shah", stat: "55% · 24 tips", units: "+4.6 units", av: "#F59E0B" },
 ];
 
 const si = (paths) => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">{paths}</svg>;
@@ -43,7 +43,7 @@ function Avatar({ initials, color, big }) {
 export default function TipsPage() {
   return (
     <>
-      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -73,7 +73,7 @@ export default function TipsPage() {
       </section>
 
       <section className="section">
-        <div className="container layout-split-wide">
+        <div className="container layout-split-wide static-flag">
           <div>
             <div className="tab-pills-scroll mb-4">
               {TABS.map((t, i) => <button key={t} className={`tab-pill${i === 0 ? " active" : ""}`} disabled={i !== 0}>{t}</button>)}
@@ -135,7 +135,7 @@ export default function TipsPage() {
                 </div>
               ))}
             </div>
-            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(45,212,191,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(45,212,191,0.18)" }}>
+            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(255,142,0,0.18)" }}>
               <h4 style={{ fontSize: 15, marginBottom: 8 }}>Get tips by email</h4>
               <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>Daily digest of our highest-confidence picks.</p>
               <div className="flex-col gap-2">

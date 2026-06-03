@@ -22,7 +22,7 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
       <section
         style={{
           padding: "28px 0 16px",
-          background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)",
+          background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)",
           borderBottom: "1px solid var(--border)",
         }}
       >

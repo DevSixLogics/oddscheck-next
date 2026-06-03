@@ -57,7 +57,7 @@ export default function Hero({ matches, liveCount }) {
             <div className="flex gap-6 flex-wrap" style={{ marginTop: 32, fontSize: 13, color: "var(--text-2)" }}>
               {HERO_FEATURES.map((f) => (
                 <span className="flex items-center gap-2" key={f.label}>
-                  <span style={{ width: 26, height: 26, borderRadius: 6, display: "grid", placeItems: "center", background: "rgba(45,212,191,0.10)", color: "var(--accent)" }}>
+                  <span style={{ width: 26, height: 26, borderRadius: 6, display: "grid", placeItems: "center", background: "rgba(255,142,0,0.10)", color: "var(--accent)" }}>
                     {f.icon}
                   </span>
                   {f.label}
@@ -68,7 +68,7 @@ export default function Hero({ matches, liveCount }) {
           <TopOddsWidget matches={matches} />
         </div>
 
-        <div className="stat-strip">
+        <div className="stat-strip static-flag">
           {STATS.map((s) => (
             <div className="stat" key={s.label}>
               <div className="stat-val num">{s.val}</div>

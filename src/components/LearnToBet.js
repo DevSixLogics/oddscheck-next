@@ -18,7 +18,7 @@ const redBadge = { width: 38, height: 38, borderRadius: 10, display: "grid", pla
 export default function LearnToBet() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-0), var(--bg-1))" }}>
-      <div className="container">
+      <div className="container static-flag">
         <div className="section-head">
           <div>
             <div className="eyebrow">Education</div>

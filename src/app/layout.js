@@ -16,7 +16,7 @@ export const metadata = {
     images: ["/og-default.svg"],
   },
   twitter: { card: "summary_large_image", site: "@oddscheck" },
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: "/fav_icon.ico", shortcut: "/fav_icon.ico", apple: "/oddscheck.png" },
 };
 
 export const viewport = {

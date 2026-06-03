@@ -41,7 +41,7 @@ export default async function RacingPage({ searchParams }) {
 
   return (
     <>
-      <section style={{ padding: "28px 0 24px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "28px 0 24px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -52,7 +52,7 @@ export default async function RacingPage({ searchParams }) {
           </nav>
           <div className="flex justify-between items-end flex-wrap gap-4" style={{ marginTop: 12 }}>
             <div className="flex items-center gap-3 flex-wrap">
-              <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(45,212,191,0.10)", border: "1px solid rgba(45,212,191,0.25)", display: "grid", placeItems: "center", color: "var(--accent)" }}>
+              <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(255,142,0,0.10)", border: "1px solid rgba(255,142,0,0.25)", display: "grid", placeItems: "center", color: "var(--accent)" }}>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
               </div>
               <div>

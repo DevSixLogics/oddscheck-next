@@ -68,7 +68,7 @@ export default function OffersPage() {
       </section>
 
       <section style={{ padding: "32px 0 64px" }}>
-        <div className="container layout-split">
+        <div className="container layout-split static-flag">
           {/* Filters (static) */}
           <aside className="flex-col gap-4">
             <div className="card" style={{ padding: 18 }}>
@@ -90,7 +90,7 @@ export default function OffersPage() {
                 </div>
               ))}
             </div>
-            <div className="card" style={{ padding: 16, background: "linear-gradient(135deg, rgba(45,212,191,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(45,212,191,0.18)" }}>
+            <div className="card" style={{ padding: 16, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(255,142,0,0.18)" }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Offer alerts</div>
               <div className="mute" style={{ fontSize: 11, marginBottom: 10 }}>Get new free bets and boosts emailed to you, daily.</div>
               <Link className="btn btn-primary btn-sm btn-block" href="/signup">Get alerts</Link>

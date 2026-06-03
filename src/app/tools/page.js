@@ -52,13 +52,13 @@ const SECTIONS = [
   },
 ];
 
-const tealBox = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(45,212,191,0.10)", color: "var(--accent)", border: "1px solid rgba(45,212,191,0.25)" };
+const tealBox = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,142,0,0.10)", color: "var(--accent)", border: "1px solid rgba(255,142,0,0.25)" };
 const goldBox = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "linear-gradient(135deg, rgba(218,180,107,0.18), rgba(194,140,66,0.10))", color: "var(--gold)", border: "1px solid rgba(218,180,107,0.3)" };
 
 export default function ToolsPage() {
   return (
     <>
-      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -84,13 +84,13 @@ export default function ToolsPage() {
       </section>
 
       <section className="section">
-        <div className="container flex-col gap-7">
+        <div className="container flex-col gap-7 static-flag">
           {/* Featured calculator */}
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div className="flex justify-between items-start flex-wrap gap-3" style={{ padding: "18px 22px", borderBottom: "1px solid var(--border)" }}>
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(45,212,191,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.calc}</span>
+                  <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.calc}</span>
                   <h3 style={{ fontSize: 19 }}>Odds Calculator</h3><span className="chip chip-best">Most used</span>
                 </div>
                 <p className="muted" style={{ fontSize: 13 }}>Type any price — we convert across formats, calculate implied probability, and show returns.</p>
@@ -128,7 +128,7 @@ export default function ToolsPage() {
           ))}
 
           {/* Pro CTA */}
-          <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #0B2419)", borderColor: "rgba(45,212,191,0.30)" }}>
+          <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #2A1A05)", borderColor: "rgba(255,142,0,0.30)" }}>
             <div className="grid grid-2" style={{ gap: 40, alignItems: "center" }}>
               <div>
                 <span className="chip chip-gold mb-3">OddsCheck Pro · £9/mo</span>

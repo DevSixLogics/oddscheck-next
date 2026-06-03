@@ -29,12 +29,12 @@ export default function DashboardCTA() {
           style={{
             padding: 0,
             overflow: "hidden",
-            background: "linear-gradient(135deg, #0E1729 0%, #0F2333 60%, #0B2419 100%)",
-            borderColor: "rgba(45,212,191,0.30)",
+            background: "linear-gradient(135deg, #0E1729 0%, #0F2333 60%, #2A1A05 100%)",
+            borderColor: "rgba(255,142,0,0.30)",
             position: "relative",
           }}
         >
-          <div style={{ position: "absolute", top: -100, right: -50, width: 480, height: 480, background: "radial-gradient(circle, rgba(45,212,191,0.18), transparent 60%)" }} />
+          <div style={{ position: "absolute", top: -100, right: -50, width: 480, height: 480, background: "radial-gradient(circle, rgba(255,142,0,0.18), transparent 60%)" }} />
           <div className="grid grid-2 allow-mobile-split" style={{ gap: 48, padding: "52px 56px", position: "relative" }}>
             <div>
               <span className="chip chip-best" style={{ marginBottom: 18 }}>Free forever</span>
@@ -50,7 +50,7 @@ export default function DashboardCTA() {
               <div className="flex items-center gap-4 flex-wrap mute" style={{ fontSize: 13 }}>
                 <div className="flex items-center gap-1">
                   <div className="flex" style={{ marginRight: 4 }}>
-                    {["#2DD4BF", "#DAB46B", "#3B82F6", "#EC4899"].map((c, i) => (
+                    {["#FF8E00", "#DAB46B", "#3B82F6", "#EC4899"].map((c, i) => (
                       <div key={c} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: "2px solid var(--bg-1)", marginLeft: i === 0 ? 0 : -8 }} />
                     ))}
                   </div>
@@ -66,7 +66,7 @@ export default function DashboardCTA() {
             <div className="grid grid-2 allow-mobile-split" style={{ gap: 12 }}>
               {FEATURES.map((f) => (
                 <div key={f.title} style={{ padding: 16, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(45,212,191,0.12)", display: "grid", placeItems: "center", color: "var(--accent)", marginBottom: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.12)", display: "grid", placeItems: "center", color: "var(--accent)", marginBottom: 10 }}>
                     {f.icon}
                   </div>
                   <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 3 }}>{f.title}</div>

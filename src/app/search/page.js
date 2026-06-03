@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { getMatches, flattenMatches } from "@/lib/api";
+import { getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
 import { oddsTriple, statusOf, statusLabel, score, kickoffTime } from "@/lib/format";
 import Crest from "@/components/Crest";
 
 export const metadata = { title: "Search results" };
 
+// Sports served by the match (1·X·2) feed.
 const SPORTS = [
   { key: "football", label: "Football" },
   { key: "tennis", label: "Tennis" },
   { key: "basketball", label: "Basketball" },
   { key: "cricket", label: "Cricket" },
+  { key: "nfl", label: "NFL" },
+  { key: "baseball", label: "Baseball" },
 ];
 
 function ResultRow({ m }) {
@@ -57,6 +60,44 @@ function ResultRow({ m }) {
   );
 }
 
+function RaceRow({ r }) {
+  const s = (r.status || "").toUpperCase();
+  const live = s === "OFF";
+  const done = s === "RESULT" || s === "INTERIM";
+  return (
+    <div className="card flex items-center gap-3 flex-wrap" style={{ padding: "12px 16px" }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>{r.course}</div>
+        <div className="mute" style={{ fontSize: 12, marginTop: 2 }}>{r.nm}</div>
+      </div>
+      <div style={{ fontSize: 12, color: "var(--text-2)", minWidth: 130 }}>
+        <span className="chip chip-muted" style={{ fontSize: 10, marginRight: 6 }}>Horse Racing</span>
+        {[r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
+        <div className="mute" style={{ fontSize: 11, marginTop: 3 }}>
+          {live ? <span style={{ color: "var(--down)", fontWeight: 700 }}>LIVE</span> : done ? "Result" : kickoffTime(r.st)}
+        </div>
+      </div>
+      <Link className="btn btn-primary btn-xs" href={`/race?id=${r.id}`}>Card</Link>
+    </div>
+  );
+}
+
+function GolfRow({ g }) {
+  return (
+    <div className="card flex items-center gap-3 flex-wrap" style={{ padding: "12px 16px" }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>{g.player || g.tournament}</div>
+        {g.player && <div className="mute" style={{ fontSize: 12, marginTop: 2 }}>{g.tournament}</div>}
+      </div>
+      <div style={{ fontSize: 12, color: "var(--text-2)", minWidth: 130 }}>
+        <span className="chip chip-muted" style={{ fontSize: 10, marginRight: 6 }}>Golf</span>
+        {g.player ? [g.pos && `Pos ${g.pos}`, g.par != null && `${g.par}`].filter(Boolean).join(" · ") : "Tournament"}
+      </div>
+      <Link className="btn btn-primary btn-xs" href="/golf">View</Link>
+    </div>
+  );
+}
+
 export default async function SearchPage({ searchParams }) {
   const sp = await searchParams;
   const q = (sp?.q || "").trim();
@@ -64,12 +105,41 @@ export default async function SearchPage({ searchParams }) {
 
   let results = [];
   if (ql) {
-    const all = await Promise.all(SPORTS.map((s) => getMatches(s.key)));
+    // Run every sport's feed in parallel: matches, racing meetings, golf.
+    const [matchFeeds, racing, golf] = await Promise.all([
+      Promise.all(SPORTS.map((s) => getMatches(s.key))),
+      getRacingMeetings(),
+      getGolfTournaments(),
+    ]);
+
+    // 1·X·2 match sports — match on team names + league.
     SPORTS.forEach((s, i) => {
-      flattenMatches(all[i].groups).forEach((m) => {
+      flattenMatches(matchFeeds[i].groups).forEach((m) => {
         const c = m.competitors || {};
         const hay = `${c.htn || ""} ${c.atn || ""} ${m.league || ""} ${m.leagueFull || ""}`.toLowerCase();
-        if (hay.includes(ql)) results.push({ ...m, sport: s.key, sportLabel: s.label });
+        if (hay.includes(ql)) results.push({ kind: "match", ...m, sport: s.key, sportLabel: s.label });
+      });
+    });
+
+    // Horse racing — match on course / race name / country.
+    (racing.meetings || []).forEach((mt) => {
+      (mt.races || []).forEach((r) => {
+        const hay = `${mt.cnm || ""} ${r.nm || ""} ${mt.co || ""}`.toLowerCase();
+        if (hay.includes(ql)) {
+          results.push({ kind: "race", id: r.id, course: mt.cnm, nm: r.nm, st: r.st, status: r.status, dis: r.dis, nor: r.nor });
+        }
+      });
+    });
+
+    // Golf — match on tournament name and player names.
+    (golf.tournaments || []).forEach((tn) => {
+      if ((tn.nm || "").toLowerCase().includes(ql)) {
+        results.push({ kind: "golf", id: tn.id, tournament: tn.nm, player: null });
+      }
+      (tn.matches || []).forEach((p) => {
+        if ((p.nm || "").toLowerCase().includes(ql)) {
+          results.push({ kind: "golf", id: tn.id, tournament: tn.nm, player: p.nm, pos: p.pos, par: p.par });
+        }
       });
     });
   }
@@ -90,7 +160,7 @@ export default async function SearchPage({ searchParams }) {
           <span style={{ padding: "0 8px 0 12px", color: "var(--text-mute)", display: "inline-flex" }}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" /><path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
           </span>
-          <input className="input" name="q" defaultValue={q} placeholder="Search team, event or league (e.g. Canada)" aria-label="Search" style={{ background: "transparent", border: 0, padding: "10px 0" }} />
+          <input className="input" name="q" defaultValue={q} placeholder="Search team, horse, player, course or league" aria-label="Search" style={{ background: "transparent", border: 0, padding: "10px 0" }} />
           <button className="btn btn-primary" type="submit">Search</button>
         </form>
 
@@ -101,10 +171,14 @@ export default async function SearchPage({ searchParams }) {
             <h1 style={{ fontSize: 22, marginBottom: 4 }}>
               {results.length} result{results.length === 1 ? "" : "s"} for &ldquo;{q}&rdquo;
             </h1>
-            <p className="sub" style={{ marginBottom: 20 }}>Across football, tennis, basketball and cricket.</p>
+            <p className="sub" style={{ marginBottom: 20 }}>Across all sports — football, horse racing, tennis, basketball, cricket, golf and more.</p>
             {results.length ? (
               <div className="flex-col gap-2">
-                {results.slice(0, 50).map((m) => <ResultRow key={`${m.sport}-${m.id}`} m={m} />)}
+                {results.slice(0, 50).map((item, idx) =>
+                  item.kind === "race" ? <RaceRow key={`race-${item.id}`} r={item} />
+                  : item.kind === "golf" ? <GolfRow key={`golf-${item.id}-${item.player || "t"}-${idx}`} g={item} />
+                  : <ResultRow key={`${item.sport}-${item.id}`} m={item} />
+                )}
               </div>
             ) : (
               <div className="card" style={{ padding: 40, textAlign: "center" }}>

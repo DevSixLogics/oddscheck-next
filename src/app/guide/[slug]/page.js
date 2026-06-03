@@ -141,7 +141,7 @@ export default async function GuideTopicPage({ params }) {
 
   return (
     <>
-      <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -181,7 +181,7 @@ export default async function GuideTopicPage({ params }) {
             <div className={styles.callout}>
               <div className="flex justify-between items-center flex-wrap gap-3">
                 <div className="flex items-center gap-3">
-                  <span style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(45,212,191,0.12)", display: "grid", placeItems: "center", color: "var(--accent)" }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(255,142,0,0.12)", display: "grid", placeItems: "center", color: "var(--accent)" }}>
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
                       <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
                       <path d="M8 7h8M8 12h2m4 0h2m-8 4h2m4 0h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -206,7 +206,7 @@ export default async function GuideTopicPage({ params }) {
                 ))}
               </div>
             </div>
-            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(45,212,191,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(45,212,191,0.18)" }}>
+            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))", borderColor: "rgba(255,142,0,0.18)" }}>
               <h4 style={{ fontSize: 14, marginBottom: 8 }}>Now compare some real odds</h4>
               <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>See best price across 14 books on today&apos;s matches.</p>
               <Link className="btn btn-primary btn-sm btn-block" href="/football">Open today&apos;s odds</Link>

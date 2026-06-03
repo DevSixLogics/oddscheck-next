@@ -20,7 +20,7 @@ export default function SignupPage() {
         </p>
 
         <div className="flex gap-2 mb-4" style={{ background: "var(--bg-2)", padding: 4, borderRadius: 10, border: "1px solid var(--border)" }}>
-          <div style={{ flex: 1, padding: "8px 14px", background: "rgba(45,212,191,0.10)", borderRadius: 7, fontSize: 12, fontWeight: 600, textAlign: "center", color: "var(--accent)" }}>1 · Account</div>
+          <div style={{ flex: 1, padding: "8px 14px", background: "rgba(255,142,0,0.10)", borderRadius: 7, fontSize: 12, fontWeight: 600, textAlign: "center", color: "var(--accent)" }}>1 · Account</div>
           <div style={{ flex: 1, padding: "8px 14px", fontSize: 12, fontWeight: 500, textAlign: "center", color: "var(--text-mute)" }}>2 · Preferences</div>
           <div style={{ flex: 1, padding: "8px 14px", fontSize: 12, fontWeight: 500, textAlign: "center", color: "var(--text-mute)" }}>3 · Done</div>
         </div>

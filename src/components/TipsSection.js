@@ -1,26 +1,25 @@
 import Link from "next/link";
 import StaticNote from "./StaticNote";
-import StaticDot from "./StaticDot";
 
 // Static placeholder content (no API source — needs a tips endpoint).
 const TIPS = [
   { sport: "Football", when: "Today", match: "Man City vs Arsenal", pick: "BTTS & Over 2.5 Goals", desc: "Both attacks firing — value lies in goals, not the winner.", odds: "1.85", bm: "BET365", cls: "bet365", initials: "JM", author: "James Murphy", conf: 4, av: "linear-gradient(135deg,#A855F7,#1F2937)" },
   { sport: "Horse Racing", when: "Today", match: "15:30 Ascot · 2m Hurdle", pick: "Stormrider · Each Way", desc: "Strong recent form on soft ground, drawn well in a competitive field.", odds: "6.00", bm: "P.POWER", cls: "paddypower", initials: "NO", author: "Niamh O'Connor", conf: 3, av: "linear-gradient(135deg,#EF4444,#1F2937)" },
   { sport: "Tennis", when: "Today", match: "Sinner vs Alcaraz · Madrid F", pick: "Sinner -1.5 sets", desc: "Sinner is 7-1 in last 8 vs top-5 on clay & in red-hot form.", odds: "2.40", bm: "W.HILL", cls: "williamhill", initials: "MC", author: "Mark Chen", conf: 4, av: "linear-gradient(135deg,#3B82F6,#1F2937)" },
-  { sport: "Football", when: "Acca", match: "6-fold Saturday Acca", pick: "Saturday 3pm Acca", desc: "Six in-form home favourites, all priced 1.40-1.90. AI-picked.", odds: "14.50", bm: "BETFAIR", cls: "betfair", initials: "OA", author: "OddsCheck AI", conf: 4, av: "linear-gradient(135deg,#2DD4BF,#1F2937)" },
+  { sport: "Football", when: "Acca", match: "6-fold Saturday Acca", pick: "Saturday 3pm Acca", desc: "Six in-form home favourites, all priced 1.40-1.90. AI-picked.", odds: "14.50", bm: "BETFAIR", cls: "betfair", initials: "OA", author: "OddsCheck AI", conf: 4, av: "linear-gradient(135deg,#FF8E00,#1F2937)" },
   { sport: "NBA", when: "Tonight", match: "Lakers vs Celtics", pick: "LeBron Over 24.5 pts", desc: "LeBron averaged 28.4 vs Boston this season. Live underdog narrative.", odds: "1.95", bm: "UNIBET", cls: "unibet", initials: "TB", author: "Tyler Banks", conf: 3, av: "linear-gradient(135deg,#F59E0B,#1F2937)" },
-  { sport: "Cricket", when: "Tomorrow", match: "IND vs AUS · 3rd ODI", pick: "India to win", desc: "Home conditions, batting depth, and Bumrah back from injury.", odds: "1.72", bm: "888SPORT", cls: "888sport", initials: "PS", author: "Priya Shah", conf: 4, av: "linear-gradient(135deg,#10B981,#1F2937)" },
+  { sport: "Cricket", when: "Tomorrow", match: "IND vs AUS · 3rd ODI", pick: "India to win", desc: "Home conditions, batting depth, and Bumrah back from injury.", odds: "1.72", bm: "888SPORT", cls: "888sport", initials: "PS", author: "Priya Shah", conf: 4, av: "linear-gradient(135deg,#FF8E00,#1F2937)" },
 ];
 
 /** Tips & predictions — static (needs a tips endpoint). */
 export default function TipsSection() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-0) 0%, var(--bg-1) 100%)" }}>
-      <div className="container">
+      <div className="container static-flag">
         <div className="section-head">
           <div>
             <div className="eyebrow">Expert insights</div>
-            <h2 className="flex items-center gap-2"><StaticDot /> Tips &amp; predictions</h2>
+            <h2>Tips &amp; predictions</h2>
             <p className="sub">Hand-picked by our editors and AI. Confidence-scored and result-tracked.</p>
           </div>
           <div className="flex gap-3 items-center flex-wrap">

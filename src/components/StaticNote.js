@@ -14,7 +14,7 @@ export default function StaticNote({ children = "Static placeholder — no API d
     >
       <span
         aria-hidden="true"
-        style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent, #DAB46B)" }}
+        style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text-mute, #5A6680)", flexShrink: 0 }}
       />
       {children}
     </div>

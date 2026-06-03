@@ -99,7 +99,7 @@ function Dots({ n }) {
 export default function ReviewPage() {
   return (
     <>
-      <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -162,7 +162,7 @@ export default function ReviewPage() {
                 <div key={s.label} style={{ marginBottom: 14 }}>
                   <div className="flex justify-between mb-1" style={{ fontSize: 13 }}><span>{s.label}</span><b className="num">{s.val.toFixed(1)}</b></div>
                   <div style={{ height: 6, borderRadius: 3, background: "var(--bg-3)", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${(s.val / 5) * 100}%`, background: "linear-gradient(90deg, var(--accent), #6FE5D4)" }} />
+                    <div style={{ height: "100%", width: `${(s.val / 5) * 100}%`, background: "linear-gradient(90deg, var(--accent), #FFB04D)" }} />
                   </div>
                 </div>
               ))}

@@ -24,8 +24,8 @@ function PreviewRow({ match }) {
         marginBottom: 10,
       }}
     >
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex justify-between items-center mb-3" style={{ gap: 10 }}>
+        <div className="flex items-center gap-2" style={{ minWidth: 0, flex: "1 1 auto" }}>
           <Crest name={c.htn} id={c.htid} />
           <span style={{ fontWeight: 600, fontSize: 14 }}>{c.htn}</span>
           <span className="mute" style={{ fontSize: 12 }}>vs</span>
@@ -33,9 +33,9 @@ function PreviewRow({ match }) {
           <Crest name={c.atn} id={c.atid} />
         </div>
         {live ? (
-          <span className="chip chip-live" style={{ fontSize: 10 }}>LIVE {statusLabel(match)}</span>
+          <span className="chip chip-live" style={{ fontSize: 10, flexShrink: 0, whiteSpace: "nowrap" }}>LIVE {statusLabel(match)}</span>
         ) : (
-          <span className="mute" style={{ fontSize: 11 }}>{kickoffTime(match.dt)}</span>
+          <span className="mute" style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}>{kickoffTime(match.dt)}</span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>

@@ -30,7 +30,7 @@ export default async function NewsPage({ searchParams }) {
 
   return (
     <>
-      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -147,7 +147,7 @@ export default async function NewsPage({ searchParams }) {
                 {TOPICS.map((t) => <a key={t} href="#" className="chip chip-muted">{t}</a>)}
               </div>
             </div>
-            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(45,212,191,0.04), rgba(56,189,248,0.03))" }}>
+            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))" }}>
               <h4 style={{ fontSize: 15, marginBottom: 8 }}>News digest</h4>
               <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>The day&apos;s biggest stories, in one email.</p>
               <div className="flex-col gap-2">

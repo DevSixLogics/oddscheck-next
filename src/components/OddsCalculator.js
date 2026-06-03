@@ -106,10 +106,10 @@ export default function OddsCalculator() {
         </div>
       </form>
 
-      <div style={{ padding: 24, background: "linear-gradient(180deg, rgba(45,212,191,0.06), rgba(45,212,191,0.02))", border: "1px solid rgba(45,212,191,0.20)", borderRadius: 12 }}>
+      <div style={{ padding: 24, background: "linear-gradient(180deg, rgba(255,142,0,0.06), rgba(255,142,0,0.02))", border: "1px solid rgba(255,142,0,0.20)", borderRadius: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 16 }}>Result</div>
         {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between items-baseline" style={{ padding: "9px 0", borderBottom: "1px solid rgba(45,212,191,0.10)" }}>
+          <div key={k} className="flex justify-between items-baseline" style={{ padding: "9px 0", borderBottom: "1px solid rgba(255,142,0,0.10)" }}>
             <span className="muted" style={{ fontSize: 12 }}>{k}</span>
             <span className="num" style={{ fontSize: 16, fontWeight: 700, color: "var(--text)" }}>{v}</span>
           </div>

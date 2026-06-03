@@ -138,22 +138,62 @@ function RaceRow({ race }) {
   );
 }
 
+// To-par colour: under par = accent, over par = down, level = default.
+function parColor(p) {
+  if (typeof p === "string" && p.startsWith("-")) return "var(--accent)";
+  if (typeof p === "string" && p.startsWith("+")) return "var(--down)";
+  return "var(--text)";
+}
+
+// Golf is a leaderboard (no outright odds) — show pos / player / to-par + a Leaderboard link.
+function GolfRow({ player }) {
+  return (
+    <div className={styles.row}>
+      <div className={styles.teams}>
+        <div className={styles.names}>
+          <div style={{ fontWeight: 600 }}>
+            <span className="num mute" style={{ marginRight: 8 }}>{player.pos || "–"}</span>{player.nm}
+          </div>
+          <div className="mute" style={{ fontSize: 12 }}>{player.tournament}</div>
+        </div>
+      </div>
+
+      <div className={styles.meta}>
+        <div>{player.cnm || ""}</div>
+        <div className={styles.status}><span className="num" style={{ fontWeight: 700, color: parColor(player.par) }}>{player.par ?? "–"}</span></div>
+      </div>
+
+      <div className={styles.odds} style={{ gridTemplateColumns: "1fr" }}>
+        <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "6px 10px", fontSize: 13, justifySelf: "start" }}>—</span>
+      </div>
+
+      <div className={styles.action}>
+        <Link className="btn btn-primary btn-xs" href="/golf">Leaderboard</Link>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Homepage "Today's top odds" — sport pills switch the table BELOW in-place
  * (no navigation). The top subnav tabs are what navigate to a sport page.
- * `sports` = [{ key, label, href, matches }]; racing entries carry { kind:"racing", races }.
+ * `sports` = [{ key, label, href, matches }]; racing carries { kind:"racing", races },
+ * golf carries { kind:"golf", players }.
  */
 export default function TodaysTopOdds({ sports = [], limit = 8 }) {
   const [active, setActive] = useState(sports[0]?.key);
   const current = sports.find((s) => s.key === active) || sports[0];
   const isRacing = current?.kind === "racing";
+  const isGolf = current?.kind === "golf";
   const matches = current?.matches || [];
 
-  // Racing → race rows (live/off first). Other sports → priced matches first.
+  // Racing → race rows (live/off first). Golf → leaderboard rows. Others → priced matches first.
   const raceItems = (current?.races || [])
     .slice()
     .sort((a, b) => (raceIsLive(b) ? 1 : 0) - (raceIsLive(a) ? 1 : 0) || String(a.st || "").localeCompare(String(b.st || "")))
     .slice(0, limit);
+  const golfItems = (current?.players || []).slice(0, limit);
+  const count = (current?.players ?? current?.races ?? current?.matches ?? []).length;
   const priced = matches.filter((m) => oddsTriple(m));
   const liveP = priced.filter((m) => statusOf(m) === "live");
   const rest = matches.filter((m) => !oddsTriple(m));
@@ -189,20 +229,28 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
               aria-pressed={s.key === active}
             >
               {SPORT_ICONS[s.key]}
-              {s.label} <span style={{ fontSize: 11, opacity: 0.7 }}>{(s.races ?? s.matches).length}</span>
+              {s.label} <span style={{ fontSize: 11, opacity: 0.7 }}>{(s.players ?? s.races ?? s.matches).length}</span>
             </button>
           ))}
         </div>
 
         <div className="card table-scroll" style={{ padding: 0, overflow: "hidden" }}>
           <div className={styles.headRow}>
-            <div>{isRacing ? "Race" : "Event"}</div>
-            <div>{isRacing ? "Distance · Off" : "Competition · Time"}</div>
-            <div>{isRacing ? "Best odds" : "Best odds · 1 / X / 2"}</div>
+            <div>{isRacing ? "Race" : isGolf ? "Pos · Player" : "Event"}</div>
+            <div>{isRacing ? "Distance · Off" : isGolf ? "Country · To par" : "Competition · Time"}</div>
+            <div>{isRacing || isGolf ? "Best odds" : "Best odds · 1 / X / 2"}</div>
             <div />
           </div>
           <div className={styles.scroll}>
-            {isRacing ? (
+            {isGolf ? (
+              golfItems.length ? (
+                golfItems.map((p) => <GolfRow key={p.id} player={p} />)
+              ) : (
+                <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
+                  No golf tournaments in play — leaderboards appear during tournament weeks.
+                </div>
+              )
+            ) : isRacing ? (
               raceItems.length ? (
                 raceItems.map((r) => <RaceRow key={r.id} race={r} />)
               ) : (
@@ -223,13 +271,13 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
         {current && (
           <div className="flex justify-between items-center mt-4 flex-wrap gap-3" style={{ fontSize: 13, color: "var(--text-dim)" }}>
             <div className="flex gap-4 flex-wrap">
-              <span className="flex items-center gap-2"><span style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(45,212,191,0.45)" }} />Best price</span>
+              <span className="flex items-center gap-2"><span style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(255,142,0,0.45)" }} />Best price</span>
               <span className="flex items-center gap-1" style={{ color: "var(--up)" }}><Arrow dir="up" /> Shortening</span>
               <span className="flex items-center gap-1" style={{ color: "var(--down)" }}><Arrow dir="down" /> Drifting</span>
               <span className="flex items-center gap-2"><span className="live-dot" /> Live</span>
             </div>
             <Link href={current.href} style={{ color: "var(--accent)", fontWeight: 600 }}>
-              See all {(current.races ?? current.matches).length} {current.label} {isRacing ? "races" : "matches"} →
+              See all {count} {current.label} {isRacing ? "races" : isGolf ? "players" : "matches"} →
             </Link>
           </div>
         )}

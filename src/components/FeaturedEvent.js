@@ -117,12 +117,12 @@ export default function FeaturedEvent({ matches }) {
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      borderColor: isBest ? "rgba(45,212,191,0.45)" : "var(--border)",
-                      background: isBest ? "rgba(45,212,191,0.06)" : "var(--surface)",
+                      borderColor: isBest ? "rgba(255,142,0,0.45)" : "var(--border)",
+                      background: isBest ? "rgba(255,142,0,0.06)" : "var(--surface)",
                     }}
                   >
                     <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8 }}>{tile.label}</div>
-                    <div className="num" style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: isBest ? "#C8F5EF" : "var(--text)" }}>
+                    <div className="num" style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: isBest ? "#FFE3C2" : "var(--text)" }}>
                       {typeof tile.price === "number" ? tile.price.toFixed(2) : "—"}
                     </div>
                     {isBest && (

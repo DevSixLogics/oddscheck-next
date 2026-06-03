@@ -5,15 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 
+// `static: true` → page is hardcoded placeholder (no API) — flagged red in the nav.
 const NAV = [
   { href: "/football", label: "Sports", match: ["/football", "/racing", "/tennis", "/basketball"] },
   { href: "/live", label: "Live Odds" },
-  { href: "/offers", label: "Offers" },
-  { href: "/tips", label: "Tips" },
+  { href: "/offers", label: "Offers", static: true },
+  { href: "/tips", label: "Tips", static: true },
   { href: "/news", label: "News" },
-  { href: "/reviews", label: "Reviews" },
-  { href: "/guides", label: "Guides" },
-  { href: "/tools", label: "Tools" },
+  { href: "/reviews", label: "Reviews", static: true },
+  { href: "/guides", label: "Guides", static: true },
+  { href: "/tools", label: "Tools", static: true },
 ];
 
 const I = (paths) => (
@@ -113,6 +114,8 @@ export default function Header() {
                 className={`topnav-link${isActive(item) ? " active" : ""}`}
                 href={item.href}
                 aria-current={isActive(item) ? "page" : undefined}
+                style={item.static ? { color: "var(--live)" } : undefined}
+                title={item.static ? "Static page — no live API data" : undefined}
               >
                 {item.label === "Sports" && <span className="nav-dot" aria-hidden="true" />}
                 {item.label}
@@ -228,7 +231,7 @@ export default function Header() {
                           font: "inherit",
                           fontSize: 13,
                           textAlign: "left",
-                          background: fmt === f ? "rgba(45,212,191,0.10)" : "transparent",
+                          background: fmt === f ? "rgba(255,142,0,0.10)" : "transparent",
                           color: fmt === f ? "var(--accent)" : "var(--text-2)",
                         }}
                       >
@@ -249,11 +252,15 @@ export default function Header() {
       </header>
 
       {/* Mobile drawer (useState toggle replaces the original :target behavior) */}
+      <div
+        className={`drawer-backdrop${open ? " open" : ""}`}
+        aria-hidden="true"
+        onClick={() => setOpen(false)}
+      />
       <aside
-        className="drawer"
+        className={`drawer${open ? " open" : ""}`}
         aria-label="Mobile menu"
         aria-hidden={!open}
-        style={{ transform: open ? "translateX(0)" : undefined, visibility: open ? "visible" : undefined }}
       >
         <div className="drawer-inner">
           <div className="drawer-head">
@@ -267,7 +274,7 @@ export default function Header() {
           <nav className="drawer-nav" aria-label="Primary">
             <Link href="/" onClick={() => setOpen(false)}>Home</Link>
             {NAV.map((item) => (
-              <Link key={item.href} href={item.href} className={isActive(item) ? "active" : undefined} onClick={() => setOpen(false)}>
+              <Link key={item.href} href={item.href} className={isActive(item) ? "active" : undefined} onClick={() => setOpen(false)} style={item.static ? { color: "var(--live)" } : undefined}>
                 {item.label}
               </Link>
             ))}

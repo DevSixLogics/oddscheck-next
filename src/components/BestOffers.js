@@ -1,6 +1,5 @@
 import Link from "next/link";
 import StaticNote from "./StaticNote";
-import StaticDot from "./StaticDot";
 
 // Static placeholder content (no API source — see coverage map).
 const OFFERS = [
@@ -16,10 +15,10 @@ const OFFERS = [
 export default function BestOffers() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg,var(--bg-1),var(--bg-0))" }}>
-      <div className="container">
+      <div className="container static-flag">
         <div className="section-head">
           <div>
-            <h2 className="flex items-center gap-2"><StaticDot /> Best betting offers</h2>
+            <h2>Best betting offers</h2>
             <p className="sub">New-customer free bets and boosts.</p>
           </div>
           <Link className="btn btn-outline btn-sm" href="/offers">All offers →</Link>

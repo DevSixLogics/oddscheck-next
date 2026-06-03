@@ -9,12 +9,12 @@ const i = (paths, fill = "none") => <svg viewBox="0 0 24 24" width="14" height="
 
 const TOPICS = [
   {
-    title: "Betting basics", count: 18, color: "#2DD4BF",
+    title: "Betting basics", count: 18, color: "#FF8E00",
     icon: i(<path d="m12 3 2.7 5.5 6 .9-4.3 4.3 1 6.1L12 17l-5.4 2.8 1-6.1L3.3 9.4l6-.9L12 3Z" />, "currentColor"),
     links: [["How to read betting odds", "/guide"], ["How a bookmaker makes money", "/guide"], ["How to place your first bet", "/guide"], ["Decimal vs fractional vs American", "/guide"]],
   },
   {
-    title: "Strategy & value", count: 14, color: "#22D3EE",
+    title: "Strategy & value", count: 14, color: "#FFA733",
     icon: i(<><path d="m3 17 6-6 4 4 8-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M15 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>),
     links: [["What is implied probability?", "/guide/implied-probability"], ["What makes a value bet?", "/guide/value-bets"], ["Expected value (EV) explained", "/guide"], ["How to spot a steam move", "/guide"]],
   },
@@ -54,7 +54,7 @@ const POPULAR = [
 export default function GuidesPage() {
   return (
     <>
-      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(45,212,191,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
+      <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -76,7 +76,7 @@ export default function GuidesPage() {
       </section>
 
       <section className="section">
-        <div className="container flex-col gap-7">
+        <div className="container flex-col gap-7 static-flag">
           {/* Browse by topic */}
           <div>
             <h2 style={{ fontSize: 24, marginBottom: 18 }}>Browse by topic</h2>
@@ -84,7 +84,7 @@ export default function GuidesPage() {
               {TOPICS.map((t) => (
                 <div className="card" key={t.title} style={{ padding: 24 }}>
                   <div className="flex items-center gap-3 mb-3">
-                    <span style={{ width: 42, height: 42, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(45,212,191,0.10)", color: t.color, border: "1px solid rgba(255,255,255,0.06)" }}>{t.icon}</span>
+                    <span style={{ width: 42, height: 42, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,142,0,0.10)", color: t.color, border: "1px solid rgba(255,255,255,0.06)" }}>{t.icon}</span>
                     <div>
                       <h3 style={{ fontSize: 16 }}>{t.title}</h3>
                       <div className="mute" style={{ fontSize: 11 }}>{t.count} guides</div>
@@ -125,7 +125,7 @@ export default function GuidesPage() {
           </div>
 
           {/* Email course CTA */}
-          <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #0B2419)", borderColor: "rgba(45,212,191,0.30)", position: "relative", overflow: "hidden" }}>
+          <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #2A1A05)", borderColor: "rgba(255,142,0,0.30)", position: "relative", overflow: "hidden" }}>
             <div className="grid grid-2" style={{ gap: 40, alignItems: "center" }}>
               <div>
                 <h2 style={{ fontSize: 28, marginBottom: 12 }}>Get the 7-day Betting Basics email course</h2>

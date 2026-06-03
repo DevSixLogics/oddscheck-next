@@ -29,7 +29,7 @@ const TOOLS = [
 
 const tealBox = {
   width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center",
-  background: "rgba(45,212,191,0.10)", color: "var(--accent)", border: "1px solid rgba(45,212,191,0.25)",
+  background: "rgba(255,142,0,0.10)", color: "var(--accent)", border: "1px solid rgba(255,142,0,0.25)",
 };
 const goldBox = {
   width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center",
@@ -41,7 +41,7 @@ const goldBox = {
 export default function SmartTools() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%)" }}>
-      <div className="container">
+      <div className="container static-flag">
         <div className="section-head">
           <div>
             <div className="eyebrow">Toolkit</div>

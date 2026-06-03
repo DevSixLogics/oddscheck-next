@@ -1,4 +1,4 @@
-import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings } from "@/lib/api";
+import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
@@ -15,21 +15,19 @@ export const metadata = {
   title: "OddsCheck.com — compare best odds from top UK bookmakers",
 };
 
-// Other sports offered in the "Today's top odds" in-place switcher.
-// Racing uses a different feed (meetings/races) and renders race rows.
+// Match-feed sports for the "Today's top odds" in-place switcher.
+// Racing (meetings/races) and golf (leaderboards) use their own feeds — handled below.
 const SPORT_DEFS = [
   { key: "tennis", label: "Tennis", href: "/tennis" },
   { key: "basketball", label: "Basketball", href: "/basketball" },
   { key: "cricket", label: "Cricket", href: "/cricket" },
   { key: "nfl", label: "NFL", href: "/nfl" },
   { key: "baseball", label: "Baseball", href: "/baseball" },
-  { key: "golf", label: "Golf", href: "/golf" },
 ];
 
 export default async function HomePage() {
   const { groups } = await getFootballMatches();
   const matches = flattenMatches(groups);
-  const liveCount = matches.filter((m) => statusOf(m) === "live").length;
 
   // Matches per sport for the switcher.
   const others = await Promise.all(
@@ -47,11 +45,27 @@ export default async function HomePage() {
   );
   const racing = { key: "racing", label: "Horse Racing", href: "/racing", kind: "racing", races, matches: [] };
 
+  // Golf: leaderboard feed (not new-matches). Flatten players with their tournament
+  // for the switcher; no outright odds in this feed.
+  const { tournaments } = await getGolfTournaments();
+  const golfPlayers = tournaments.flatMap((t) =>
+    (t.matches || []).map((p) => ({ ...p, tournament: t.nm }))
+  );
+  const golf = { key: "golf", label: "Golf", href: "/golf", kind: "golf", players: golfPlayers, matches: [] };
+
+  // "Live now" count across ALL sports: football + other match feeds + racing
+  // (a race is live only while OFF, i.e. in-running).
+  const liveCount =
+    matches.filter((m) => statusOf(m) === "live").length +
+    others.reduce((n, s) => n + s.matches.filter((m) => statusOf(m) === "live").length, 0) +
+    races.filter((r) => (r.status || "").toUpperCase() === "OFF").length;
+
   // Show every sport as a pill (matching the reference). Racing sits second.
   const sportsData = [
     { key: "football", label: "Football", href: "/football", matches },
     racing,
     ...others,
+    golf,
   ];
 
   return (
