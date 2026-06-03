@@ -96,6 +96,26 @@ export async function getMatchDetail(sport = "football", id) {
 }
 
 /**
+ * Runners for a race: /horseracing/meeting/{raceId}/runners.
+ * Returns the race object { id, st, nm, nor, dis, runner: [{ nm, joc, tra, wei, pos, surl, ... }] } or null.
+ */
+export async function getRaceRunners(raceId) {
+  if (!raceId) return null;
+  try {
+    const res = await fetch(`${API_BASE}/horseracing/meeting/${raceId}/runners`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`horseracing/meeting/${raceId}/runners -> HTTP ${res.status}`);
+    const json = await res.json();
+    return Array.isArray(json?.data) ? json.data[0] ?? null : null;
+  } catch (err) {
+    console.error("[api] getRaceRunners failed:", err.message);
+    return null;
+  }
+}
+
+/**
  * Golf tournaments + leaderboard for a date: /golf/matches?match_type=all&date=.
  * Returns { tournaments, date }. Each tournament: { id, nm, st, et, par, matches:[player] }
  * where player: { id, pid, nm, cnm (country), par (to-par), thru, strk, pos, st, scores:[round] }.

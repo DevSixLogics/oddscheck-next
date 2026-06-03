@@ -13,7 +13,9 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
   const reqDate = dateProp || todayISO();
   const { groups, date } = await getMatches(sport, reqDate);
   const matches = flattenMatches(groups);
-  const liveCount = matches.filter((m) => statusOf(m) === "live").length;
+  // A selected day before today is fully played — never show "live" on it.
+  const isPast = reqDate < todayISO();
+  const liveCount = isPast ? 0 : matches.filter((m) => statusOf(m) === "live").length;
 
   return (
     <>
@@ -80,7 +82,7 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
                 </div>
               </div>
               {matches.length ? (
-                <MatchTable groups={groups} sport={sport} />
+                <MatchTable groups={groups} sport={sport} isPast={isPast} />
               ) : (
                 <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
                   No {subjectWord} found for {date}. This sport&apos;s feed may be empty right now —

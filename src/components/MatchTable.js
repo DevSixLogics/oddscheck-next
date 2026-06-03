@@ -33,9 +33,10 @@ function Odds({ match }) {
   );
 }
 
-function Row({ match, sport }) {
+function Row({ match, sport, isPast }) {
   const c = match.competitors || {};
-  const bucket = statusOf(match);
+  // Past day → results only, regardless of stale "live" flags in the feed.
+  const bucket = isPast ? "finished" : statusOf(match);
   const sc = score(match);
   const showScore = bucket !== "upcoming" && sc.raw;
 
@@ -83,7 +84,7 @@ function Row({ match, sport }) {
   );
 }
 
-export default function MatchTable({ groups, sport = "football" }) {
+export default function MatchTable({ groups, sport = "football", isPast = false }) {
   if (!groups?.length) {
     return <div className={styles.note}>No matches found for this date.</div>;
   }
@@ -100,7 +101,7 @@ export default function MatchTable({ groups, sport = "football" }) {
           </div>
           <div style={{ overflowX: "auto" }}>
             {(g.matches || []).map((m) => (
-              <Row key={m.id} sport={sport} match={{ ...m, league: g.name || g.nm }} />
+              <Row key={m.id} sport={sport} isPast={isPast} match={{ ...m, league: g.name || g.nm }} />
             ))}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMatchDetail, getMatchH2H, getMatches, flattenMatches } from "@/lib/api";
+import { getMatchDetail, getMatchH2H, getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { oddsTriple, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
 import Crest from "@/components/Crest";
 
@@ -47,7 +47,11 @@ export default async function EventPage({ searchParams }) {
 
   const c = d.competitors || {};
   const t = oddsTriple(d);
-  const bucket = statusOf(d);
+  // A match on an earlier calendar day is finished — ignore stale "live" flags.
+  const matchDate = (d.dt || "").slice(0, 10);
+  const isPast = /^\d{4}-\d{2}-\d{2}$/.test(matchDate) && matchDate < todayISO();
+  const bucket = isPast ? "finished" : statusOf(d);
+  const statusText = isPast ? (d.mins || "FT") : statusLabel(d);
   const sc = score(d);
   const comp = [d.tournament?.cat, d.tournament?.nm].filter(Boolean).join(" · ") || d.league;
 
@@ -233,7 +237,7 @@ export default async function EventPage({ searchParams }) {
                 <li className="flex justify-between"><span className="mute">Country</span><span>{d.tournament?.cat || "—"}</span></li>
                 {d.ro && <li className="flex justify-between"><span className="mute">Round</span><span>{d.ro}</span></li>}
                 <li className="flex justify-between"><span className="mute">Kickoff</span><span>{kickoffDate(d.dt)} · {kickoffTime(d.dt)}</span></li>
-                <li className="flex justify-between"><span className="mute">Status</span><span>{statusLabel(d)}</span></li>
+                <li className="flex justify-between"><span className="mute">Status</span><span>{statusText}</span></li>
                 {(d.cfs || d.ft) && <li className="flex justify-between"><span className="mute">Score</span><span className="num">{d.cfs || d.ft}</span></li>}
               </ul>
             </div>

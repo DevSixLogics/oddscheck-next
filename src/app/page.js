@@ -1,4 +1,4 @@
-import { getFootballMatches, getMatches, flattenMatches } from "@/lib/api";
+import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
@@ -16,11 +16,11 @@ export const metadata = {
 };
 
 // Other sports offered in the "Today's top odds" in-place switcher.
+// Racing uses a different feed (meetings/races) and renders race rows.
 const SPORT_DEFS = [
   { key: "tennis", label: "Tennis", href: "/tennis" },
   { key: "basketball", label: "Basketball", href: "/basketball" },
   { key: "cricket", label: "Cricket", href: "/cricket" },
-  { key: "racing", label: "Horse Racing", href: "/racing" },
   { key: "nfl", label: "NFL", href: "/nfl" },
   { key: "baseball", label: "Baseball", href: "/baseball" },
   { key: "golf", label: "Golf", href: "/golf" },
@@ -31,17 +31,28 @@ export default async function HomePage() {
   const matches = flattenMatches(groups);
   const liveCount = matches.filter((m) => statusOf(m) === "live").length;
 
-  // Matches per sport for the switcher (only sports that actually have matches).
+  // Matches per sport for the switcher.
   const others = await Promise.all(
     SPORT_DEFS.map(async (s) => {
       const res = await getMatches(s.key);
       return { ...s, matches: flattenMatches(res.groups) };
     })
   );
+
+  // Racing: pull today's races from the meetings feed (not new-matches), and
+  // flatten to race rows the switcher can render (no 1·X·2 odds in this feed).
+  const { meetings } = await getRacingMeetings();
+  const races = meetings.flatMap((m) =>
+    (m.races || []).map((r) => ({ ...r, course: m.cnm, going: m.go }))
+  );
+  const racing = { key: "racing", label: "Horse Racing", href: "/racing", kind: "racing", races, matches: [] };
+
+  // Show every sport as a pill (matching the reference). Racing sits second.
   const sportsData = [
     { key: "football", label: "Football", href: "/football", matches },
+    racing,
     ...others,
-  ].filter((s) => s.matches.length);
+  ];
 
   return (
     <>
