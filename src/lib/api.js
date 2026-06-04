@@ -24,7 +24,8 @@ export function todayISO() {
 }
 
 async function fetchMatches(sport, date) {
-  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}`;
+  // multi_odds=1 → `odds` is an array of per-bookmaker markets (1x2, DC, BTTS…).
+  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1`;
   const res = await fetch(url, {
     // Treat as live-ish data; re-fetch at most once per REVALIDATE window.
     next: { revalidate: REVALIDATE },
@@ -83,7 +84,7 @@ export function getFootballMatches(date = todayISO()) {
 export async function getMatchDetail(sport = "football", id) {
   if (!id) return null;
   try {
-    const res = await fetch(`${API_BASE}/${sport}/match/${id}/detail`, {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/detail?multi_odds=1`, {
       next: { revalidate: REVALIDATE },
     });
     if (!res.ok) throw new Error(`${sport}/match/${id}/detail -> HTTP ${res.status}`);

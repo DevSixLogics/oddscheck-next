@@ -88,8 +88,13 @@ function Row({ match, sport }) {
         })}
       </div>
 
-      <div className={styles.action}>
-        <Link className="btn btn-primary btn-xs" href={`/event?sport=${sport}&id=${match.id}`}>Compare</Link>
+      <div className={styles.action} style={{ flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
+        <Link className="btn btn-primary btn-sm" href={`/event?sport=${sport}&id=${match.id}`}>Compare</Link>
+        {t?.books > 0 && (
+          <Link href={`/event?sport=${sport}&id=${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+            {t.books} book{t.books > 1 ? "s" : ""}
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -209,7 +214,7 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
             <p className="sub">Best price across 14+ bookmakers, refreshed every second.</p>
           </div>
           <div className="flex gap-3 items-center flex-wrap">
-            <div className="tabs">
+            <div className="tabs" title="Static — odds format switch not wired" style={{ border: "1px solid rgba(255,77,103,0.55)", borderRadius: 10, boxShadow: "0 0 0 1px rgba(255,77,103,0.12)" }}>
               <span className="tab active">Decimal</span>
               <span className="tab">Fractional</span>
               <span className="tab">American</span>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getMatchDetail, getMatchH2H, getMatches, flattenMatches, todayISO } from "@/lib/api";
-import { oddsTriple, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
+import { oddsTriple, bookmakerRows, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
 import Crest from "@/components/Crest";
 
 export const metadata = { title: "Event — odds & match detail" };
@@ -55,15 +55,21 @@ export default async function EventPage({ searchParams }) {
   const sc = score(d);
   const comp = [d.tournament?.cat, d.tournament?.nm].filter(Boolean).join(" · ") || d.league;
 
-  // outcomes + favourite + overround
-  const cells = t ? [
-    { sym: "1", label: c.htn, price: t.home },
-    { sym: "X", label: "Draw", price: t.draw },
-    { sym: "2", label: c.atn, price: t.away },
-  ] : [];
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null;
-  const overround = prices.length === 3 ? prices.reduce((s, p) => s + 100 / p, 0) : null;
+  // Per-bookmaker 1·X·2 rows + the best price in each column (highlighted).
+  const rows = bookmakerRows(d);
+  const twoWay = t?.twoWay;
+  const cols = twoWay ? "1.4fr 1fr 1fr 0.8fr" : "1.4fr 1fr 1fr 1fr 0.8fr";
+  const best = {
+    home: rows.length ? Math.max(...rows.map((r) => r.home ?? 0)) : null,
+    draw: rows.length ? Math.max(...rows.map((r) => r.draw ?? 0)) : null,
+    away: rows.length ? Math.max(...rows.map((r) => r.away ?? 0)) : null,
+  };
+  // Overround uses the BEST line available across books (lowest combined margin).
+  const overround = t && !twoWay && best.home && best.draw && best.away
+    ? (100 / best.home + 100 / best.draw + 100 / best.away)
+    : t && twoWay && best.home && best.away
+    ? (100 / best.home + 100 / best.away)
+    : null;
 
   return (
     <>
@@ -133,61 +139,59 @@ export default async function EventPage({ searchParams }) {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 18 }}>Match Winner</div>
                   <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    {t ? "Best price highlighted · 1 bookmaker in feed" : "No odds available for this match"}
+                    {rows.length ? `Best price highlighted · ${rows.length} bookmaker${rows.length > 1 ? "s" : ""} compared` : "No odds available for this match"}
                   </div>
                 </div>
+                {overround ? <span className="chip chip-muted">Best-line overround {overround.toFixed(1)}%</span> : null}
               </div>
 
-              {t ? (
+              {rows.length ? (
                 <div className="table-scroll">
-                  <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 0.6fr", padding: "12px 22px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "0.08em", textTransform: "uppercase", minWidth: 700 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: cols, padding: "12px 22px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "0.08em", textTransform: "uppercase", minWidth: 600 }}>
                     <div>Bookmaker</div>
                     <div style={{ textAlign: "center" }}>{c.htn}</div>
-                    <div style={{ textAlign: "center" }}>Draw</div>
+                    {!twoWay && <div style={{ textAlign: "center" }}>Draw</div>}
                     <div style={{ textAlign: "center" }}>{c.atn}</div>
                     <div style={{ textAlign: "right" }}>Overround</div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 0.6fr", padding: "14px 22px", borderBottom: "1px solid var(--border-soft)", alignItems: "center", minWidth: 700 }}>
-                    <div className="flex items-center gap-3">
-                      <span className="bm bm-md bm-bet365">ODDS</span>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>Feed price</div>
-                        <div className="mute" style={{ fontSize: 10 }}>{d.odds?.type || "pre-match"}</div>
-                      </div>
-                    </div>
-                    {cells.map((x) => {
-                      const isBest = typeof x.price === "number" && x.price === fav;
-                      return (
-                        <div style={{ textAlign: "center" }} key={x.sym}>
-                          <button className={`odds-cell${isBest ? " best" : ""}`} style={{ display: "inline-flex", minWidth: 80, padding: "8px 12px", alignItems: "center", justifyContent: "center" }}>
-                            <div style={{ display: "flex", flexDirection: "column" }}>
-                              <span className="price" style={{ fontSize: 15 }}>{typeof x.price === "number" ? x.price.toFixed(2) : "—"}</span>
-                              {isBest && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>BEST</span>}
+                  {rows.map((r, i) => {
+                    const or = !twoWay && r.home && r.draw && r.away
+                      ? (100 / r.home + 100 / r.draw + 100 / r.away)
+                      : twoWay && r.home && r.away
+                      ? (100 / r.home + 100 / r.away)
+                      : null;
+                    const rcells = twoWay
+                      ? [["home", r.home], ["away", r.away]]
+                      : [["home", r.home], ["draw", r.draw], ["away", r.away]];
+                    return (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: cols, padding: "12px 22px", borderBottom: "1px solid var(--border-soft)", alignItems: "center", minWidth: 600 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{r.bookmaker}</div>
+                        {rcells.map(([key, price]) => {
+                          const isBest = price != null && price === best[key];
+                          const inner = (
+                            <span className={`odds-cell${isBest ? " best" : ""}`} style={{ display: "inline-flex", minWidth: 60, padding: "7px 10px", alignItems: "center", justifyContent: "center" }}>
+                              <span className="price" style={{ fontSize: 15 }}>{price != null ? price.toFixed(2) : "—"}</span>
+                            </span>
+                          );
+                          return (
+                            <div style={{ textAlign: "center" }} key={key}>
+                              {price != null && r.link
+                                ? <a href={r.link} target="_blank" rel="noopener noreferrer">{inner}</a>
+                                : inner}
                             </div>
-                          </button>
-                        </div>
-                      );
-                    })}
-                    <div style={{ textAlign: "right", fontSize: 13, color: "var(--text-2)" }} className="num">
-                      {overround ? `${overround.toFixed(1)}%` : "—"}
-                    </div>
-                  </div>
+                          );
+                        })}
+                        <div style={{ textAlign: "right", fontSize: 13, color: "var(--text-2)" }} className="num">{or ? `${or.toFixed(1)}%` : "—"}</div>
+                      </div>
+                    );
+                  })}
                   <div style={{ padding: "12px 22px", fontSize: 11, color: "var(--text-mute)" }}>
-                    The feed returns a single bookmaker&apos;s 1·X·2 market. Multi-bookmaker comparison,
-                    extra markets and price movement aren&apos;t available yet.
+                    Best price in each column highlighted in green. Pre-match 1·X·2 across {rows.length} bookmaker{rows.length > 1 ? "s" : ""}.
                   </div>
                 </div>
               ) : (
                 <div style={{ padding: 22, color: "var(--text-dim)", fontSize: 13 }}>
                   Odds aren&apos;t published for this match yet — check back closer to kickoff.
-                </div>
-              )}
-
-              {d.odds?.oddsTrackingLink && (
-                <div style={{ padding: "0 22px 20px" }}>
-                  <a className="btn btn-primary btn-block" href={d.odds.oddsTrackingLink} target="_blank" rel="noopener noreferrer">
-                    Bet at bookmaker →
-                  </a>
                 </div>
               )}
             </div>

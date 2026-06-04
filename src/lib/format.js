@@ -44,24 +44,78 @@ export function statusLabel(match) {
   return kickoffTime(match.dt);
 }
 
+// Outcome names that belong to the match-winner (1·X·2 / moneyline) market.
+const HDA = /^(H|D|A|1|X|2|HOME|DRAW|AWAY)$/i;
+
+/** Normalise an outcome name to home | draw | away (or null for other markets). */
+function side(name) {
+  const n = String(name ?? "").toUpperCase();
+  if (n === "H" || n === "1" || n === "HOME") return "home";
+  if (n === "A" || n === "2" || n === "AWAY") return "away";
+  if (n === "D" || n === "X" || n === "DRAW") return "draw";
+  return null;
+}
+
 /**
- * 1·X·2 prices from match.odds, or null if the match has no odds yet.
- * The feed carries a single pre-match market with outcomes named H/D/A
- * (Home=1, Draw=X, Away=2) — one bookmaker, no comparison/history.
+ * The odds payload as a list of markets. Handles both shapes:
+ *  - new `multi_odds=1`: array of { market_id, market_name, bookmaker_name, outcomes }
+ *  - legacy: a single { outcomes } object.
+ */
+function marketList(match) {
+  const raw = match?.odds;
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw.outcomes)) return [raw];
+  return [];
+}
+
+/** Match-winner markets only (one per bookmaker) — excludes DC / BTTS / etc. */
+function winnerMarkets(match) {
+  return marketList(match).filter(
+    (m) => Array.isArray(m.outcomes) && m.outcomes.length <= 3 && m.outcomes.every((x) => HDA.test(String(x.name ?? "")))
+  );
+}
+
+const toNum = (v) => (typeof v === "number" ? v : parseFloat(v));
+
+/**
+ * Best 1·X·2 price for each outcome ACROSS all bookmakers, or null if no
+ * match-winner market is present. `books` = number of bookmakers compared.
  */
 export function oddsTriple(match) {
-  const o = match?.odds;
-  if (!o || !Array.isArray(o.outcomes)) return null;
+  const markets = winnerMarkets(match);
+  if (!markets.length) return null;
   const by = { home: null, draw: null, away: null };
-  for (const x of o.outcomes) {
-    const n = String(x.name ?? "").toUpperCase();
-    if (n === "H" || n === "1" || n === "HOME") by.home = x.odds;
-    else if (n === "A" || n === "2" || n === "AWAY") by.away = x.odds;
-    else if (n === "D" || n === "X" || n === "DRAW") by.draw = x.odds;
+  for (const m of markets) {
+    for (const x of m.outcomes) {
+      const s = side(x.name);
+      const p = toNum(x.odds);
+      if (!s || !p) continue;
+      if (by[s] == null || p > by[s]) by[s] = p; // best (highest) price wins
+    }
   }
   if (by.home == null && by.draw == null && by.away == null) return null;
   // twoWay = a 2-outcome market (tennis, basketball moneyline) — no draw.
-  return { ...by, twoWay: by.draw == null, type: o.type };
+  return { ...by, twoWay: by.draw == null, type: markets[0].type, books: markets.length };
+}
+
+/**
+ * Per-bookmaker 1·X·2 rows for the event comparison table.
+ * Returns [{ bookmaker, home, draw, away, link }] sorted best-home first.
+ */
+export function bookmakerRows(match) {
+  return winnerMarkets(match)
+    .map((m) => {
+      const row = { bookmaker: m.bookmaker_name || "Bookmaker", home: null, draw: null, away: null, link: m.oddsTrackingLink || null };
+      for (const x of m.outcomes) {
+        const s = side(x.name);
+        const p = toNum(x.odds);
+        if (s && p) row[s] = p;
+      }
+      return row;
+    })
+    .filter((r) => r.home != null || r.away != null)
+    .sort((a, b) => (b.home ?? 0) - (a.home ?? 0));
 }
 
 /** "2026-06-02 07:51:55" -> "37 min ago" / "2h ago" / "3d ago" / "12 May". */

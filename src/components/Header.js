@@ -133,8 +133,8 @@ export default function Header() {
             <span className="kbd" aria-hidden="true">⌘K</span>
           </form>
           <div className="topnav-actions">
-            <Link className="btn btn-ghost btn-sm" href="/login">Sign in</Link>
-            <Link className="btn btn-primary btn-sm" href="/signup">Join free</Link>
+            <Link className="btn btn-ghost btn-sm" href="/login" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Sign in</Link>
+            <Link className="btn btn-primary btn-sm" href="/signup" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Join free</Link>
             <button
               type="button"
               className="nav-toggle"
