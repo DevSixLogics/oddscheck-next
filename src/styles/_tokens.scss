@@ -1,0 +1,58 @@
+// Design tokens as Sass variables — mirror the canonical --color-* CSS custom
+// properties from the original styles.css. Use via `@use "tokens" as t;`.
+
+// Brand
+$primary:        #FF8E00; // teal · primary interactive / "best"
+$secondary:      #143138; // dark teal
+$accent:         #DAB46B; // warm gold · featured / premium
+
+// Backgrounds & surfaces
+$bg:             #0A0F1C;
+$bg-deep:        #06080F;
+$surface:        #0F1729;
+$surface-alt:    #131C34;
+$surface-raised: #19223E;
+
+// Text
+$text-primary:   #EAF0FA;
+$text-secondary: #8B97AE;
+$text-inverse:   #052026;
+$text-surface:   #C2CDE0;
+$text-surface-alt:#5A6680;
+
+// Lines
+$border:         #1E2A48;
+$border-strong:  #2A3A5E;
+$divider:        #18223C;
+
+// Status
+$success:        #FF8E00;
+$warning:        #DAB46B;
+$error:          #FF4D67;
+$info:           #38BDF8;
+$live:           #FF4D67;
+
+// Layout
+$radius:         12px;
+$radius-sm:      8px;
+$container:      1200px;
+
+// Breakpoints
+$bp-tablet:      768px;
+$bp-desktop:     1024px;
+
+@mixin tablet-up  { @media (min-width: #{$bp-tablet})  { @content; } }
+@mixin desktop-up { @media (min-width: #{$bp-desktop}) { @content; } }
+
+// Pill helper used by chips/badges
+@mixin pill($bg, $fg) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: $bg;
+  color: $fg;
+}

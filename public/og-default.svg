@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0A0F1C"></stop>
+      <stop offset="60%" stop-color="#0F1729"></stop>
+      <stop offset="100%" stop-color="#143138"></stop>
+    </linearGradient>
+    <radialGradient id="glow" cx="20%" cy="20%" r="50%">
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.45"></stop>
+      <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"></stop>
+    </radialGradient>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.07)"></circle>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"></rect>
+  <rect width="1200" height="630" fill="url(#dots)"></rect>
+  <rect width="1200" height="630" fill="url(#glow)"></rect>
+
+  <g transform="translate(80, 80)">
+    <rect width="88" height="88" rx="20" fill="#2DD4BF"></rect>
+    <path d="M22 46 L40 64 L70 26" stroke="#052026" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+  </g>
+  <text x="200" y="148" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="60" fill="#EAF0FA" letter-spacing="-2">
+    odds<tspan fill="#2DD4BF">check</tspan>
+  </text>
+
+  <text x="80" y="290" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="84" fill="#EAF0FA" letter-spacing="-3">Compare live odds.</text>
+  <text x="80" y="380" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="700" font-size="84" fill="#2DD4BF" letter-spacing="-3">Find the best price.</text>
+  <text x="80" y="450" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="500" font-size="28" fill="#C2CDE0">120+ bookmakers · 32 sports · 2.3M price updates / day</text>
+
+  <g transform="translate(80, 510)">
+    <rect width="200" height="60" rx="12" fill="#2DD4BF"></rect>
+    <text x="100" y="38" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" font-size="20" fill="#052026">Compare odds →</text>
+  </g>
+  <g transform="translate(300, 510)">
+    <rect width="200" height="60" rx="12" fill="none" stroke="#2A3A5E" stroke-width="1.5"></rect>
+    <text x="100" y="38" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-weight="700" font-size="20" fill="#EAF0FA">View today&#39;s tips</text>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
+
+  /* stack the featured article above the side list on tablet/mobile */
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
