@@ -1,6 +1,7 @@
 import "./globals.scss";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
+import { OddsFormatProvider } from "@/components/OddsFormatProvider";
 
 export const metadata = {
   metadataBase: new URL("https://oddscheck.com"),
@@ -28,11 +29,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <a href="#main" className="skip-link">Skip to content</a>
-        <Header />
-        <main id="main" role="main">
-          {children}
-        </main>
-        <SiteFooter />
+        <OddsFormatProvider>
+          <Header />
+          <main id="main" role="main">
+            {children}
+          </main>
+          <SiteFooter />
+        </OddsFormatProvider>
       </body>
     </html>
   );

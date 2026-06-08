@@ -3,8 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
-import { oddsTriple, statusOf, statusLabel, kickoffTime, score } from "@/lib/format";
+import { oddsTriple, statusOf, statusLabel, kickoffTime, score, formatOdds } from "@/lib/format";
 import styles from "./TodaysTopOdds.module.scss";
+
+// This section has its OWN odds-format control (the Decimal/Fractional/American
+// tabs) — local only, so it doesn't change odds elsewhere on the site.
+const FORMATS = ["Decimal", "Fractional", "American"];
 
 // Sport icons (same set as the reference subnav).
 const ic = (paths) => (
@@ -21,19 +25,7 @@ const SPORT_ICONS = {
   golf: ic(<><path d="M10 4v12M10 4l6 2-6 2" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><ellipse cx="10" cy="19" rx="6" ry="2" stroke="currentColor" strokeWidth="1.4" /></>),
 };
 
-function Arrow({ dir }) {
-  return (
-    <span className={`mover ${dir}`}>
-      <svg viewBox="0 0 24 24" width="10" height="10" fill="none" aria-hidden="true">
-        {dir === "up"
-          ? <path d="M12 19V6m0 0-6 6m6-6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          : <path d="M12 5v13m0 0 6-6m-6 6-6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
-      </svg>
-    </span>
-  );
-}
-
-function Row({ match, sport }) {
+function Row({ match, sport, fmt }) {
   const c = match.competitors || {};
   const t = oddsTriple(match);
   const twoWay = t?.twoWay;
@@ -41,8 +33,9 @@ function Row({ match, sport }) {
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
   const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
+  // Shortest price = the favourite (most likely outcome). Each cell already shows
+  // the best price across bookmakers, so we flag the favourite, not a "best" cell.
   const fav = prices.length ? Math.min(...prices) : null;
-  const out = prices.length ? Math.max(...prices) : null;
   const bucket = statusOf(match);
   const sc = score(match);
 
@@ -72,17 +65,12 @@ function Row({ match, sport }) {
       <div className={styles.odds} style={twoWay ? { gridTemplateColumns: "1fr 1fr" } : undefined}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
-          const isBest = has && x.price === fav;
-          const isLongest = has && x.price === out;
+          const isFav = has && x.price === fav;
           return (
-            <button type="button" key={x.sym} className={`odds-cell${isBest ? " best" : ""}`}>
-              <span className="flex justify-between items-center" style={{ gap: 4 }}>
-                <span className="meta">{x.sym}</span>
-                {isBest && <Arrow dir="up" />}
-                {isLongest && !isBest && <Arrow dir="down" />}
-              </span>
-              <span className="price">{has ? x.price.toFixed(2) : "—"}</span>
-              {isBest && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>BEST</span>}
+            <button type="button" key={x.sym} className={`odds-cell${isFav ? " best" : ""}`}>
+              <span className="meta">{x.sym}</span>
+              <span className="price">{has ? formatOdds(x.price, fmt) : "—"}</span>
+              {isFav && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>FAV</span>}
             </button>
           );
         })}
@@ -186,6 +174,7 @@ function GolfRow({ player }) {
  * golf carries { kind:"golf", players }.
  */
 export default function TodaysTopOdds({ sports = [], limit = 8 }) {
+  const [fmt, setFmt] = useState("Decimal");
   const [active, setActive] = useState(sports[0]?.key);
   const current = sports.find((s) => s.key === active) || sports[0];
   const isRacing = current?.kind === "racing";
@@ -214,10 +203,10 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
             <p className="sub">Best price across 14+ bookmakers, refreshed every second.</p>
           </div>
           <div className="flex gap-3 items-center flex-wrap">
-            <div className="tabs" title="Static — odds format switch not wired" style={{ border: "1px solid rgba(255,77,103,0.55)", borderRadius: 10, boxShadow: "0 0 0 1px rgba(255,77,103,0.12)" }}>
-              <span className="tab active">Decimal</span>
-              <span className="tab">Fractional</span>
-              <span className="tab">American</span>
+            <div className="tabs">
+              {FORMATS.map((f) => (
+                <button key={f} type="button" className={`tab${fmt === f ? " active" : ""}`} onClick={() => setFmt(f)} style={{ background: "none", border: 0, cursor: "pointer", font: "inherit" }}>{f}</button>
+              ))}
             </div>
             {current && <Link className="btn btn-outline btn-sm" href={current.href}>All {current.label} →</Link>}
           </div>
@@ -264,7 +253,7 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
                 </div>
               )
             ) : ordered.length ? (
-              ordered.map((m) => <Row key={m.id} match={m} sport={current.key} />)
+              ordered.map((m) => <Row key={m.id} match={m} sport={current.key} fmt={fmt} />)
             ) : (
               <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
                 No {current?.label} matches right now — check back closer to kickoff.
@@ -276,9 +265,8 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
         {current && (
           <div className="flex justify-between items-center mt-4 flex-wrap gap-3" style={{ fontSize: 13, color: "var(--text-dim)" }}>
             <div className="flex gap-4 flex-wrap">
-              <span className="flex items-center gap-2"><span style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(255,142,0,0.45)" }} />Best price</span>
-              <span className="flex items-center gap-1" style={{ color: "var(--up)" }}><Arrow dir="up" /> Shortening</span>
-              <span className="flex items-center gap-1" style={{ color: "var(--down)" }}><Arrow dir="down" /> Drifting</span>
+              <span className="flex items-center gap-2"><span style={{ width: 10, height: 10, borderRadius: 3, background: "rgba(255,142,0,0.45)" }} />Favourite (shortest price)</span>
+              <span>Each price is the best across {isRacing || isGolf ? "—" : "all bookmakers"}</span>
               <span className="flex items-center gap-2"><span className="live-dot" /> Live</span>
             </div>
             <Link href={current.href} style={{ color: "var(--accent)", fontWeight: 600 }}>

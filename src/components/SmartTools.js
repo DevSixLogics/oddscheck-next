@@ -5,17 +5,17 @@ const svg = (paths, fill = "none", w = 14) => (
 );
 
 const TOOLS = [
-  { title: "Odds Calculator", desc: "Convert decimal, fractional and American", href: "/odds-calculator",
+  { title: "Odds Calculator", desc: "Convert decimal, fractional and American", href: "/tools?calc=odds",
     icon: svg(<><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 7h8M8 12h2m4 0h2m-8 4h2m4 0h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></>, "none", 16) },
-  { title: "Implied Probability", desc: "See the real % behind any price", href: "/odds-calculator",
+  { title: "Implied Probability", desc: "See the real % behind any price", href: "/tools?calc=odds",
     icon: svg(<><path d="m3 17 6-6 4 4 8-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M15 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>) },
-  { title: "Accumulator Builder", desc: "Find best price on multi-leg bets", href: "/odds-calculator",
+  { title: "Accumulator Builder", desc: "Combined odds & returns on multi-leg bets", href: "/tools?calc=acca",
     icon: svg(<path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />) },
-  { title: "Each-Way Calculator", desc: "Place + win returns for racing", href: "/odds-calculator",
+  { title: "Each-Way Calculator", desc: "Place + win returns for racing", href: "/tools?calc=ew",
     icon: svg(<path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />) },
-  { title: "Arbitrage Finder", desc: "32 surebets across books right now", href: "/tools", pro: true,
+  { title: "Arbitrage Calculator", desc: "Split stakes for a guaranteed surebet", href: "/tools?calc=arb",
     icon: svg(<path d="M13 2 4 13h7l-1 9 9-11h-7l1-9Z" />, "currentColor") },
-  { title: "Expected Value Bets", desc: "+EV picks updated every minute", href: "/tools", pro: true,
+  { title: "Kelly Stake", desc: "Optimal stake sizing for your edge", href: "/tools?calc=kelly",
     icon: svg(<path d="M12 2c1 4 5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 1.5 1 2 2 2 0-3-2-4 1-7Z" />, "currentColor") },
   { title: "Bet Tracker", desc: "Log bets, P&L, ROI by sport & market", href: "/dashboard",
     icon: svg(<path d="m12 3 2.7 5.5 6 .9-4.3 4.3 1 6.1L12 17l-5.4 2.8 1-6.1L3.3 9.4l6-.9L12 3Z" />, "currentColor") },
@@ -41,7 +41,7 @@ const goldBox = {
 export default function SmartTools() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%)" }}>
-      <div className="container static-flag">
+      <div className="container">
         <div className="section-head">
           <div>
             <div className="eyebrow">Toolkit</div>

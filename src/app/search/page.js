@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
 import { oddsTriple, statusOf, statusLabel, score, kickoffTime } from "@/lib/format";
+import { OddsValue } from "@/components/OddsFormatProvider";
 import Crest from "@/components/Crest";
 
 export const metadata = { title: "Search results" };
@@ -50,7 +51,7 @@ function ResultRow({ m }) {
           return (
             <button key={x.sym} className={`odds-cell${has && x.price === fav ? " best" : ""}`} style={{ padding: "6px 4px" }}>
               <span className="meta">{x.sym}</span>
-              <span className="price" style={{ fontSize: 13 }}>{has ? x.price.toFixed(2) : "—"}</span>
+              <span className="price" style={{ fontSize: 13 }}>{has ? <OddsValue value={x.price} /> : "—"}</span>
             </button>
           );
         })}

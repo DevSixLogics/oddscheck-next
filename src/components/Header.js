@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
+import { useOddsFormat } from "./OddsFormatProvider";
 
 // `static: true` → page is hardcoded placeholder (no API) — flagged red in the nav.
 const NAV = [
@@ -96,8 +97,21 @@ const ODDS_FORMATS = ["Decimal", "Fractional", "American"];
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [fmt, setFmt] = useState("Decimal");
+  const { fmt, setFmt } = useOddsFormat();
   const [fmtOpen, setFmtOpen] = useState(false);
+  const fmtBtnRef = useRef(null);
+  const [fmtPos, setFmtPos] = useState({ top: 0, right: 16 });
+
+  // The subnav scrolls horizontally (overflow-x: auto), which would clip an
+  // absolutely-positioned menu — so anchor a fixed-position menu to the button.
+  const toggleFmt = () =>
+    setFmtOpen((v) => {
+      if (!v) {
+        const r = fmtBtnRef.current?.getBoundingClientRect();
+        if (r) setFmtPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+      }
+      return !v;
+    });
 
   const isActive = (item) =>
     item.match ? item.match.includes(pathname) : pathname === item.href;
@@ -176,11 +190,12 @@ export default function Header() {
             {/* Odds-format dropdown (the original "UK · Decimal ▾" affordance) */}
             <div style={{ position: "relative" }}>
               <button
+                ref={fmtBtnRef}
                 type="button"
                 className="subnav-link"
                 aria-haspopup="menu"
                 aria-expanded={fmtOpen}
-                onClick={() => setFmtOpen((v) => !v)}
+                onClick={toggleFmt}
                 style={{ background: "none", border: 0, cursor: "pointer", font: "inherit" }}
               >
                 {ICONS.globe} UK · {fmt} {ICONS.chevron}
@@ -190,22 +205,22 @@ export default function Header() {
                   {/* click-away backdrop */}
                   <div
                     onClick={() => setFmtOpen(false)}
-                    style={{ position: "fixed", inset: 0, zIndex: 40 }}
+                    style={{ position: "fixed", inset: 0, zIndex: 200 }}
                     aria-hidden="true"
                   />
                   <div
                     role="menu"
                     style={{
-                      position: "absolute",
-                      top: "calc(100% + 6px)",
-                      right: 0,
+                      position: "fixed",
+                      top: fmtPos.top,
+                      right: fmtPos.right,
                       minWidth: 160,
                       background: "var(--bg-1)",
                       border: "1px solid var(--border)",
                       borderRadius: 10,
                       boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
                       padding: 6,
-                      zIndex: 50,
+                      zIndex: 201,
                     }}
                   >
                     {ODDS_FORMATS.map((f) => (

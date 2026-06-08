@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMatchDetail, getMatchH2H, getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { oddsTriple, bookmakerRows, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
+import { OddsValue } from "@/components/OddsFormatProvider";
 import Crest from "@/components/Crest";
 
 export const metadata = { title: "Event — odds & match detail" };
@@ -170,7 +171,7 @@ export default async function EventPage({ searchParams }) {
                           const isBest = price != null && price === best[key];
                           const inner = (
                             <span className={`odds-cell${isBest ? " best" : ""}`} style={{ display: "inline-flex", minWidth: 60, padding: "7px 10px", alignItems: "center", justifyContent: "center" }}>
-                              <span className="price" style={{ fontSize: 15 }}>{price != null ? price.toFixed(2) : "—"}</span>
+                              <span className="price" style={{ fontSize: 15 }}>{price != null ? <OddsValue value={price} /> : "—"}</span>
                             </span>
                           );
                           return (

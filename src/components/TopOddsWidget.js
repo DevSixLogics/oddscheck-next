@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Crest from "./Crest";
 import { oddsTriple, statusOf, statusLabel, kickoffTime } from "@/lib/format";
+import { OddsValue } from "./OddsFormatProvider";
 
 function PreviewRow({ match }) {
   const c = match.competitors || {};
@@ -50,7 +51,7 @@ function PreviewRow({ match }) {
               <span className="flex justify-between items-center" style={{ gap: 4 }}>
                 <span className="meta">{x.sym}</span>
               </span>
-              <span className="price">{has ? x.price.toFixed(2) : "—"}</span>
+              <span className="price">{has ? <OddsValue value={x.price} /> : "—"}</span>
             </button>
           );
         })}

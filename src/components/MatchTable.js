@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Crest from "./Crest";
 import { kickoffTime, statusOf, statusLabel, score, oddsTriple } from "@/lib/format";
+import { OddsValue } from "./OddsFormatProvider";
 import styles from "./MatchTable.module.scss";
 
 function Odds({ match }) {
@@ -25,7 +26,7 @@ function Odds({ match }) {
             key={c.sym}
           >
             <span className={styles.sym}>{c.sym}</span>
-            {has ? <span className={styles.price}>{c.price.toFixed(2)}</span> : <span className={styles.dash}>—</span>}
+            {has ? <span className={styles.price}><OddsValue value={c.price} /></span> : <span className={styles.dash}>—</span>}
           </div>
         );
       })}

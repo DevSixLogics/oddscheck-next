@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Crest from "./Crest";
 import { oddsTriple, statusOf, statusLabel, kickoffTime, kickoffDate } from "@/lib/format";
+import { OddsValue } from "./OddsFormatProvider";
 
 function pickFeatured(matches) {
   const withOdds = matches.filter((m) => oddsTriple(m));
@@ -15,7 +16,7 @@ function pickFeatured(matches) {
 
 /**
  * "Featured event" — DATA-DRIVEN: picks a top match that has a 1·X·2 market and
- * shows it like the reference (crests, vs, three outcome tiles, favourite = BEST).
+ * shows it like the reference (crests, vs, three outcome tiles, favourite = FAV).
  * Form pills and bookmaker names aren't in the list feed, so they're omitted.
  */
 export default function FeaturedEvent({ matches }) {
@@ -109,7 +110,7 @@ export default function FeaturedEvent({ matches }) {
           {tiles.length ? (
             <div className="grid grid-3" style={{ padding: 28, gap: 14 }}>
               {tiles.map((tile) => {
-                const isBest = typeof tile.price === "number" && tile.price === fav;
+                const isFav = typeof tile.price === "number" && tile.price === fav;
                 return (
                   <div
                     key={tile.label}
@@ -117,17 +118,17 @@ export default function FeaturedEvent({ matches }) {
                     style={{
                       padding: 18,
                       textAlign: "center",
-                      borderColor: isBest ? "rgba(255,142,0,0.45)" : "var(--border)",
-                      background: isBest ? "rgba(255,142,0,0.06)" : "var(--surface)",
+                      borderColor: isFav ? "rgba(255,142,0,0.45)" : "var(--border)",
+                      background: isFav ? "rgba(255,142,0,0.06)" : "var(--surface)",
                     }}
                   >
                     <div style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 8 }}>{tile.label}</div>
-                    <div className="num" style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: isBest ? "#FFE3C2" : "var(--text)" }}>
-                      {typeof tile.price === "number" ? tile.price.toFixed(2) : "—"}
+                    <div className="num" style={{ fontSize: 32, fontWeight: 700, letterSpacing: "-0.02em", color: isFav ? "#FFE3C2" : "var(--text)" }}>
+                      {typeof tile.price === "number" ? <OddsValue value={tile.price} /> : "—"}
                     </div>
-                    {isBest && (
+                    {isFav && (
                       <div className="flex justify-center items-center gap-2 mt-3">
-                        <span className="chip chip-best" style={{ fontSize: 10, padding: "2px 6px" }}>BEST</span>
+                        <span className="chip chip-best" style={{ fontSize: 10, padding: "2px 6px" }}>FAV</span>
                       </div>
                     )}
                   </div>

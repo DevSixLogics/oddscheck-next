@@ -12,8 +12,8 @@ const HERO_FEATURES = [
 // Static marketing data — no API source.
 const STATS = [
   { val: "120+", label: "bookmakers compared" },
-  { val: "32", label: "sports & 8,400 leagues" },
-  { val: "2.3M", label: "price updates / day" },
+  { val: "8+", label: "sports & 8,400 leagues" },
+  { val: "60+", label: "Multiple Markets" },
   { val: "14.7%", label: "avg. value gained vs single book" },
   { val: "4.8★", label: "iOS & Android" },
 ];
@@ -68,7 +68,7 @@ export default function Hero({ matches, liveCount }) {
           <TopOddsWidget matches={matches} />
         </div>
 
-        <div className="stat-strip static-flag">
+        <div className="stat-strip">
           {STATS.map((s) => (
             <div className="stat" key={s.label}>
               <div className="stat-val num">{s.val}</div>

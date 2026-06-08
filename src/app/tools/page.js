@@ -1,5 +1,5 @@
 import Link from "next/link";
-import OddsCalculator from "@/components/OddsCalculator";
+import BettingTools from "@/components/BettingTools";
 
 export const metadata = {
   title: "Smart betting tools — calculators, arbitrage, +EV & alerts",
@@ -24,12 +24,12 @@ const SECTIONS = [
   {
     title: "Calculators", more: "View all calculators →",
     tools: [
-      { title: "Odds Calculator", desc: "Convert decimal, fractional & American formats.", href: "/odds-calculator", icon: ICONS.calc },
-      { title: "Implied Probability", desc: "Translate odds into a real-world probability.", href: "/odds-calculator", icon: ICONS.pct },
-      { title: "Accumulator Calculator", desc: "Returns for any multi-leg bet.", href: "/odds-calculator", icon: ICONS.plus },
-      { title: "Each-Way Calculator", desc: "Place + win returns for racing bets.", href: "/odds-calculator", icon: ICONS.racing },
-      { title: "Expected Value (EV)", desc: "Find the long-run profitability of a bet.", href: "/odds-calculator", icon: ICONS.flame },
-      { title: "Kelly Criterion", desc: "Optimal stake sizing for your edge.", href: "/signup", icon: ICONS.bolt, pro: true },
+      { title: "Odds Calculator", desc: "Convert decimal, fractional & American formats.", href: "/tools?calc=odds", icon: ICONS.calc },
+      { title: "Implied Probability", desc: "Translate odds into a real-world probability.", href: "/tools?calc=odds", icon: ICONS.pct },
+      { title: "Accumulator Calculator", desc: "Returns for any multi-leg bet.", href: "/tools?calc=acca", icon: ICONS.plus },
+      { title: "Each-Way Calculator", desc: "Place + win returns for racing bets.", href: "/tools?calc=ew", icon: ICONS.racing },
+      { title: "Arbitrage Calculator", desc: "Split stakes for a guaranteed surebet profit.", href: "/tools?calc=arb", icon: ICONS.arrows },
+      { title: "Kelly Criterion", desc: "Optimal stake sizing for your edge.", href: "/tools?calc=kelly", icon: ICONS.bolt },
     ],
   },
   {
@@ -84,22 +84,14 @@ export default function ToolsPage() {
       </section>
 
       <section className="section">
-        <div className="container flex-col gap-7 static-flag">
-          {/* Featured calculator */}
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div className="flex justify-between items-start flex-wrap gap-3" style={{ padding: "18px 22px", borderBottom: "1px solid var(--border)" }}>
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.calc}</span>
-                  <h3 style={{ fontSize: 19 }}>Odds Calculator</h3><span className="chip chip-best">Most used</span>
-                </div>
-                <p className="muted" style={{ fontSize: 13 }}>Type any price — we convert across formats, calculate implied probability, and show returns.</p>
-              </div>
-              <Link className="btn btn-outline btn-sm" href="/odds-calculator">Open full calculator →</Link>
+        <div className="container flex-col gap-7">
+          {/* Working calculators — Odds converter, Accumulator, Each-Way, Arbitrage, Kelly */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.calc}</span>
+              <h2 style={{ fontSize: 24 }}>Calculators</h2><span className="chip chip-best">Live</span>
             </div>
-            <div style={{ padding: 22 }}>
-              <OddsCalculator />
-            </div>
+            <BettingTools />
           </div>
 
           {/* Tool sections */}
