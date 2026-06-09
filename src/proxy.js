@@ -28,5 +28,5 @@ export function proxy(request) {
 // Gate every route except Next internals and public assets (so the login
 // challenge itself and the logo/favicon can still load).
 export const config = {
-  matcher: ["/((?!_next/|favicon|oddscheck\\.png|fav_icon\\.ico|og-default\\.svg|robots\\.txt).*)"],
+  matcher: ["/((?!_next/|favicon|oddscheck\\.png|fav_icon\\.ico|og-default\\.svg|robots\\.txt|goal\\.mp3|crowd-cheers\\.mp3).*)"],
 };

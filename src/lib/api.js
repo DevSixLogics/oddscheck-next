@@ -241,7 +241,7 @@ export function flattenMatches(groups) {
   const out = [];
   for (const g of groups) {
     for (const m of g.matches ?? []) {
-      out.push({ ...m, league: g.name || g.nm, leagueFull: g.nm, isCup: !!g.is_cup });
+      out.push({ ...m, league: g.name || g.nm, leagueFull: g.nm, isCup: !!g.is_cup, fid: g.fid, is_top: g.is_top });
     }
   }
   return out;

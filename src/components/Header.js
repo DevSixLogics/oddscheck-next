@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import { useOddsFormat } from "./OddsFormatProvider";
+import SocketStatus from "./SocketStatus";
 
 // `static: true` → page is hardcoded placeholder (no API) — flagged red in the nav.
 const NAV = [
@@ -14,8 +15,8 @@ const NAV = [
   { href: "/tips", label: "Tips", static: true },
   { href: "/news", label: "News" },
   { href: "/reviews", label: "Reviews", static: true },
-  { href: "/guides", label: "Guides", static: true },
-  { href: "/tools", label: "Tools", static: true },
+  { href: "/guides", label: "Guides" },
+  { href: "/tools", label: "Tools" },
 ];
 
 const I = (paths) => (
@@ -87,7 +88,6 @@ const SPORTS = [
   { href: "/tennis", label: "Tennis", icon: ICONS.tennis, route: true },
   { href: "/basketball", label: "Basketball", icon: ICONS.basketball, route: true },
   { href: "/cricket", label: "Cricket", icon: ICONS.cricket, route: true },
-  { href: "/nfl", label: "NFL", icon: ICONS.nfl, route: true },
   { href: "/baseball", label: "Baseball", icon: ICONS.baseball, route: true },
   { href: "/golf", label: "Golf", icon: ICONS.golf, route: true },
 ];
@@ -184,7 +184,7 @@ export default function Header() {
             )}
             <span className="subnav-spacer" />
             <Link className="subnav-link" href="/live">
-              <span className="live-dot" aria-hidden="true" /> Live now
+              <SocketStatus label="Live now" />
             </Link>
 
             {/* Odds-format dropdown (the original "UK · Decimal ▾" affordance) */}

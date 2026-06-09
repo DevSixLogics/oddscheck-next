@@ -26,6 +26,14 @@ export function statusOf(match) {
   const st = (match.st || "").toLowerCase();
   const sun = (match.sun || "").toLowerCase();
   const mins = (match.mins || "").toUpperCase();
+  // Cricket carries its own status fields (cst/bs), not statusKey/sun/mins.
+  const cst = (match.cst || "").toLowerCase();
+  const bs = (match.bs || "").toLowerCase();
+  if (cst || bs) {
+    if (cst === "inprogress" || bs === "live") return "live";
+    if (/finish|result|complete|abandon|stump|won|lost|draw/.test(`${cst} ${bs}`)) return "finished";
+    if (/scheduled|not started|upcoming|delay|preview/.test(`${bs} ${st}`)) return "upcoming";
+  }
   // Cancelled / postponed / abandoned — treat as off (not upcoming, not live).
   if (OFF.has(st) || OFF_CODES.has(mins)) return "finished";
   if (FINISHED.has(st) || st === "finished") return "finished";
@@ -37,6 +45,12 @@ export function statusOf(match) {
 
 /** Display score "H-A" using current/final score, falling back to full-time. */
 export function score(match) {
+  // Cricket scores its own way (hs/as = runs, e.g. "421" and "17/0").
+  if (match.hs != null || match.as != null) {
+    const home = String(match.hs ?? "").trim();
+    const away = String(match.as ?? "").trim();
+    return { home, away, raw: home || away };
+  }
   const s = match.cfs || match.ft || "";
   const [h, a] = s.split("-");
   return { home: (h ?? "").trim(), away: (a ?? "").trim(), raw: s };
@@ -46,8 +60,9 @@ export function score(match) {
 export function statusLabel(match) {
   const bucket = statusOf(match);
   if (bucket === "finished") return match.mins || "FT";
-  if (bucket === "live") return match.mins || "LIVE";
-  return kickoffTime(match.dt);
+  // Cricket has no running minute — fall back to its status text (e.g. "Live").
+  if (bucket === "live") return match.mins || match.bs || "LIVE";
+  return kickoffTime(match.dt || match.gdt);
 }
 
 // Outcome names that belong to the match-winner (1·X·2 / moneyline) market.

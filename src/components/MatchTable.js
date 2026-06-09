@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Crest from "./Crest";
+import Flag from "./Flag";
 import { kickoffTime, statusOf, statusLabel, score, oddsTriple } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import styles from "./MatchTable.module.scss";
@@ -46,8 +47,8 @@ function Row({ match, sport, isPast }) {
     <div className={styles.row}>
       <div className={styles.teams}>
         <div className={styles.crests}>
-          <Crest name={c.htn} id={c.htid} />
-          <Crest name={c.atn} id={c.atid} />
+          <Crest name={c.htn} id={c.htid} sport={sport} />
+          <Crest name={c.atn} id={c.atid} sport={sport} />
         </div>
         <div className={styles.names}>
           <div>{c.htn}</div>
@@ -100,7 +101,8 @@ export default function MatchTable({ groups, sport = "football", isPast = false 
       {groups.map((g) => (
         <div className={styles.group} id={`group-${g.id}`} key={g.id} style={{ scrollMarginTop: 96 }}>
           <div className={styles.groupHead}>
-            <span>
+            <span className="flex items-center gap-2">
+              <Flag fid={g.fid} sport={sport} size={18} />
               {g.nm}
               {g.is_cup ? <span className={styles.cup}>CUP</span> : null}
             </span>

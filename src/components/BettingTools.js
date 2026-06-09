@@ -39,6 +39,7 @@ const num = (v) => parseFloat(v) || 0;
 
 const TABS = [
   { id: "odds", label: "Odds Converter" },
+  { id: "implied", label: "Implied %" },
   { id: "acca", label: "Accumulator" },
   { id: "ew", label: "Each-Way" },
   { id: "arb", label: "Arbitrage" },
@@ -111,6 +112,42 @@ function OddsConverter() {
           [`Returns on ${money(stakeN)}`, money(stakeN * decimal)],
         ]}
         highlight={{ label: "Profit", value: money(stakeN * (decimal - 1)) }}
+      />
+    </div>
+  );
+}
+
+// ---------- 1b. Implied probability ----------
+function ImpliedProbability() {
+  const [odds, setOdds] = useState("2.50");
+  const [prob, setProb] = useState("40");
+
+  const d = num(odds);
+  const implied = d > 1 ? 100 / d : null; // odds → probability
+  const p = num(prob) / 100;
+  const fairDec = p > 0 && p < 1 ? 1 / p : null; // probability → fair odds
+
+  return (
+    <div className="grid grid-2" style={{ gap: 28 }}>
+      <form className="flex-col gap-3" onSubmit={(e) => e.preventDefault()}>
+        <Field label="Decimal odds → probability" hint="(e.g. 2.50)" value={odds} onChange={setOdds} />
+        <Field label="Your probability (%) → fair odds" hint="(e.g. 40)" value={prob} onChange={setProb} />
+        <p className="mute" style={{ fontSize: 11 }}>
+          Implied probability is the chance a price represents: <b>100 ÷ decimal odds</b>.
+          The reverse gives the fair (no-margin) price for a probability you believe.
+        </p>
+      </form>
+      <Result
+        rows={[
+          ["Decimal odds", d > 1 ? d.toFixed(2) : "—"],
+          ["Fractional", d > 1 ? decToFractional(d) : "—"],
+          ["American", d > 1 ? decToAmerican(d) : "—"],
+          ["— Fair odds for " + (num(prob) || 0) + "% —", ""],
+          ["Decimal", fairDec ? fairDec.toFixed(2) : "—"],
+          ["Fractional", fairDec ? decToFractional(fairDec) : "—"],
+          ["American", fairDec ? decToAmerican(fairDec) : "—"],
+        ]}
+        highlight={{ label: "Implied probability", value: implied != null ? `${implied.toFixed(2)}%` : "—" }}
       />
     </div>
   );
@@ -294,6 +331,7 @@ function BettingToolsInner() {
       </div>
       <div style={{ padding: 22 }}>
         {active === "odds" && <OddsConverter />}
+        {active === "implied" && <ImpliedProbability />}
         {active === "acca" && <Accumulator />}
         {active === "ew" && <EachWay />}
         {active === "arb" && <Arbitrage />}

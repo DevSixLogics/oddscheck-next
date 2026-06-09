@@ -76,7 +76,7 @@ export default function GuidesPage() {
       </section>
 
       <section className="section">
-        <div className="container flex-col gap-7 static-flag">
+        <div className="container flex-col gap-7">
           {/* Browse by topic */}
           <div>
             <h2 style={{ fontSize: 24, marginBottom: 18 }}>Browse by topic</h2>

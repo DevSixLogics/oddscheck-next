@@ -7,7 +7,7 @@ const svg = (paths, fill = "none", w = 14) => (
 const TOOLS = [
   { title: "Odds Calculator", desc: "Convert decimal, fractional and American", href: "/tools?calc=odds",
     icon: svg(<><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" /><path d="M8 7h8M8 12h2m4 0h2m-8 4h2m4 0h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></>, "none", 16) },
-  { title: "Implied Probability", desc: "See the real % behind any price", href: "/tools?calc=odds",
+  { title: "Implied Probability", desc: "See the real % behind any price", href: "/tools?calc=implied",
     icon: svg(<><path d="m3 17 6-6 4 4 8-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /><path d="M15 6h6v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></>) },
   { title: "Accumulator Builder", desc: "Combined odds & returns on multi-leg bets", href: "/tools?calc=acca",
     icon: svg(<path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />) },

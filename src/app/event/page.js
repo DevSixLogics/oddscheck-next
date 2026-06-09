@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getMatchDetail, getMatchH2H, getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { oddsTriple, bookmakerRows, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
 import { OddsValue } from "@/components/OddsFormatProvider";
+import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
 
 export const metadata = { title: "Event — odds & match detail" };
@@ -93,27 +94,13 @@ export default async function EventPage({ searchParams }) {
                 <h1 style={{ fontSize: "clamp(26px, 4vw, 36px)" }}>{c.htn}</h1>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}><FormPills form={c.htf} /></div>
               </div>
-              <Crest name={c.htn} id={c.htid} size="xl" />
+              <Crest name={c.htn} id={c.htid} sport={sport} size="xl" />
             </div>
 
-            <div className="event-head-vs" style={{ textAlign: "center", padding: "0 16px" }}>
-              {bucket === "live" ? (
-                <div className="chip chip-live mb-3"><span className="live-dot" /> {statusLabel(d)}</div>
-              ) : bucket === "finished" ? (
-                <div className="chip chip-muted mb-3">Full time</div>
-              ) : (
-                <div className="chip chip-best mb-3"><span className="live-dot" style={{ background: "var(--accent)" }} /> {kickoffDate(d.dt)} · {kickoffTime(d.dt)}</div>
-              )}
-              <div className="num" style={{ fontSize: 52, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "-0.04em", lineHeight: 1 }}>
-                {bucket !== "upcoming" && sc.raw ? `${sc.home}–${sc.away}` : "vs"}
-              </div>
-              <div className="flex gap-2 mt-3" style={{ justifyContent: "center", flexWrap: "wrap" }}>
-                <span className="chip chip-muted">{comp}{d.ro ? ` · ${d.ro}` : ""}</span>
-              </div>
-            </div>
+            <EventScore sport={sport} id={id} match={d} />
 
             <div className="flex items-center gap-4">
-              <Crest name={c.atn} id={c.atid} size="xl" />
+              <Crest name={c.atn} id={c.atid} sport={sport} size="xl" />
               <div>
                 <div className="mute" style={{ fontSize: 10, letterSpacing: "0.08em", fontWeight: 700, marginBottom: 6 }}>AWAY</div>
                 <h1 style={{ fontSize: "clamp(26px, 4vw, 36px)" }}>{c.atn}</h1>

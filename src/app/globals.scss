@@ -786,6 +786,17 @@ select.input {
 .stat-strip .stat { border-left: 1px solid var(--border); padding-left: 24px; }
 .stat-strip .stat:first-child { border-left: 0; padding-left: 0; }
 
+/* Goal flash — briefly pulses the team that just scored in a live update. */
+@keyframes goalPulse {
+  0%   { background: rgba(46,204,113,0.40); box-shadow: 0 0 0 1px rgba(46,204,113,0.5); }
+  100% { background: transparent; box-shadow: none; }
+}
+.goal-flash { animation: goalPulse 3s ease-out; border-radius: 6px; }
+.goal-tag {
+  display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 800;
+  color: #2ECC71; letter-spacing: 0.06em; animation: goalPulse 3s ease-out;
+}
+
 /* Static-content flag — red border + soft glow around hardcoded/placeholder
    sections (offers, tips, tools, learn, hero stats — no live API source). */
 .static-flag {
