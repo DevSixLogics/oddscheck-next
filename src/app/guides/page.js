@@ -124,16 +124,17 @@ export default function GuidesPage() {
             </div>
           </div>
 
-          {/* Email course CTA */}
+          {/* Put it into practice CTA */}
           <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #2A1A05)", borderColor: "rgba(255,142,0,0.30)", position: "relative", overflow: "hidden" }}>
             <div className="grid grid-2" style={{ gap: 40, alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: 28, marginBottom: 12 }}>Get the 7-day Betting Basics email course</h2>
-                <p className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}>One short lesson a day — odds, value, staking and bankroll. Free, no spam, unsubscribe anytime.</p>
+                <span className="chip chip-best mb-3">Free · no signup</span>
+                <h2 style={{ fontSize: 28, margin: "12px 0" }}>Ready to put it into practice?</h2>
+                <p className="muted" style={{ fontSize: 14, lineHeight: 1.6 }}>Start with how to read odds and implied probability, then compare real prices across bookmakers and size your stakes with our free calculators — odds, value, staking and bankroll, no account needed.</p>
               </div>
               <div className="flex-col gap-2">
-                <input className="input" type="email" placeholder="you@email.com" aria-label="Email" />
-                <Link className="btn btn-primary btn-lg btn-block" href="/signup">Start the course</Link>
+                <Link className="btn btn-primary btn-lg btn-block" href="/guide">How to read odds →</Link>
+                <Link className="btn btn-ghost btn-lg btn-block" href="/tools">Open the free calculators</Link>
               </div>
             </div>
           </div>

@@ -7,17 +7,19 @@ import Logo from "./Logo";
 import { useOddsFormat } from "./OddsFormatProvider";
 import SocketStatus from "./SocketStatus";
 
-// `static: true` → page is hardcoded placeholder (no API) — flagged red in the nav.
-const NAV = [
-  { href: "/football", label: "Sports", match: ["/football", "/racing", "/tennis", "/basketball"] },
+// Fallback nav, used only if the CMS /settings menu is unavailable.
+const NAV_FALLBACK = [
+  { href: "/football", label: "Sports" },
   { href: "/live", label: "Live Odds" },
-  { href: "/offers", label: "Offers", static: true },
-  { href: "/tips", label: "Tips", static: true },
+  { href: "/offers", label: "Offers" },
   { href: "/news", label: "News" },
-  { href: "/reviews", label: "Reviews", static: true },
+  { href: "/experts", label: "Experts" },
   { href: "/guides", label: "Guides" },
   { href: "/tools", label: "Tools" },
 ];
+
+// Pathnames that should light up the "Sports" nav item.
+const SPORTS_PATHS = ["/football", "/racing", "/tennis", "/basketball", "/cricket", "/baseball", "/golf"];
 
 const I = (paths) => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
@@ -94,8 +96,9 @@ const SPORTS = [
 
 const ODDS_FORMATS = ["Decimal", "Fractional", "American"];
 
-export default function Header() {
+export default function Header({ menu }) {
   const pathname = usePathname();
+  const NAV = Array.isArray(menu) && menu.length ? menu : NAV_FALLBACK;
   const [open, setOpen] = useState(false);
   const { fmt, setFmt } = useOddsFormat();
   const [fmtOpen, setFmtOpen] = useState(false);
@@ -114,7 +117,7 @@ export default function Header() {
     });
 
   const isActive = (item) =>
-    item.match ? item.match.includes(pathname) : pathname === item.href;
+    item.label === "Sports" ? SPORTS_PATHS.includes(pathname) : pathname === item.href;
 
   return (
     <>
@@ -124,12 +127,12 @@ export default function Header() {
           <nav className="topnav-links" aria-label="Primary">
             {NAV.map((item) => (
               <Link
-                key={item.href}
+                key={item.href + item.label}
                 className={`topnav-link${isActive(item) ? " active" : ""}`}
                 href={item.href}
+                target={item.newTab ? "_blank" : undefined}
+                rel={item.newTab ? "noopener noreferrer" : undefined}
                 aria-current={isActive(item) ? "page" : undefined}
-                style={item.static ? { color: "var(--live)" } : undefined}
-                title={item.static ? "Static page — no live API data" : undefined}
               >
                 {item.label === "Sports" && <span className="nav-dot" aria-hidden="true" />}
                 {item.label}
@@ -289,7 +292,7 @@ export default function Header() {
           <nav className="drawer-nav" aria-label="Primary">
             <Link href="/" onClick={() => setOpen(false)}>Home</Link>
             {NAV.map((item) => (
-              <Link key={item.href} href={item.href} className={isActive(item) ? "active" : undefined} onClick={() => setOpen(false)} style={item.static ? { color: "var(--live)" } : undefined}>
+              <Link key={item.href + item.label} href={item.href} target={item.newTab ? "_blank" : undefined} rel={item.newTab ? "noopener noreferrer" : undefined} className={isActive(item) ? "active" : undefined} onClick={() => setOpen(false)}>
                 {item.label}
               </Link>
             ))}

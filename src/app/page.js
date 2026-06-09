@@ -4,7 +4,6 @@ import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
 import BestOffers from "@/components/BestOffers";
 import FeaturedEvent from "@/components/FeaturedEvent";
-import TipsSection from "@/components/TipsSection";
 import ScoresSection from "@/components/ScoresSection";
 import SmartTools from "@/components/SmartTools";
 import NewsSection from "@/components/NewsSection";
@@ -80,7 +79,6 @@ export default async function HomePage() {
       <TodaysTopOdds sports={sportsData} />
       <BestOffers />
       <FeaturedEvent matches={matches} />
-      <TipsSection />
       <ScoresSection matches={scoresMatches} />
       <SmartTools />
       <NewsSection />

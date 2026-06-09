@@ -148,11 +148,11 @@ export default async function NewsPage({ searchParams }) {
               </div>
             </div>
             <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))" }}>
-              <h4 style={{ fontSize: 15, marginBottom: 8 }}>News digest</h4>
-              <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>The day&apos;s biggest stories, in one email.</p>
+              <h4 style={{ fontSize: 15, marginBottom: 8 }}>Stay on top of the action</h4>
+              <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>Live scores, odds movement and the day&apos;s biggest stories — all in one place, no signup.</p>
               <div className="flex-col gap-2">
-                <input className="input input-sm" type="email" placeholder="you@email.com" aria-label="Email" />
-                <Link className="btn btn-primary btn-sm btn-block" href="/signup">Subscribe</Link>
+                <Link className="btn btn-primary btn-sm btn-block" href="/live">Compare live odds</Link>
+                <Link className="btn btn-ghost btn-sm btn-block" href="/offers">Browse all articles</Link>
               </div>
             </div>
           </aside>

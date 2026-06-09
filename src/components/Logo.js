@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export default function Logo() {
+export default function Logo({ height = 44 }) {
   return (
     <Link href="/" className="logo" aria-label="OddsCheck.com home">
       <Image
@@ -10,7 +10,7 @@ export default function Logo() {
         width={272}
         height={88}
         priority
-        style={{ height: 32, width: "auto" }}
+        style={{ height, width: "auto" }}
       />
     </Link>
   );

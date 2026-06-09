@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import { OddsFormatProvider } from "@/components/OddsFormatProvider";
 import GoalAlerts from "@/components/GoalAlerts";
+import { getHeaderMenu } from "@/lib/api";
 
 export const metadata = {
   metadataBase: new URL("https://oddscheck.com"),
@@ -25,14 +26,15 @@ export const viewport = {
   themeColor: "#0A0F1C",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const menu = await getHeaderMenu();
   return (
     <html lang="en">
       <body>
         <a href="#main" className="skip-link">Skip to content</a>
         <OddsFormatProvider>
           <GoalAlerts />
-          <Header />
+          <Header menu={menu} />
           <main id="main" role="main">
             {children}
           </main>
