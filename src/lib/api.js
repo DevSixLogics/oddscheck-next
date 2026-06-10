@@ -271,7 +271,7 @@ export async function getCategoryBySlug(slug = "") {
   // 1 + 2: dedicated category endpoint (via alias, then the raw slug).
   for (const candidate of [CATEGORY_ALIASES[s], s]) {
     if (!candidate) continue;
-    const { articles } = await getCategoryArticles(candidate, { perPage: 30 });
+    const { articles } = await getCategoryArticles(candidate, { perPage: 50 });
     if (articles.length) {
       return { name: articles[0].categoryName || candidate, slug: candidate, articles };
     }
@@ -329,21 +329,38 @@ export async function getHeaderMenu() {
  * Returns [{ slug, name, image, bio, postCount }] sorted by post count desc.
  */
 export async function getAuthors() {
-  const [{ articles: general }, offers] = await Promise.all([
-    getArticles({ perPage: 50 }),
-    getOffers({ perPage: 24 }),
-  ]);
   const map = new Map();
-  for (const a of [...general, ...offers]) {
-    const slug = (a.authorSlug || "").toLowerCase();
-    if (!slug || map.has(slug)) continue;
-    map.set(slug, { slug, name: a.authorName || slug, image: a.profile_image_path || null });
+  const collect = (arr) => {
+    for (const a of arr || []) {
+      const slug = (a.authorSlug || "").toLowerCase();
+      if (!slug || map.has(slug)) continue;
+      map.set(slug, { slug, name: a.authorName || slug, image: a.profile_image_path || null });
+    }
+  };
+
+  // The /articles feed caps each page at ~5 items, so page through ALL of it to
+  // discover every author (page 1 alone would only surface a handful).
+  const MAX_PAGES = 40;
+  const first = await getArticles({ page: 1, perPage: 50 });
+  collect(first.articles);
+  const total = first.pagination?.total || first.articles.length;
+  const per = first.articles.length || 5;
+  const lastPage = Math.min(Math.ceil(total / per) || 1, MAX_PAGES);
+  if (lastPage > 1) {
+    const pages = [];
+    for (let p = 2; p <= lastPage; p++) pages.push(p);
+    const rest = await Promise.all(pages.map((p) => getArticles({ page: p, perPage: 50 })));
+    rest.forEach((r) => collect(r.articles));
   }
+  // Offers feed too (bookmaker authors).
+  collect(await getOffers({ perPage: 50 }));
+
   const authors = [...map.values()];
   const enriched = await Promise.all(
     authors.map(async (au) => {
       const { detail } = await getAuthorDetails(au.slug);
-      const bio = detail?.bio && detail.bio.trim().toLowerCase() !== "author" ? detail.bio : null;
+      // Use the author's real CMS bio verbatim as the card strapline.
+      const bio = detail?.bio?.trim() || null;
       return { ...au, bio, postCount: detail?.post_count ?? null };
     })
   );
@@ -388,15 +405,37 @@ export async function getArticle(slug) {
     if (!res.ok) throw new Error(`articles/${slug} -> HTTP ${res.status}`);
     const json = await res.json();
     if (!json?.data) return null;
-    return {
-      article: json.data,
-      related: Array.isArray(json.relatedArticles) ? json.relatedArticles : [],
-      random: Array.isArray(json.randomArticles) ? json.randomArticles : [],
-    };
+    let related = Array.isArray(json.relatedArticles) ? json.relatedArticles : [];
+    let random = Array.isArray(json.randomArticles) ? json.randomArticles : [];
+
+    // The single-article endpoint omits image_path on its related/random lists,
+    // but the category feed carries it — backfill by slug so "More stories" can
+    // show thumbnails.
+    if ([...related, ...random].some((a) => a && !a.image_path)) {
+      const imgBySlug = await articleImageMap();
+      const fill = (a) => (a && !a.image_path && imgBySlug[a.slug] ? { ...a, image_path: imgBySlug[a.slug] } : a);
+      related = related.map(fill);
+      random = random.map(fill);
+    }
+
+    return { article: json.data, related, random };
   } catch (err) {
     console.error("[api] getArticle failed:", err.message);
     return null;
   }
+}
+
+// slug → image_path map from the feeds that actually carry images (the category
+// feeds). Used to backfill thumbnails the single-article endpoint leaves blank.
+async function articleImageMap() {
+  const map = {};
+  try {
+    const { articles } = await getCategoryArticles("best-betting-offers", { perPage: 50 });
+    for (const a of articles) if (a?.slug && a.image_path) map[a.slug] = a.image_path;
+  } catch {
+    /* best-effort */
+  }
+  return map;
 }
 
 /**

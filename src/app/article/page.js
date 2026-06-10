@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
+import ConsoleLog from "@/components/ConsoleLog";
 
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
@@ -14,10 +15,16 @@ const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
 function MiniArticle({ a }) {
   return (
     <Link href={`/article?slug=${a.slug}`} className="flex gap-3" style={{ padding: "10px 0", borderBottom: "1px solid var(--border-soft)" }}>
-      <div style={{ width: 72, flexShrink: 0, height: 56, borderRadius: 8, overflow: "hidden", background: FALLBACK_GRAD }}>
-        {a.image_path && (
+      <div style={{ width: 72, flexShrink: 0, height: 56, borderRadius: 8, overflow: "hidden", background: FALLBACK_GRAD, display: "grid", placeItems: "center" }}>
+        {a.image_path ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={a.image_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+            <circle cx="8.5" cy="10" r="1.5" fill="currentColor" />
+            <path d="m21 16-5-5-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          </svg>
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -49,6 +56,7 @@ export default async function ArticlePage({ searchParams }) {
 
   return (
     <>
+      <ConsoleLog label="article" data={{ article: a, related, random }} />
       <section style={{ padding: "32px 0 24px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -67,11 +75,17 @@ export default async function ArticlePage({ searchParams }) {
           <h1 style={{ fontSize: "clamp(28px, 4vw, 40px)", lineHeight: 1.15, maxWidth: "22ch", marginBottom: 12 }}>{a.headline}</h1>
           {a.strapline && <p style={{ fontSize: 17, color: "var(--text-2)", lineHeight: 1.55, maxWidth: 680 }}>{a.strapline}</p>}
           <div className="flex items-center gap-3 mt-4 flex-wrap">
-            <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
-            <div>
-              <div style={{ fontWeight: 600 }}>{a.authorName}</div>
+            {a.authorName ? (
+              <>
+                <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{a.authorName}</div>
+                  <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date)}</div>
+                </div>
+              </>
+            ) : (
               <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date)}</div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -86,7 +100,7 @@ export default async function ArticlePage({ searchParams }) {
               </div>
             )}
             <div className="prose" dangerouslySetInnerHTML={{ __html: a.editor || a.preview || "" }} />
-            {a.bio && (
+            {a.authorName && a.bio && (
               <div className="card" style={{ padding: 18, marginTop: 28, display: "flex", gap: 12, alignItems: "center" }}>
                 <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
                 <div>
@@ -110,14 +124,6 @@ export default async function ArticlePage({ searchParams }) {
                 {random.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} />)}
               </div>
             )}
-            <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))" }}>
-              <h4 style={{ fontSize: 15, marginBottom: 8 }}>News digest</h4>
-              <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>The day&apos;s biggest stories, in one email.</p>
-              <div className="flex-col gap-2">
-                <input className="input input-sm" type="email" placeholder="you@email.com" aria-label="Email" />
-                <Link className="btn btn-primary btn-sm btn-block" href="/signup">Subscribe</Link>
-              </div>
-            </div>
             <div className="rg-banner" style={{ margin: 0 }}>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               <div style={{ fontSize: 12 }}><b>18+ · Gamble responsibly.</b></div>

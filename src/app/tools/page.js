@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BettingTools from "@/components/BettingTools";
+import DiscoveryTools from "@/components/DiscoveryTools";
 
 export const metadata = {
   title: "Smart betting tools — calculators, arbitrage, +EV & alerts",
@@ -30,24 +31,6 @@ const SECTIONS = [
       { title: "Each-Way Calculator", desc: "Place + win returns for racing bets.", href: "/tools?calc=ew", icon: ICONS.racing },
       { title: "Arbitrage Calculator", desc: "Split stakes for a guaranteed surebet profit.", href: "/tools?calc=arb", icon: ICONS.arrows },
       { title: "Kelly Criterion", desc: "Optimal stake sizing for your edge.", href: "/tools?calc=kelly", icon: ICONS.bolt },
-    ],
-  },
-  {
-    title: "Discovery", more: "View all discovery →",
-    tools: [
-      { title: "Arbitrage Finder", desc: "Surebets across books, right now.", href: "/signup", icon: ICONS.bolt, pro: true },
-      { title: "+EV Bets", desc: "Positive expected-value picks, updated live.", href: "/signup", icon: ICONS.flame, pro: true },
-      { title: "Middling Opportunities", desc: "Win both sides when lines move.", href: "/signup", icon: ICONS.arrows, pro: true },
-      { title: "Price Boosts Aggregator", desc: "Every bookmaker boost in one feed.", href: "/offers", icon: ICONS.star },
-    ],
-  },
-  {
-    title: "Personal", more: "View all personal →",
-    tools: [
-      { title: "Bet Tracker", desc: "Log bets, P&L and ROI by sport & market.", href: "/dashboard", icon: ICONS.star },
-      { title: "Odds Alerts", desc: "Ping me when a price hits my target.", href: "/signup", icon: ICONS.bell },
-      { title: "Watchlist", desc: "Follow teams, players and markets.", href: "/dashboard", icon: ICONS.eye },
-      { title: "Line Movement Tracker", desc: "Sharp money & steam moves, real-time.", href: "/live", icon: ICONS.arrows, pro: true },
     ],
   },
 ];
@@ -93,6 +76,15 @@ export default function ToolsPage() {
               <h2 style={{ fontSize: 24 }}>Calculators</h2><span className="chip chip-best">Live</span>
             </div>
             <BettingTools />
+          </div>
+
+          {/* Discovery — live scanners over the multi-bookmaker odds feed */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.bolt}</span>
+              <h2 style={{ fontSize: 24 }}>Discovery</h2><span className="chip chip-best">Live</span>
+            </div>
+            <DiscoveryTools />
           </div>
 
           {/* Tool sections */}

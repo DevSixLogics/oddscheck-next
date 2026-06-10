@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import MatchTable from "@/components/MatchTable";
-import StaticNote from "@/components/StaticNote";
 import DateNav from "@/components/DateNav";
 
 /**
@@ -66,10 +65,6 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
                   </a>
                 ))}
               </nav>
-            </div>
-            <div className="card" style={{ padding: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Quick filters</div>
-              <StaticNote>Market filters are static — feed has no market flags.</StaticNote>
             </div>
           </aside>
 

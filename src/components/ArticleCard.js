@@ -12,7 +12,10 @@ function brandCode(name = "") {
 }
 
 function keyChip(kv = "") {
-  const txt = String(kv).split(",").map((s) => s.trim()).filter(Boolean).join(" ");
+  const raw = String(kv).trim();
+  // Ignore junk/placeholder values like "{'key':'value'}" or any JSON-ish string.
+  if (!raw || /[{}:[\]"']/.test(raw)) return null;
+  const txt = raw.split(",").map((s) => s.trim()).filter(Boolean).join(" ");
   if (!txt) return null;
   return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
 }

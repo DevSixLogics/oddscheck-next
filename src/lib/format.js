@@ -243,9 +243,11 @@ export function timeAgo(dateStr) {
   return then.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-/** Two-letter crest abbreviation from a team name (logos are not in the API). */
-export function initials(name = "") {
-  const words = name.replace(/[^\w\s]/g, "").trim().split(/\s+/);
+/** Two-letter crest abbreviation from a team/author name (logos are not in the API). */
+export function initials(name) {
+  const clean = String(name ?? "").replace(/[^\w\s]/g, "").trim();
+  if (!clean) return "OC";
+  const words = clean.split(/\s+/);
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }

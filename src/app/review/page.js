@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAuthorDetails } from "@/lib/api";
+import { getAuthorDetails, getAuthors } from "@/lib/api";
 
 const BRANDS = new Set(["bet365", "williamhill", "paddypower", "skybet", "ladbrokes", "coral", "betvictor", "betfair", "unibet", "888sport"]);
 
@@ -81,14 +81,6 @@ const FAQS = [
   ["Is the welcome offer worth claiming?", "For most users, yes — £30 in free bets for a £10 stake is fair value with manageable terms (min odds 1/2, 7-day expiry, no wagering on winnings)."],
 ];
 
-const COMPARE = [
-  { bm: "W.HILL", name: "William Hill", cls: "williamhill", rating: "4.7" },
-  { bm: "P.POWER", name: "Paddy Power", cls: "paddypower", rating: "4.6" },
-  { bm: "SKY BET", name: "Sky Bet", cls: "skybet", rating: "4.5" },
-  { bm: "LADBROKES", name: "Ladbrokes", cls: "ladbrokes", rating: "4.4" },
-];
-
-const KPIS = [["Min dep", "£10"], ["Min odds", "1/2"], ["Payout", "~94.5%"], ["License", "UKGC"]];
 
 function Dots({ n }) {
   return (
@@ -114,18 +106,23 @@ export default async function ReviewPage({ searchParams }) {
   const brandCls = isBrand ? `bm-${brandKey}` : "";
   const brandCode = name.length <= 8 ? name.toUpperCase() : name.slice(0, 8).toUpperCase();
 
-  // The author's primary offer article powers the welcome-offer CTA.
+  // The author's primary (latest) article powers the hero CTA.
   const primary = articles[0] || null;
-  const claimHref = primary?.slug ? `/article?slug=${primary.slug}` : "/offers";
-  const welcomeOffer = primary?.headline || "Bet £10, get £30 in free bets";
+
+  // "Compare with" — real bookmaker authors from the CMS (no invented ratings),
+  // excluding the one being viewed.
+  const allAuthors = isBrand ? await getAuthors() : [];
+  const compareList = allAuthors
+    .filter((a) => BRANDS.has(a.slug.replace(/-/g, "")) && a.slug.toLowerCase() !== slug)
+    .slice(0, 6);
+  const codeFor = (nm = "") => (nm.length <= 8 ? nm.toUpperCase() : nm.slice(0, 8).toUpperCase());
 
   // Only the real Bet365 page carries the hand-written editorial (scores, pros/cons,
   // FAQs). Every other author shows their real profile + articles instead.
   const isBet365 = slug === "bet365";
   const role = isBrand ? "Bookmaker" : (bio || "Contributor");
-  const intro = isBrand
-    ? `${name} is a UK-licensed bookmaker. See their latest welcome offer and every article they've published on OddsCheck below.`
-    : `${name}${bio ? `, ${bio},` : ""} writes betting tips, previews and analysis for OddsCheck.`;
+  // Generic — this is just an author's articles in a (dynamic) category, not an "offer".
+  const intro = bio || `Articles and updates published by ${name} on OddsCheck.`;
 
   return (
     <>
@@ -172,46 +169,19 @@ export default async function ReviewPage({ searchParams }) {
                 <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.6 }}>{intro}</p>
               )}
               <div className="flex gap-2 mt-4 flex-wrap">
-                {isBrand
-                  ? <Link className="btn btn-primary" href={claimHref}>{primary ? "Claim offer" : "See offers"}</Link>
-                  : <Link className="btn btn-primary" href={claimHref}>Read latest article</Link>}
+                {primary && <Link className="btn btn-primary" href={`/article?slug=${primary.slug}`}>Read latest article</Link>}
                 <Link className="btn btn-ghost" href="/experts">All authors</Link>
               </div>
             </div>
 
             <aside className="card" style={{ padding: 24 }}>
-              {isBrand ? (
-                <>
-                  <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 8 }}>Welcome offer</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{welcomeOffer}</div>
-                  <div className="mute" style={{ fontSize: 11, marginBottom: 14 }}>New customers · Min deposit £10 · 7-day expiry</div>
-                  <Link className="btn btn-primary btn-block" href={claimHref}>{primary ? "Claim Offer" : "See offers"}</Link>
-                  <div className="mute" style={{ fontSize: 10, textAlign: "center", marginTop: 8 }}>18+ · T&amp;Cs apply · Begambleaware.org</div>
-                  {isBet365 && (
-                    <>
-                      <hr className="divider" style={{ margin: "16px 0" }} />
-                      <div className="grid grid-2" style={{ gap: 8 }}>
-                        {KPIS.map(([k, v]) => (
-                          <div className="kpi card-flat" key={k} style={{ padding: 12 }}>
-                            <div className="kpi-label">{k}</div>
-                            <div className="num" style={{ fontSize: 18, fontWeight: 700 }}>{v}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 8 }}>Latest article</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, lineHeight: 1.3 }}>{primary?.headline || "No articles yet"}</div>
-                  {primary && <Link className="btn btn-primary btn-block" href={claimHref}>Read article</Link>}
-                  <hr className="divider" style={{ margin: "16px 0" }} />
-                  <div className="flex justify-between" style={{ fontSize: 13 }}>
-                    <span className="mute">Articles</span><b className="num">{detail?.post_count ?? articles.length}</b>
-                  </div>
-                </>
-              )}
+              <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 8 }}>Latest article</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, lineHeight: 1.3 }}>{primary?.headline || "No articles yet"}</div>
+              {primary && <Link className="btn btn-primary btn-block" href={`/article?slug=${primary.slug}`}>Read article</Link>}
+              <hr className="divider" style={{ margin: "16px 0" }} />
+              <div className="flex justify-between" style={{ fontSize: 13 }}>
+                <span className="mute">Articles</span><b className="num">{detail?.post_count ?? articles.length}</b>
+              </div>
             </aside>
           </div>
         </div>
@@ -320,15 +290,20 @@ export default async function ReviewPage({ searchParams }) {
           </div>
 
           <aside className="flex-col gap-4">
-            <div className="card" style={{ padding: 20 }}>
-              <h4 style={{ fontSize: 14, marginBottom: 14 }}>Compare with</h4>
-              {COMPARE.map((c, i) => (
-                <Link key={c.bm} href="/experts" className="flex items-center justify-between" style={{ padding: "10px 0", borderBottom: i === COMPARE.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
-                  <span className="flex items-center gap-2"><span className={`bm bm-${c.cls}`}>{c.bm}</span><span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span></span>
-                  <span className="num muted" style={{ fontSize: 12 }}>{c.rating}</span>
-                </Link>
-              ))}
-            </div>
+            {compareList.length > 0 && (
+              <div className="card" style={{ padding: 20 }}>
+                <h4 style={{ fontSize: 14, marginBottom: 14 }}>Compare with</h4>
+                {compareList.map((c, i) => {
+                  const k = c.slug.replace(/-/g, "");
+                  return (
+                    <Link key={c.slug} href={`/review?author=${c.slug}`} className="flex items-center justify-between" style={{ padding: "10px 0", borderBottom: i === compareList.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
+                      <span className="flex items-center gap-2"><span className={`bm bm-${k}`}>{codeFor(c.name)}</span><span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span></span>
+                      <span className="num muted" style={{ fontSize: 12 }}>{c.postCount ?? 0} article{c.postCount === 1 ? "" : "s"}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
             <div className="card" style={{ padding: 20 }}>
               <h4 style={{ fontSize: 14, marginBottom: 12 }}>
                 More from {name}{detail?.post_count ? ` · ${detail.post_count} article${detail.post_count === 1 ? "" : "s"}` : ""}

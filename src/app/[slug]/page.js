@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import SportPage from "@/components/SportPage";
-import ArticleCard from "@/components/ArticleCard";
+import CategoryGrid from "@/components/CategoryGrid";
 import { getSettings, getCategoryBySlug } from "@/lib/api";
 
 // One root dynamic segment handling any single-segment slug the CMS menu points at:
@@ -90,13 +90,7 @@ export default async function DynamicSlugPage({ params, searchParams }) {
 
         <section className="section">
           <div className="container">
-            {cat.articles.length === 0 ? (
-              <div className="card" style={{ padding: 28, textAlign: "center", color: "var(--text-2)" }}>Nothing here right now.</div>
-            ) : (
-              <div className="grid grid-3">
-                {cat.articles.map((a) => <ArticleCard key={a.id || a.slug} a={a} />)}
-              </div>
-            )}
+            <CategoryGrid articles={cat.articles} />
           </div>
         </section>
       </>

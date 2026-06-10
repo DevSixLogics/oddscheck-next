@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+
+const PAGE_SIZE = 9;
 
 // Bookmaker brand classes that have a styled badge in globals.scss (hyphen-stripped slug).
 const BRANDS = new Set(["bet365", "williamhill", "paddypower", "skybet", "ladbrokes", "coral", "betvictor", "betfair", "unibet", "888sport"]);
@@ -23,7 +25,7 @@ function ExpertCard({ a }) {
   const key = brandKey(a.slug);
   const isBrand = BRANDS.has(key);
   return (
-    <Link className="card" href={`/review?author=${a.slug}`} style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12, minHeight: 168 }}>
+    <Link className="card" href={`/experts/${a.slug}`} style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12, minHeight: 168 }}>
       <div className="flex items-center gap-3">
         {isBrand
           ? <span className={`bm bm-lg bm-${key}`}>{brandCode(a.name)}</span>
@@ -47,6 +49,8 @@ function ExpertCard({ a }) {
 export default function ExpertsList({ authors = [] }) {
   const [type, setType] = useState("all"); // all | bookmaker | contributor
   const [sort, setSort] = useState("posts");
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [type, sort]); // reset to first page when filters change
 
   const counts = useMemo(() => {
     let bookmaker = 0, contributor = 0;
@@ -72,6 +76,10 @@ export default function ExpertsList({ authors = [] }) {
     );
     return list;
   }, [authors, type, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const pageItems = shown.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
 
   return (
     <div className="layout-split">
@@ -110,9 +118,20 @@ export default function ExpertsList({ authors = [] }) {
         {shown.length === 0 ? (
           <div className="card" style={{ padding: 28, textAlign: "center", color: "var(--text-2)" }}>No experts match this filter.</div>
         ) : (
-          <div className="grid grid-2">
-            {shown.map((a) => <ExpertCard key={a.slug} a={a} />)}
-          </div>
+          <>
+            <div className="grid grid-2">
+              {pageItems.map((a) => <ExpertCard key={a.slug} a={a} />)}
+            </div>
+            {totalPages > 1 && (
+              <div className="pagination" style={{ marginTop: 4 }}>
+                {current > 1 && <button type="button" className="page" onClick={() => setPage(current - 1)}>‹</button>}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button type="button" key={p} className={`page${p === current ? " active" : ""}`} onClick={() => setPage(p)}>{p}</button>
+                ))}
+                {current < totalPages && <button type="button" className="page" onClick={() => setPage(current + 1)}>›</button>}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
