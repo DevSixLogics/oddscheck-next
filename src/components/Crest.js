@@ -1,7 +1,11 @@
-import { initials } from "@/lib/format";
+"use client";
 
-// The API has no team logo or colour (only htid/atid). We derive a stable
-// gradient from the team id/name so each club still gets a consistent badge.
+import { useState } from "react";
+import { initials } from "@/lib/format";
+import { teamImageURL } from "@/lib/images";
+
+// Stable gradient from the team id/name — used as the fallback badge when the
+// real logo is missing or fails to load.
 function hueFor(seed = "") {
   let h = 0;
   const s = String(seed);
@@ -9,14 +13,35 @@ function hueFor(seed = "") {
   return h;
 }
 
-export default function Crest({ name, id, size }) {
-  const h = hueFor(id || name);
-  const style = {
-    background: `linear-gradient(135deg, hsl(${h} 55% 45%) 0%, hsl(${(h + 40) % 360} 60% 28%) 100%)`,
-  };
+export default function Crest({ name, id, sport = "football", size }) {
+  const [failed, setFailed] = useState(false);
+  const cls = `crest${size === "xl" ? " crest-xl" : size === "lg" ? " crest-lg" : ""}`;
+  const url = teamImageURL(id, sport);
+
+  // No id, the API returns "none", or the image 404'd → initials gradient badge.
+  if (!url || url.includes("/none") || failed) {
+    const h = hueFor(id || name);
+    return (
+      <span
+        className={cls}
+        style={{ background: `linear-gradient(135deg, hsl(${h} 55% 45%) 0%, hsl(${(h + 40) % 360} 60% 28%) 100%)` }}
+        aria-hidden="true"
+      >
+        {initials(name)}
+      </span>
+    );
+  }
+
   return (
-    <span className={`crest${size === "xl" ? " crest-xl" : ""}`} style={style} aria-hidden="true">
-      {initials(name)}
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className={cls}
+      src={url}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      style={{ objectFit: "contain", background: "rgba(255,255,255,0.06)", padding: 2 }}
+    />
   );
 }

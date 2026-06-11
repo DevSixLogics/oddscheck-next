@@ -35,8 +35,8 @@ const COLUMNS = [
   {
     title: "Bookmakers",
     links: [
-      ["Best Betting Sites", "/reviews"],
-      ["Sportsbook Reviews", "/reviews"],
+      ["Best Betting Sites", "/experts"],
+      ["Sportsbook Reviews", "/experts"],
       ["Free Bet Offers", "/offers"],
       ["New Customer Offers", "/offers"],
     ],
@@ -57,15 +57,11 @@ export default function SiteFooter() {
       <div className="container">
         <div className="footer-grid">
           <div className="footer-intro">
-            <Logo />
+            <Logo height={56} />
             <p>
               Live odds comparison and betting intelligence across football, racing, tennis,
               basketball and 30+ sports. Built for serious sports fans.
             </p>
-            <div className="footer-store">
-              <a className="btn btn-ghost btn-sm" href="#">iOS app</a>
-              <a className="btn btn-ghost btn-sm" href="#">Android app</a>
-            </div>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>

@@ -8,17 +8,16 @@ const GUIDES = [
   { badge: "£", level: "Beginner", title: "How free bets actually work", time: "5 min read", href: "/guide/free-bets" },
   { badge: "P", level: "Intermediate", title: "What are prop bets?", time: "6 min read", href: "/guide/prop-bets" },
   { badge: "⇄", level: "Intermediate", title: "How to compare bookmakers", time: "8 min read", href: "/guide/compare-bookmakers" },
-  { badge: "+", level: "Essential", title: "Responsible betting guide", time: "4 min read", href: "/responsible-gambling", essential: true },
+  { badge: "+", level: "Essential", title: "Responsible betting guide", time: "4 min read", href: "/responsible-gambling" },
 ];
 
 const tealBadge = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", fontSize: 18, fontWeight: 700, color: "var(--accent)" };
-const redBadge = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,77,103,0.12)", border: "1px solid rgba(255,77,103,0.30)", fontSize: 18, fontWeight: 700, color: "#FFC6CE" };
 
 /** "Learn to bet smarter" — static guides grid (matches the reference). */
 export default function LearnToBet() {
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-0), var(--bg-1))" }}>
-      <div className="container static-flag">
+      <div className="container">
         <div className="section-head">
           <div>
             <div className="eyebrow">Education</div>
@@ -31,14 +30,10 @@ export default function LearnToBet() {
           {GUIDES.map((g) => (
             <Link key={g.title} className="card" href={g.href} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, minHeight: 160 }}>
               <div className="flex justify-between items-start">
-                <span style={g.essential ? redBadge : tealBadge}>{g.badge}</span>
+                <span style={tealBadge}>{g.badge}</span>
                 <span
                   className="chip"
-                  style={
-                    g.essential
-                      ? { background: "rgba(255,77,103,0.10)", borderColor: "rgba(255,77,103,0.3)", color: "#FFC6CE", fontSize: 10, padding: "2px 7px" }
-                      : { background: "rgba(255,255,255,0.03)", borderColor: "var(--border-soft)", color: "var(--text-dim)", fontSize: 10, padding: "2px 7px" }
-                  }
+                  style={{ background: "rgba(255,255,255,0.03)", borderColor: "var(--border-soft)", color: "var(--text-dim)", fontSize: 10, padding: "2px 7px" }}
                 >
                   {g.level}
                 </span>

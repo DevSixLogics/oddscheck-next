@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BettingTools from "@/components/BettingTools";
+import DiscoveryTools from "@/components/DiscoveryTools";
 
 export const metadata = {
   title: "Smart betting tools — calculators, arbitrage, +EV & alerts",
@@ -25,29 +26,11 @@ const SECTIONS = [
     title: "Calculators", more: "View all calculators →",
     tools: [
       { title: "Odds Calculator", desc: "Convert decimal, fractional & American formats.", href: "/tools?calc=odds", icon: ICONS.calc },
-      { title: "Implied Probability", desc: "Translate odds into a real-world probability.", href: "/tools?calc=odds", icon: ICONS.pct },
+      { title: "Implied Probability", desc: "Translate odds into a real-world probability.", href: "/tools?calc=implied", icon: ICONS.pct },
       { title: "Accumulator Calculator", desc: "Returns for any multi-leg bet.", href: "/tools?calc=acca", icon: ICONS.plus },
       { title: "Each-Way Calculator", desc: "Place + win returns for racing bets.", href: "/tools?calc=ew", icon: ICONS.racing },
       { title: "Arbitrage Calculator", desc: "Split stakes for a guaranteed surebet profit.", href: "/tools?calc=arb", icon: ICONS.arrows },
       { title: "Kelly Criterion", desc: "Optimal stake sizing for your edge.", href: "/tools?calc=kelly", icon: ICONS.bolt },
-    ],
-  },
-  {
-    title: "Discovery", more: "View all discovery →",
-    tools: [
-      { title: "Arbitrage Finder", desc: "Surebets across books, right now.", href: "/signup", icon: ICONS.bolt, pro: true },
-      { title: "+EV Bets", desc: "Positive expected-value picks, updated live.", href: "/signup", icon: ICONS.flame, pro: true },
-      { title: "Middling Opportunities", desc: "Win both sides when lines move.", href: "/signup", icon: ICONS.arrows, pro: true },
-      { title: "Price Boosts Aggregator", desc: "Every bookmaker boost in one feed.", href: "/offers", icon: ICONS.star },
-    ],
-  },
-  {
-    title: "Personal", more: "View all personal →",
-    tools: [
-      { title: "Bet Tracker", desc: "Log bets, P&L and ROI by sport & market.", href: "/dashboard", icon: ICONS.star },
-      { title: "Odds Alerts", desc: "Ping me when a price hits my target.", href: "/signup", icon: ICONS.bell },
-      { title: "Watchlist", desc: "Follow teams, players and markets.", href: "/dashboard", icon: ICONS.eye },
-      { title: "Line Movement Tracker", desc: "Sharp money & steam moves, real-time.", href: "/live", icon: ICONS.arrows, pro: true },
     ],
   },
 ];
@@ -69,15 +52,16 @@ export default function ToolsPage() {
           </nav>
           <div className="flex justify-between items-end flex-wrap gap-4" style={{ marginTop: 12 }}>
             <div>
-              <span className="chip chip-best mb-3"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M13 2 4 13h7l-1 9 9-11h-7l1-9Z" /></svg> 14 free + pro tools</span>
+              <span className="chip chip-best mb-3"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M13 2 4 13h7l-1 9 9-11h-7l1-9Z" /></svg> Free calculators · no signup</span>
               <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", margin: "10px 0" }}>Smart betting tools</h1>
               <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.55 }}>
-                Pro-grade calculators, arbitrage finders, +EV picks, alerts and bet tracking — all
-                in one place. Free to start.
+                Free calculators for odds, value and staking — convert prices, work out implied
+                probability, accumulators, each-way, arbitrage and Kelly stakes, all in one place.
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Link className="btn btn-primary" href="/signup">Try Pro free for 14 days</Link>
+              <Link className="btn btn-primary" href="/tools?calc=odds">Open the calculators</Link>
+              <Link className="btn btn-ghost" href="/live">Compare live odds</Link>
             </div>
           </div>
         </div>
@@ -92,6 +76,15 @@ export default function ToolsPage() {
               <h2 style={{ fontSize: 24 }}>Calculators</h2><span className="chip chip-best">Live</span>
             </div>
             <BettingTools />
+          </div>
+
+          {/* Discovery — live scanners over the multi-bookmaker odds feed */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,142,0,0.10)", display: "grid", placeItems: "center", color: "var(--accent)" }}>{ICONS.bolt}</span>
+              <h2 style={{ fontSize: 24 }}>Discovery</h2><span className="chip chip-best">Live</span>
+            </div>
+            <DiscoveryTools />
           </div>
 
           {/* Tool sections */}
@@ -119,17 +112,17 @@ export default function ToolsPage() {
             </div>
           ))}
 
-          {/* Pro CTA */}
+          {/* Free-tools CTA */}
           <div className="card" style={{ padding: 36, background: "linear-gradient(135deg, #0E1729, #0F2333 60%, #2A1A05)", borderColor: "rgba(255,142,0,0.30)" }}>
             <div className="grid grid-2" style={{ gap: 40, alignItems: "center" }}>
               <div>
-                <span className="chip chip-gold mb-3">OddsCheck Pro · £9/mo</span>
-                <h2 style={{ fontSize: 28, margin: "12px 0" }}>Unlock every pro tool</h2>
-                <p className="muted" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>Arbitrage, +EV, middling, Kelly staking and real-time line movement — plus unlimited alerts and tracking. 14-day free trial, cancel anytime.</p>
-                <Link className="btn btn-primary btn-lg" href="/signup">Start free trial</Link>
+                <span className="chip chip-gold mb-3">100% free · no signup</span>
+                <h2 style={{ fontSize: 28, margin: "12px 0" }}>Every calculator, free to use</h2>
+                <p className="muted" style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>Convert odds, work out implied probability, size accumulators, each-way and arbitrage bets, and find your Kelly stake — then compare the best price across top bookmakers. No account, no paywall.</p>
+                <Link className="btn btn-primary btn-lg" href="/tools?calc=odds">Open the calculators</Link>
               </div>
               <ul className="flex-col gap-2" style={{ fontSize: 13, listStyle: "none", padding: 0 }}>
-                {["Live arbitrage & +EV scanner", "Unlimited price alerts", "Full bet tracker & ROI analytics", "Line-movement & steam alerts", "Priority data refresh"].map((f) => (
+                {["Decimal / fractional / American converter", "Implied probability & fair odds", "Accumulator & each-way returns", "2-way arbitrage & Kelly staking", "Best price compared across bookmakers"].map((f) => (
                   <li key={f} className="flex items-start gap-2"><span style={{ color: "var(--accent)" }}>✓</span>{f}</li>
                 ))}
               </ul>

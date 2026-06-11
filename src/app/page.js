@@ -4,7 +4,6 @@ import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
 import BestOffers from "@/components/BestOffers";
 import FeaturedEvent from "@/components/FeaturedEvent";
-import TipsSection from "@/components/TipsSection";
 import ScoresSection from "@/components/ScoresSection";
 import SmartTools from "@/components/SmartTools";
 import NewsSection from "@/components/NewsSection";
@@ -21,7 +20,6 @@ const SPORT_DEFS = [
   { key: "tennis", label: "Tennis", href: "/tennis" },
   { key: "basketball", label: "Basketball", href: "/basketball" },
   { key: "cricket", label: "Cricket", href: "/cricket" },
-  { key: "nfl", label: "NFL", href: "/nfl" },
   { key: "baseball", label: "Baseball", href: "/baseball" },
 ];
 
@@ -68,14 +66,20 @@ export default async function HomePage() {
     golf,
   ];
 
+  // Scores & results draws from ALL match-feed sports (not just football),
+  // tagged with their sport so crests resolve to the right logo path.
+  const scoresMatches = [
+    ...matches.map((m) => ({ ...m, sport: "football" })),
+    ...others.flatMap((s) => s.matches.map((m) => ({ ...m, sport: s.key }))),
+  ];
+
   return (
     <>
       <Hero matches={matches} liveCount={liveCount} />
       <TodaysTopOdds sports={sportsData} />
       <BestOffers />
       <FeaturedEvent matches={matches} />
-      <TipsSection />
-      <ScoresSection matches={matches} />
+      <ScoresSection matches={scoresMatches} />
       <SmartTools />
       <NewsSection />
       <LearnToBet />

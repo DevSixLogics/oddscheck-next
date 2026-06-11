@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
+import Flag from "./Flag";
+import useSocket from "@/hooks/useSocket";
+import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
 import { oddsTriple, statusOf, statusLabel, kickoffTime, score, formatOdds } from "@/lib/format";
 import styles from "./TodaysTopOdds.module.scss";
 
@@ -43,8 +46,8 @@ function Row({ match, sport, fmt }) {
     <div className={styles.row}>
       <div className={styles.teams}>
         <div className={styles.crests}>
-          <Crest name={c.htn} id={c.htid} />
-          <Crest name={c.atn} id={c.atid} />
+          <Crest name={c.htn} id={c.htid} sport={sport} />
+          <Crest name={c.atn} id={c.atid} sport={sport} />
         </div>
         <div className={styles.names}>
           <div>{c.htn}</div>
@@ -54,7 +57,7 @@ function Row({ match, sport, fmt }) {
       </div>
 
       <div className={styles.meta}>
-        <div>{match.league}</div>
+        <div className="flex items-center gap-2"><Flag fid={match.fid} sport={sport} size={14} />{match.league}</div>
         <div className={styles.status}>
           {bucket === "live" ? (
             <><span className="live-dot" /> <span className={styles.live}>{statusLabel(match)}</span></>
@@ -176,7 +179,54 @@ function GolfRow({ player }) {
 export default function TodaysTopOdds({ sports = [], limit = 8 }) {
   const [fmt, setFmt] = useState("Decimal");
   const [active, setActive] = useState(sports[0]?.key);
-  const current = sports.find((s) => s.key === active) || sports[0];
+  const [sportsState, setSportsState] = useState(sports);
+
+  // Live-merge in-play score/odds updates over the socket (Tier 1, per sport).
+  const socket = useSocket(SOCKET_URL);
+  useEffect(() => {
+    if (!socket) return;
+    const channel = socket.channel("IPUB");
+    const subs = [];
+    ["football", "tennis", "basketball", "cricket"].forEach((key) => {
+      const ev = getSocketSportEvent(key);
+      if (!ev) return;
+      const handler = (e) => {
+        const incoming = flattenSocketLeagues(e?.data);
+        if (!incoming.length) return;
+        const byId = new Map(incoming.map((m) => [String(m.id), m]));
+        setSportsState((prev) =>
+          prev.map((s) =>
+            s.key !== key ? s : { ...s, matches: (s.matches || []).map((m) => (byId.has(String(m.id)) ? mergeMatch(m, byId.get(String(m.id))) : m)) }
+          )
+        );
+      };
+      channel.listen(ev, handler);
+      subs.push([ev, handler]);
+    });
+    return () => subs.forEach(([ev, h]) => channel.stopListening(ev, h));
+  }, [socket]);
+
+  // The socket broadcasts a different backend's match IDs, so it can't refresh
+  // these matches. The REST feed DOES update (it just lags), so poll it for the
+  // active match sport every 30s and replace that sport's matches with fresh data.
+  useEffect(() => {
+    if (!["football", "tennis", "basketball", "cricket"].includes(active)) return;
+    let stop = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/matches?sport=${active}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const { matches: fresh } = await res.json();
+        if (stop || !Array.isArray(fresh) || !fresh.length) return;
+        setSportsState((prev) => prev.map((s) => (s.key === active ? { ...s, matches: fresh } : s)));
+      } catch {}
+    };
+    const id = setInterval(poll, 30000);
+    poll();
+    return () => { stop = true; clearInterval(id); };
+  }, [active]);
+
+  const current = sportsState.find((s) => s.key === active) || sportsState[0];
   const isRacing = current?.kind === "racing";
   const isGolf = current?.kind === "golf";
   const matches = current?.matches || [];
@@ -214,7 +264,7 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
 
         {/* Sport pills — buttons that switch the table below (do NOT navigate) */}
         <div className="tab-pills-scroll mb-4">
-          {sports.map((s) => (
+          {sportsState.map((s) => (
             <button
               key={s.key}
               type="button"

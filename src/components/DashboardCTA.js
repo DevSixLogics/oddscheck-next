@@ -38,14 +38,15 @@ export default function DashboardCTA() {
           <div className="grid grid-2 allow-mobile-split" style={{ gap: 48, padding: "52px 56px", position: "relative" }}>
             <div>
               <span className="chip chip-best" style={{ marginBottom: 18 }}>Free forever</span>
-              <h2 style={{ fontSize: 42, marginBottom: 16, lineHeight: 1.05 }}>Build your personal<br />betting dashboard.</h2>
+              <h2 style={{ fontSize: 42, marginBottom: 16, lineHeight: 1.05 }}>The smartest way to<br />bet on every match.</h2>
               <p style={{ fontSize: 16, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 28, maxWidth: 480 }}>
-                Follow the teams, leagues and bookmakers you actually bet with. Get price alerts,
-                track every bet, and never miss a value move again.
+                OddsCheck compares the best price across top bookmakers, follows live scores
+                as they happen, and gives you free pro-grade calculators — football, racing,
+                tennis, cricket and more, all in one place.
               </p>
               <div className="flex gap-3 mb-4 flex-wrap">
-                <Link className="btn btn-primary btn-lg" href="/signup">Join free in 30 seconds</Link>
-                <Link className="btn btn-ghost btn-lg" href="/dashboard">See a sample dashboard</Link>
+                <Link className="btn btn-primary btn-lg" href="/live">Compare live odds</Link>
+                <Link className="btn btn-ghost btn-lg" href="/tools">Try the free tools</Link>
               </div>
               <div className="flex items-center gap-4 flex-wrap mute" style={{ fontSize: 13 }}>
                 <div className="flex items-center gap-1">

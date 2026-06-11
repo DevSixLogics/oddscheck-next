@@ -12,7 +12,6 @@ const SPORTS = [
   { key: "tennis", label: "Tennis" },
   { key: "basketball", label: "Basketball" },
   { key: "cricket", label: "Cricket" },
-  { key: "nfl", label: "NFL" },
   { key: "baseball", label: "Baseball" },
 ];
 
@@ -32,7 +31,7 @@ function ResultRow({ m }) {
   return (
     <div className="card flex items-center gap-3 flex-wrap" style={{ padding: "12px 16px" }}>
       <div className="flex items-center gap-3" style={{ flex: 1, minWidth: 200 }}>
-        <div className="flex-col gap-1"><Crest name={c.htn} id={c.htid} /><Crest name={c.atn} id={c.atid} /></div>
+        <div className="flex-col gap-1"><Crest name={c.htn} id={c.htid} sport={m.sport} /><Crest name={c.atn} id={c.atid} sport={m.sport} /></div>
         <div>
           <div style={{ fontSize: 13, fontWeight: 600 }}>{c.htn}</div>
           <div style={{ fontSize: 13, fontWeight: 600, marginTop: 3 }}>{c.atn}</div>

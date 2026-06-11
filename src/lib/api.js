@@ -187,6 +187,210 @@ export async function getArticles({ page = 1, perPage = 10 } = {}) {
   }
 }
 
+// Category-name → CMS category slug for the dedicated /article/{slug} feed.
+// The CMS exposes no category-listing endpoint and articles carry no slug, so we
+// map the slugs we've verified. Unknown categories fall back to feed-filtering.
+const CATEGORY_SLUGS = {
+  "best betting offers": "best-betting-offers",
+};
+
+/** CMS category slug for a category name, or null if we don't have a verified one. */
+export function categorySlugFor(name = "") {
+  return CATEGORY_SLUGS[name.trim().toLowerCase()] || null;
+}
+
+/**
+ * Articles for a CMS category feed: /article/{slug}?per_page=&page=.
+ * Returns { articles, pagination, seo }. Each article: { id, headline, strapline,
+ * slug, start_date, key_values, authorName, authorSlug, categoryName, subjects }.
+ */
+export async function getCategoryArticles(slug, { page = 1, perPage = 24 } = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/article/${encodeURIComponent(slug)}?per_page=${perPage}&page=${page}`, {
+      next: { revalidate: 120 },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`article/${slug} -> HTTP ${res.status}`);
+    const json = await res.json();
+    return {
+      articles: Array.isArray(json?.data) ? json.data : [],
+      pagination: json?.pagination ?? null,
+      seo: json?.seo ?? null,
+    };
+  } catch (err) {
+    console.error("[api] getCategoryArticles failed:", err.message);
+    return { articles: [], pagination: null, seo: null };
+  }
+}
+
+/**
+ * Articles for a category by NAME. Uses the dedicated category endpoint when a
+ * slug is known; otherwise filters the general /articles feed by categoryName.
+ * "" or "all" returns every article.
+ */
+export async function getArticlesForCategory(name = "All") {
+  const slug = categorySlugFor(name);
+  if (slug) {
+    const { articles } = await getCategoryArticles(slug, { perPage: 30 });
+    if (articles.length) return articles;
+  }
+  const { articles } = await getArticles({ perPage: 50 });
+  const n = name.trim().toLowerCase();
+  if (!n || n === "all") return articles;
+  return articles.filter((a) => (a.categoryName || "").trim().toLowerCase() === n);
+}
+
+/**
+ * Best betting offers — thin wrapper over the best-betting-offers category feed.
+ * Returns an array of offer articles (empty on error).
+ */
+export async function getOffers({ page = 1, perPage = 12 } = {}) {
+  const { articles } = await getCategoryArticles("best-betting-offers", { page, perPage });
+  return articles;
+}
+
+// Friendly URL slug → CMS category slug for the dynamic /[slug] category route.
+const CATEGORY_ALIASES = {
+  offers: "best-betting-offers",
+  "best-offers": "best-betting-offers",
+};
+
+const slugify = (s = "") => s.trim().toLowerCase().replace(/\s+/g, "-");
+
+/**
+ * Resolve a URL slug to a category and its articles for the dynamic /[slug] route.
+ * Returns { name, slug, articles } or null (→ 404). Resolution order:
+ *   1. alias → dedicated /article/{cmsSlug} endpoint,
+ *   2. the slug itself as a dedicated /article/{slug} endpoint,
+ *   3. slugified categoryName match in the general /articles feed (feed-filter).
+ */
+export async function getCategoryBySlug(slug = "") {
+  const s = slug.trim().toLowerCase();
+  if (!s) return null;
+
+  // 1 + 2: dedicated category endpoint (via alias, then the raw slug).
+  for (const candidate of [CATEGORY_ALIASES[s], s]) {
+    if (!candidate) continue;
+    const { articles } = await getCategoryArticles(candidate, { perPage: 50 });
+    if (articles.length) {
+      return { name: articles[0].categoryName || candidate, slug: candidate, articles };
+    }
+  }
+
+  // 3: match a category present in the general feed by slugified name.
+  const { articles: all } = await getArticles({ perPage: 50 });
+  const match = all.find((a) => slugify(a.categoryName) === s);
+  if (match) {
+    const name = match.categoryName;
+    return { name, slug: s, articles: all.filter((a) => a.categoryName === name) };
+  }
+
+  return null;
+}
+
+/**
+ * Site settings / general information from /settings.
+ * Carries site title, logos, favicon, social links, theme colours, the header
+ * `menu` array, allowed_sports, etc. Returns the `data` object or null.
+ */
+export async function getSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/settings`, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`settings -> HTTP ${res.status}`);
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (err) {
+    console.error("[api] getSettings failed:", err.message);
+    return null;
+  }
+}
+
+/** Header menu items from settings, normalized to { href, label, newTab }. */
+export async function getHeaderMenu() {
+  const settings = await getSettings();
+  const menu = Array.isArray(settings?.menu) ? settings.menu : [];
+  return menu
+    .filter((m) => (m.menu_location || "header") === "header")
+    .map((m) => ({
+      href: m.external_link || m.link || "#",
+      label: m.title || "",
+      newTab: !!m.open_in_new_tab,
+    }))
+    .filter((m) => m.label);
+}
+
+/**
+ * Distinct authors across the article feeds, enriched with bio + post count from
+ * /author/details. There is no authors-list endpoint, so we derive the set from
+ * the general feed + the offers feed, then look up each author's profile.
+ * Returns [{ slug, name, image, bio, postCount }] sorted by post count desc.
+ */
+export async function getAuthors() {
+  const map = new Map();
+  const collect = (arr) => {
+    for (const a of arr || []) {
+      const slug = (a.authorSlug || "").toLowerCase();
+      if (!slug || map.has(slug)) continue;
+      map.set(slug, { slug, name: a.authorName || slug, image: a.profile_image_path || null });
+    }
+  };
+
+  // The /articles feed caps each page at ~5 items, so page through ALL of it to
+  // discover every author (page 1 alone would only surface a handful).
+  const MAX_PAGES = 40;
+  const first = await getArticles({ page: 1, perPage: 50 });
+  collect(first.articles);
+  const total = first.pagination?.total || first.articles.length;
+  const per = first.articles.length || 5;
+  const lastPage = Math.min(Math.ceil(total / per) || 1, MAX_PAGES);
+  if (lastPage > 1) {
+    const pages = [];
+    for (let p = 2; p <= lastPage; p++) pages.push(p);
+    const rest = await Promise.all(pages.map((p) => getArticles({ page: p, perPage: 50 })));
+    rest.forEach((r) => collect(r.articles));
+  }
+  // Offers feed too (bookmaker authors).
+  collect(await getOffers({ perPage: 50 }));
+
+  const authors = [...map.values()];
+  const enriched = await Promise.all(
+    authors.map(async (au) => {
+      const { detail } = await getAuthorDetails(au.slug);
+      // Use the author's real CMS bio verbatim as the card strapline.
+      const bio = detail?.bio?.trim() || null;
+      return { ...au, bio, postCount: detail?.post_count ?? null };
+    })
+  );
+  return enriched.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+}
+
+/**
+ * Author (bookmaker) profile + their articles from /author/details?author_name={slug}.
+ * Returns { detail: { slug, name, bio, post_count, socials } | null, articles, random }.
+ */
+export async function getAuthorDetails(authorName) {
+  if (!authorName) return { detail: null, articles: [], random: [] };
+  try {
+    const res = await fetch(`${API_BASE}/author/details?author_name=${encodeURIComponent(authorName)}`, {
+      next: { revalidate: 120 },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`author/details ${authorName} -> HTTP ${res.status}`);
+    const json = await res.json();
+    return {
+      detail: json?.detail ?? null,
+      articles: Array.isArray(json?.data) ? json.data : [],
+      random: Array.isArray(json?.randomArticles) ? json.randomArticles : [],
+    };
+  } catch (err) {
+    console.error("[api] getAuthorDetails failed:", err.message);
+    return { detail: null, articles: [], random: [] };
+  }
+}
+
 /**
  * Single article from /articles/{slug}.
  * Returns { article, related, random } or null.
@@ -201,15 +405,37 @@ export async function getArticle(slug) {
     if (!res.ok) throw new Error(`articles/${slug} -> HTTP ${res.status}`);
     const json = await res.json();
     if (!json?.data) return null;
-    return {
-      article: json.data,
-      related: Array.isArray(json.relatedArticles) ? json.relatedArticles : [],
-      random: Array.isArray(json.randomArticles) ? json.randomArticles : [],
-    };
+    let related = Array.isArray(json.relatedArticles) ? json.relatedArticles : [];
+    let random = Array.isArray(json.randomArticles) ? json.randomArticles : [];
+
+    // The single-article endpoint omits image_path on its related/random lists,
+    // but the category feed carries it — backfill by slug so "More stories" can
+    // show thumbnails.
+    if ([...related, ...random].some((a) => a && !a.image_path)) {
+      const imgBySlug = await articleImageMap();
+      const fill = (a) => (a && !a.image_path && imgBySlug[a.slug] ? { ...a, image_path: imgBySlug[a.slug] } : a);
+      related = related.map(fill);
+      random = random.map(fill);
+    }
+
+    return { article: json.data, related, random };
   } catch (err) {
     console.error("[api] getArticle failed:", err.message);
     return null;
   }
+}
+
+// slug → image_path map from the feeds that actually carry images (the category
+// feeds). Used to backfill thumbnails the single-article endpoint leaves blank.
+async function articleImageMap() {
+  const map = {};
+  try {
+    const { articles } = await getCategoryArticles("best-betting-offers", { perPage: 50 });
+    for (const a of articles) if (a?.slug && a.image_path) map[a.slug] = a.image_path;
+  } catch {
+    /* best-effort */
+  }
+  return map;
 }
 
 /**
@@ -241,7 +467,7 @@ export function flattenMatches(groups) {
   const out = [];
   for (const g of groups) {
     for (const m of g.matches ?? []) {
-      out.push({ ...m, league: g.name || g.nm, leagueFull: g.nm, isCup: !!g.is_cup });
+      out.push({ ...m, league: g.name || g.nm, leagueFull: g.nm, isCup: !!g.is_cup, fid: g.fid, is_top: g.is_top });
     }
   }
   return out;

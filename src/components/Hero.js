@@ -40,7 +40,7 @@ export default function Hero({ matches, liveCount }) {
             </p>
             <HeroSearch />
             <div className="flex gap-3 flex-wrap">
-              <Link className="btn btn-primary btn-lg" href="/football">
+              <Link className="btn btn-primary btn-lg" href="/live">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
                   <path d="M3 7h12l-3-3m3 3-3 3M21 17H9l3 3m-3-3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
