@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getMatchDetail, getMatchH2H, getMatches, flattenMatches, todayISO } from "@/lib/api";
-import { oddsTriple, bookmakerRows, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
+import { oddsTriple, bookmakerRows, winnerMarketLabel, statusOf, statusLabel, score, kickoffTime, kickoffDate } from "@/lib/format";
 import { OddsValue } from "@/components/OddsFormatProvider";
 import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
@@ -59,6 +59,7 @@ export default async function EventPage({ searchParams }) {
 
   // Per-bookmaker 1·X·2 rows + the best price in each column (highlighted).
   const rows = bookmakerRows(d);
+  const marketName = winnerMarketLabel(d); // e.g. "1x2" — from the feed
   const twoWay = t?.twoWay;
   const cols = twoWay ? "1.4fr 1fr 1fr 0.8fr" : "1.4fr 1fr 1fr 1fr 0.8fr";
   const best = {
@@ -125,7 +126,10 @@ export default async function EventPage({ searchParams }) {
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               <div className="flex justify-between items-center flex-wrap gap-3" style={{ padding: "18px 22px", borderBottom: "1px solid var(--border)" }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 18 }}>Match Winner</div>
+                  <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 700, fontSize: 18 }}>Match Winner</span>
+                    {marketName && <span className="chip chip-muted" style={{ textTransform: "uppercase", fontSize: 10 }}>{marketName}</span>}
+                  </div>
                   <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                     {rows.length ? `Best price highlighted · ${rows.length} bookmaker${rows.length > 1 ? "s" : ""} compared` : "No odds available for this match"}
                   </div>

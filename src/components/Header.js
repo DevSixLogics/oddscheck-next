@@ -150,7 +150,6 @@ export default function Header({ menu }) {
             <span className="kbd" aria-hidden="true">⌘K</span>
           </form>
           <div className="topnav-actions">
-            <Link className="btn btn-ghost btn-sm" href="/login" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Sign in</Link>
             <Link className="btn btn-primary btn-sm" href="/signup" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Join free</Link>
             <button
               type="button"
@@ -306,7 +305,6 @@ export default function Header({ menu }) {
           <div className="drawer-section-h">Account</div>
           <nav className="drawer-nav">
             <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
-            <Link href="/login" onClick={() => setOpen(false)}>Sign in</Link>
             <Link href="/signup" onClick={() => setOpen(false)}>Join free</Link>
           </nav>
           <Link className="btn btn-primary btn-block btn-lg" href="/signup" style={{ marginTop: 16 }} onClick={() => setOpen(false)}>

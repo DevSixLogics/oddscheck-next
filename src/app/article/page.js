@@ -63,8 +63,6 @@ export default async function ArticlePage({ searchParams }) {
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
               <li><Link href="/">Home</Link></li>
               <li className="sep" aria-hidden="true">/</li>
-              <li><Link href="/news">News</Link></li>
-              <li className="sep" aria-hidden="true">/</li>
               <li><span className="current" aria-current="page">{a.categoryName}</span></li>
             </ol>
           </nav>

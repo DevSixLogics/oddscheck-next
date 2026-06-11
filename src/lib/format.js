@@ -170,6 +170,15 @@ export function oddsTriple(match) {
   return { ...by, twoWay: by.draw == null, type: markets[0].type, books: markets.length };
 }
 
+/** The market name of the (plausible) winner market, e.g. "1x2" / "Moneyline", or null. */
+export function winnerMarketLabel(match) {
+  for (const m of winnerMarkets(match)) {
+    const n = (m.market_name || "").trim();
+    if (n) return n;
+  }
+  return null;
+}
+
 /**
  * Per-bookmaker 1·X·2 rows for the event comparison table.
  * Returns [{ bookmaker, home, draw, away, link }] sorted best-home first.
