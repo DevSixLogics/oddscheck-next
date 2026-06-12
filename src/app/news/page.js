@@ -22,8 +22,10 @@ export default async function NewsPage({ searchParams }) {
   const page = Math.max(1, Number(sp?.page) || 1);
   const { articles, pagination } = await getArticles({ page, perPage: 10 });
 
+  // last_page comes from the API; current follows the URL (the feed currently
+  // ignores the `page` param, so navigating pages doesn't change the content yet).
   const last = pagination?.last_page || 1;
-  const current = pagination?.current_page || page;
+  const current = page;
   const featured = articles[0];
   const grid = articles.slice(1);
   const mostRead = articles.slice(0, 5);
@@ -41,7 +43,7 @@ export default async function NewsPage({ searchParams }) {
           </nav>
           <span className="chip chip-best mb-3" style={{ marginTop: 12 }}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M13 2 4 13h7l-1 9 9-11h-7l1-9Z" /></svg>
-            Updated continuously{pagination ? ` · ${pagination.total} articles` : ""}
+            Updated continuously{pagination?.total ? ` · ${pagination.total} articles` : ""}
           </span>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", margin: "10px 0" }}>Betting news &amp; analysis</h1>
           <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.55 }}>
@@ -114,7 +116,6 @@ export default async function NewsPage({ searchParams }) {
                   ))}
                 </div>
 
-                {/* Pagination (real) */}
                 {last > 1 && (
                   <div className="pagination">
                     {current > 1 && <Link className="page" href={`/news?page=${current - 1}`}>‹</Link>}

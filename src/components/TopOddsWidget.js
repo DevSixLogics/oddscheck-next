@@ -11,8 +11,6 @@ function PreviewRow({ match }) {
     { sym: "X", price: t.draw },
     { sym: "2", price: t.away },
   ];
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null; // shortest price = best/green
   const live = statusOf(match) === "live";
 
   return (
@@ -46,7 +44,7 @@ function PreviewRow({ match }) {
             <button
               type="button"
               key={x.sym}
-              className={`odds-cell${has && x.price === fav ? " best" : ""}`}
+              className="odds-cell"
             >
               <span className="flex justify-between items-center" style={{ gap: 4 }}>
                 <span className="meta">{x.sym}</span>

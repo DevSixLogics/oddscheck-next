@@ -35,10 +35,6 @@ function Row({ match, sport, fmt }) {
   const cells = twoWay
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  // Shortest price = the favourite (most likely outcome). Each cell already shows
-  // the best price across bookmakers, so we flag the favourite, not a "best" cell.
-  const fav = prices.length ? Math.min(...prices) : null;
   const bucket = statusOf(match);
   const sc = score(match);
 
@@ -68,12 +64,10 @@ function Row({ match, sport, fmt }) {
       <div className={styles.odds} style={twoWay ? { gridTemplateColumns: "1fr 1fr" } : undefined}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
-          const isFav = has && x.price === fav;
           return (
-            <button type="button" key={x.sym} className={`odds-cell${isFav ? " best" : ""}`}>
+            <button type="button" key={x.sym} className="odds-cell">
               <span className="meta">{x.sym}</span>
               <span className="price">{has ? formatOdds(x.price, fmt) : "—"}</span>
-              {isFav && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>FAV</span>}
             </button>
           );
         })}

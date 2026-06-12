@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { getArticles } from "@/lib/api";
+import { getArticles, getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "./StaticNote";
 import styles from "./NewsSection.module.scss";
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
+
+// Plain-text excerpt from an article's HTML body.
+function excerpt(html, n = 260) {
+  const text = String(html || "").replace(/<[^>]+>/g, " ").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
+  return text.length > n ? `${text.slice(0, n).replace(/\s+\S*$/, "")}…` : text;
+}
 
 export default async function NewsSection() {
   const { articles } = await getArticles({ perPage: 5 });
@@ -21,8 +27,22 @@ export default async function NewsSection() {
     );
   }
 
-  const [featured, ...rest] = articles;
-  const side = rest.slice(0, 4);
+  const [featuredRaw, ...rest] = articles;
+  const sideRaw = rest.slice(0, 4);
+  // The /articles feed omits strapline + image_path — pull them from each
+  // single-article record so we can show real images and a summary line.
+  const shown = [featuredRaw, ...sideRaw];
+  const fulls = await Promise.all(shown.map((a) => getArticle(a.slug)));
+  const merge = (a, i) => ({
+    ...a,
+    image_path: fulls[i]?.article?.image_path || a.image_path || null,
+    summary: fulls[i]?.article?.strapline || a.meta_description || "",
+    body: fulls[i]?.article?.editor || fulls[i]?.article?.preview || "",
+  });
+  const featured = merge(featuredRaw, 0);
+  const side = sideRaw.map((a, i) => merge(a, i + 1));
+  const featuredSummary = featured.summary;
+  const featuredExcerpt = excerpt(featured.body);
 
   return (
     <section className="section">
@@ -38,8 +58,8 @@ export default async function NewsSection() {
 
         <div className={styles.grid}>
           {/* Featured article */}
-          <article className="card" style={{ padding: 0, overflow: "hidden" }}>
-            <div style={{ height: 280, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
+          <article className="card" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+            <div style={{ flex: 1, minHeight: 240, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
               {featured.image_path && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={featured.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
@@ -54,7 +74,12 @@ export default async function NewsSection() {
               <h3 style={{ fontSize: 24, lineHeight: 1.25, marginBottom: 12 }}>
                 <Link href={`/article?slug=${featured.slug}`}>{featured.headline}</Link>
               </h3>
-              <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 18 }}>{featured.meta_description}</p>
+              {featuredSummary && (
+                <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6, marginBottom: featuredExcerpt ? 10 : 18 }}>{featuredSummary}</p>
+              )}
+              {featuredExcerpt && (
+                <p style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.65, marginBottom: 18, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{featuredExcerpt}</p>
+              )}
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className="avatar" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(featured.authorName)}</span>
@@ -82,6 +107,9 @@ export default async function NewsSection() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span className="chip chip-muted" style={{ fontSize: 10, padding: "2px 7px" }}>{n.categoryName}</span>
                   <h4 style={{ fontSize: 14.5, lineHeight: 1.35, margin: "8px 0" }}><Link href={`/article?slug=${n.slug}`}>{n.headline}</Link></h4>
+                  {n.summary && (
+                    <p className="mute" style={{ fontSize: 12, lineHeight: 1.45, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{n.summary}</p>
+                  )}
                   <div className="flex justify-between items-center mt-3 mute" style={{ fontSize: 11 }}>
                     <span>{n.authorName} · {timeAgo(n.start_date)}</span>
                     <Link href={`/article?slug=${n.slug}`} style={{ color: "var(--accent)" }}>Read →</Link>

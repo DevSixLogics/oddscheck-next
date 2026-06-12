@@ -14,16 +14,13 @@ function Odds({ match }) {
   const cells = twoWay
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
-  const prices = cells.map((c) => c.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null; // shortest price = favourite
-
   return (
     <div className={styles.odds} style={twoWay ? { gridTemplateColumns: "1fr 1fr" } : undefined} aria-label={t ? "odds" : "Odds not available"}>
       {cells.map((c) => {
         const has = typeof c.price === "number";
         return (
           <div
-            className={`${styles.oddsCell}${has ? " " + styles.live : ""}${has && c.price === fav ? " " + styles.fav : ""}`}
+            className={`${styles.oddsCell}${has ? " " + styles.live : ""}`}
             key={c.sym}
           >
             <span className={styles.sym}>{c.sym}</span>
@@ -116,9 +113,8 @@ export default function MatchTable({ groups, sport = "football", isPast = false 
         </div>
       ))}
       <div className={styles.note}>
-        1·X·2 prices are a single pre-match market from the feed (one bookmaker, shortest
-        price highlighted). Finished matches show “—”. Multi-bookmaker comparison, price
-        movement and extra markets are not in the feed yet.
+        1·X·2 prices are a single pre-match market from the feed. Finished matches show
+        “—”. Open a match for the full multi-bookmaker comparison.
       </div>
     </>
   );
