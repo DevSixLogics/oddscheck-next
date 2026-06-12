@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getArticles } from "@/lib/api";
+import { getCategoryArticles } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "@/components/StaticNote";
 
@@ -20,12 +20,14 @@ function pageWindow(current, last) {
 export default async function NewsPage({ searchParams }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp?.page) || 1);
-  const { articles, pagination } = await getArticles({ page, perPage: 10 });
+  // The News category feed (article/news) paginates properly, unlike the general
+  // /articles feed which ignores the `page` param.
+  const PER_PAGE = 6;
+  const { articles, pagination } = await getCategoryArticles("news", { page, perPage: PER_PAGE });
 
-  // last_page comes from the API; current follows the URL (the feed currently
-  // ignores the `page` param, so navigating pages doesn't change the content yet).
-  const last = pagination?.last_page || 1;
-  const current = page;
+  const total = pagination?.total || articles.length;
+  const last = Math.max(1, Math.ceil(total / (pagination?.per_page || PER_PAGE)));
+  const current = pagination?.current_page || page;
   const featured = articles[0];
   const grid = articles.slice(1);
   const mostRead = articles.slice(0, 5);

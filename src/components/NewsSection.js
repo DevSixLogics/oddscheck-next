@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getArticles, getArticle } from "@/lib/api";
+import { getCategoryArticles, getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "./StaticNote";
 import styles from "./NewsSection.module.scss";
@@ -13,7 +13,8 @@ function excerpt(html, n = 260) {
 }
 
 export default async function NewsSection() {
-  const { articles } = await getArticles({ perPage: 5 });
+  // article/news carries real image_path + strapline directly.
+  const { articles } = await getCategoryArticles("news", { perPage: 10 });
 
   if (!articles.length) {
     return (
@@ -27,22 +28,13 @@ export default async function NewsSection() {
     );
   }
 
-  const [featuredRaw, ...rest] = articles;
-  const sideRaw = rest.slice(0, 4);
-  // The /articles feed omits strapline + image_path — pull them from each
-  // single-article record so we can show real images and a summary line.
-  const shown = [featuredRaw, ...sideRaw];
-  const fulls = await Promise.all(shown.map((a) => getArticle(a.slug)));
-  const merge = (a, i) => ({
-    ...a,
-    image_path: fulls[i]?.article?.image_path || a.image_path || null,
-    summary: fulls[i]?.article?.strapline || a.meta_description || "",
-    body: fulls[i]?.article?.editor || fulls[i]?.article?.preview || "",
-  });
-  const featured = merge(featuredRaw, 0);
-  const side = sideRaw.map((a, i) => merge(a, i + 1));
-  const featuredSummary = featured.summary;
-  const featuredExcerpt = excerpt(featured.body);
+  const [featured, ...rest] = articles;
+  const side = rest.slice(0, 4).map((a) => ({ ...a, summary: a.strapline || a.meta_description || "" }));
+  // image_path + strapline come from article/news; only the body (for the
+  // featured excerpt) needs the single-article record.
+  const featuredFull = await getArticle(featured.slug);
+  const featuredSummary = featured.strapline || featured.meta_description || "";
+  const featuredExcerpt = excerpt(featuredFull?.article?.editor || featuredFull?.article?.preview || "");
 
   return (
     <section className="section">
