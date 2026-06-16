@@ -11,7 +11,8 @@ export async function generateMetadata({ searchParams }) {
   const isBrand = BRANDS.has(slug.replace(/-/g, ""));
   return {
     title: isBrand ? `${name} review 2026 — offers & verdict` : `${name} — author profile & articles`,
-    description: detail?.bio || `Profile and articles from ${name} on OddsCheck.`,
+    description: detail?.bio || undefined,
+    alternates: { canonical: `/review?author=${slug}` },
   };
 }
 

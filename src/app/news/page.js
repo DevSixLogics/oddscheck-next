@@ -2,12 +2,10 @@ import Link from "next/link";
 import { getCategoryArticles } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "@/components/StaticNote";
+import JsonLd from "@/components/JsonLd";
+import { articleListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata = {
-  title: "Betting news & analysis — previews, team news & line moves",
-  description: "Match previews, injury updates and the stories moving the odds. From the OddsCheck newsroom.",
-  alternates: { canonical: "/news" },
-};
+export const metadata = { alternates: { canonical: "/news" } };
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
 const TOPICS = ["Premier League", "Champions League", "Cheltenham", "El Clásico", "NFL", "NBA", "Madrid Open", "IPL", "Line movement", "Free bets"];
@@ -34,6 +32,8 @@ export default async function NewsPage({ searchParams }) {
 
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "News" }])} />
+      <JsonLd data={articleListJsonLd({ name: "Betting news & analysis", path: "/news", articles })} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">

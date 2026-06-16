@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getCategoryArticles } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
+import JsonLd from "@/components/JsonLd";
+import { articleListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export async function generateMetadata() {
   const { articles } = await getCategoryArticles("guides", { perPage: 1 });
@@ -80,8 +82,12 @@ export default async function GuidesPage() {
     .sort((a, b) => String(b.start_date).localeCompare(String(a.start_date)))
     .slice(0, 8);
 
+  const guidesName = hero?.headline;
+
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, ...(guidesName ? [{ name: guidesName }] : [])])} />
+      <JsonLd data={articleListJsonLd({ name: guidesName, path: "/guides", articles: popular })} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">

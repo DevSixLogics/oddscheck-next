@@ -1,11 +1,7 @@
 import Link from "next/link";
 import styles from "./guide.module.scss";
 
-export const metadata = {
-  title: "How to read betting odds — beginner's guide",
-  description:
-    "Three formats, one core idea: odds are a way of saying how likely the bookmaker thinks something is. Learn decimal, fractional and American odds, implied probability and the overround.",
-};
+export const metadata = { alternates: { canonical: "/guide" } };
 
 const TOC = [
   ["decimal", "Decimal odds"],

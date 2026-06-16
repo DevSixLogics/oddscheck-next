@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SportPage from "@/components/SportPage";
 import CategoryGrid from "@/components/CategoryGrid";
+import JsonLd from "@/components/JsonLd";
 import { getSettings, getCategoryBySlug } from "@/lib/api";
-import { matchListingSeo } from "@/lib/seo";
+import { matchListingSeo, articleListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 // One root dynamic segment handling any single-segment slug the CMS menu points at:
 //   • an allowed sport       → the sport fixtures/odds page,
@@ -53,6 +54,8 @@ export default async function DynamicSlugPage({ params, searchParams }) {
   if (cat) {
     return (
       <>
+        <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: cat.name }])} />
+        <JsonLd data={articleListJsonLd({ name: cat.name, path: `/${s}`, articles: cat.articles })} />
         <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
           <div className="container">
             <nav className="crumbs" aria-label="Breadcrumb">

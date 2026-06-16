@@ -4,7 +4,7 @@ import { oddsTriple, statusOf, statusLabel, score, kickoffTime } from "@/lib/for
 import { OddsValue } from "@/components/OddsFormatProvider";
 import Crest from "@/components/Crest";
 
-export const metadata = { title: "Search results" };
+export const metadata = { alternates: { canonical: "/search" } };
 
 // Sports served by the match (1·X·2) feed.
 const SPORTS = [

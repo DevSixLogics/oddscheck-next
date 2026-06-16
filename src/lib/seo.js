@@ -225,6 +225,75 @@ export async function matchListingSeo(sport, { type = "all" } = {}) {
 }
 
 /**
+ * CollectionPage + ItemList(NewsArticle) JSON-LD for an article-listing page
+ * (news, offers, guides, a category, …). Mirrors the CMS theme's buildArticlesJsonLd.
+ * `name`/`description` should come from the CMS (omitted when empty); each article
+ * becomes a NewsArticle item. Articles link to the real /article?slug= URL.
+ */
+export function articleListJsonLd({ name, description, path = "/", articles = [], limit = 50 }) {
+  const url = `${SITE_URL}${path}`;
+  const items = (articles || [])
+    .slice(0, limit)
+    .map((a, i) => {
+      if (!a?.headline) return null;
+      const item = {
+        "@type": "NewsArticle",
+        headline: a.headline,
+        url: a.slug ? `${SITE_URL}/article?slug=${a.slug}` : url,
+      };
+      const d = a.start_date ? new Date(String(a.start_date).replace(" ", "T")) : null;
+      if (d && !isNaN(d)) { item.datePublished = d.toISOString(); item.dateModified = d.toISOString(); }
+      if (a.meta_description || a.strapline) item.description = a.meta_description || a.strapline;
+      if (a.image_path || a.image_path_jpg) item.image = a.image_path_jpg || a.image_path;
+      if (a.authorName) {
+        item.author = { "@type": "Person", name: a.authorName, ...(a.authorSlug ? { url: `${SITE_URL}/experts/${a.authorSlug}` } : {}) };
+      }
+      return { "@type": "ListItem", position: i + 1, item };
+    })
+    .filter(Boolean);
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    url,
+    ...(items.length ? { mainEntity: { "@type": "ItemList", numberOfItems: items.length, itemListElement: items } } : {}),
+  };
+}
+
+/**
+ * CollectionPage + ItemList(Person) JSON-LD for the experts/authors listing.
+ * Each author becomes a Person; name/url only (no fabricated fields).
+ */
+export function personListJsonLd({ name, description, path = "/", people = [], limit = 100 }) {
+  const url = `${SITE_URL}${path}`;
+  const items = (people || [])
+    .slice(0, limit)
+    .map((p, i) => {
+      if (!p?.name) return null;
+      return {
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Person",
+          name: p.name,
+          ...(p.slug ? { url: `${SITE_URL}/experts/${p.slug}` } : {}),
+          ...(p.image ? { image: p.image } : {}),
+        },
+      };
+    })
+    .filter(Boolean);
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    url,
+    ...(items.length ? { mainEntity: { "@type": "ItemList", numberOfItems: items.length, itemListElement: items } } : {}),
+  };
+}
+
+/**
  * Generic BreadcrumbList JSON-LD. `crumbs` = [{ name, path? }] in order; the last
  * (current page) typically omits `path`.
  */

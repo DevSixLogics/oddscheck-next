@@ -24,7 +24,7 @@ export async function generateMetadata({ params }) {
   const name = detail?.name || slug;
   return {
     title: `${name} — author profile`,
-    description: detail?.bio || `Articles published by ${name} on OddsCheck.`,
+    description: detail?.bio || undefined,
     alternates: { canonical: `/experts/${slug}` },
   };
 }

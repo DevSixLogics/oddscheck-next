@@ -1,11 +1,7 @@
 import Link from "next/link";
 import OddsCalculator from "@/components/OddsCalculator";
 
-export const metadata = {
-  title: "Odds Calculator — convert decimal, fractional & American odds",
-  description:
-    "Convert between decimal, fractional and American odds. Calculate implied probability, returns and profit on any stake.",
-};
+export const metadata = { alternates: { canonical: "/odds-calculator" } };
 
 const COMPARE = [
   ["1.50", "1/2", "-200", "66.67%", "£15.00"],

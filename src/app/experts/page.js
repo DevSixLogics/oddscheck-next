@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { getAuthors } from "@/lib/api";
 import ExpertsList from "@/components/ExpertsList";
+import JsonLd from "@/components/JsonLd";
+import { personListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata = {
-  title: "Our experts & bookmakers — OddsCheck contributors",
-  description: "Meet the bookmakers and writers behind OddsCheck — their profile, what they cover and every article they've published.",
-  alternates: { canonical: "/experts" },
-};
+export const metadata = { alternates: { canonical: "/experts" } };
 
 // Server-rendered on demand so the experts list always reflects the live CMS.
 export const dynamic = "force-dynamic";
@@ -17,6 +15,8 @@ export default async function ExpertsPage() {
 
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Experts" }])} />
+      <JsonLd data={personListJsonLd({ name: "Our experts & bookmakers", path: "/experts", people: authors })} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
