@@ -4,8 +4,45 @@ import { oddsTriple, oddsMarkets, statusOf, statusLabel, score, kickoffTime, kic
 import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
 import OddsMarkets from "@/components/OddsMarkets";
+import JsonLd from "@/components/JsonLd";
+import { SITE_URL } from "@/lib/site";
+import { cmsSeo } from "@/lib/seo";
 
-export const metadata = { title: "Event — odds & match detail" };
+export async function generateMetadata({ searchParams }) {
+  const sp = await searchParams;
+  const sport = sp?.sport || "football";
+  const id = sp?.id;
+  if (!id) return { title: "Event — odds & match detail" };
+  const d = await getMatchDetail(sport, id);
+  const c = d?.competitors;
+  if (!c) return { title: "Event — odds & match detail" };
+
+  const league = d.tournament?.nm || "";
+  const replacements = {
+    HOME_TEAM: c.htn || "",
+    AWAY_TEAM: c.atn || "",
+    HOME_PLAYER: c.htn || "",
+    AWAY_PLAYER: c.atn || "",
+    LEAGUE_NAME: league,
+    TOURNAMENT_NAME: league,
+    COUNTRY_NAME: league,
+    DATE: kickoffDate(d.dt) || "",
+  };
+  // CMS /seo-settings match_detail template first; fall back to a built string.
+  const cms = await cmsSeo({
+    sport,
+    kind: "detail",
+    replacements,
+    canonicalPath: `/event?sport=${sport}&id=${id}`,
+  });
+  return (
+    cms || {
+      title: `${c.htn} vs ${c.atn} — odds & match detail`,
+      description: null,
+      alternates: { canonical: `/event?sport=${sport}&id=${id}` },
+    }
+  );
+}
 
 function FormPills({ form }) {
   if (!Array.isArray(form) || !form.length) return null;
@@ -57,8 +94,36 @@ export default async function EventPage({ searchParams }) {
   // All odds markets (1x2, BTTS, …) grouped for the interactive comparison tabs.
   const markets = oddsMarkets(d);
 
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsEvent",
+        name: `${c.htn} vs ${c.atn}`,
+        startDate: d.dt ? d.dt.replace(" ", "T") : undefined,
+        eventStatus: bucket === "finished" ? "https://schema.org/EventScheduled" : "https://schema.org/EventScheduled",
+        location: d.venue?.name ? { "@type": "Place", name: d.venue.name } : undefined,
+        competitor: [
+          { "@type": "SportsTeam", name: c.htn },
+          { "@type": "SportsTeam", name: c.atn },
+        ],
+        superEvent: d.tournament?.nm ? { "@type": "SportsOrganization", name: d.tournament.nm } : undefined,
+        url: `${SITE_URL}/event?sport=${sport}&id=${id}`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: sport.charAt(0).toUpperCase() + sport.slice(1), item: `${SITE_URL}/${sport}` },
+          { "@type": "ListItem", position: 3, name: `${c.htn} vs ${c.atn}` },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <JsonLd data={schema} />
       <section style={{ padding: "28px 0 32px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 80%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">

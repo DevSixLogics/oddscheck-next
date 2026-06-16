@@ -1,19 +1,11 @@
 import SportPage from "@/components/SportPage";
+import { matchListingSeo } from "@/lib/seo";
 
-export const metadata = {
-  title: "Baseball odds",
-  description: "MLB and more â€” live scores and prices.",
-};
+export function generateMetadata() {
+  return matchListingSeo("baseball");
+}
 
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
-  return (
-    <SportPage
-      sport="baseball"
-      date={sp?.date}
-      title="Baseball odds"
-      lead="MLB and more â€” live scores and prices."
-      subjectWord="matches"
-    />
-  );
+  return <SportPage sport="baseball" date={sp?.date} subjectWord="matches" />;
 }

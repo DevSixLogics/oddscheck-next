@@ -6,10 +6,10 @@ import StaticNote from "@/components/StaticNote";
 export const metadata = {
   title: "Betting news & analysis — previews, team news & line moves",
   description: "Match previews, injury updates and the stories moving the odds. From the OddsCheck newsroom.",
+  alternates: { canonical: "/news" },
 };
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
-const TABS = ["All news", "Match previews", "Team news", "Injury updates", "Transfer news", "Line movement", "Bookmaker updates", "Strategy"];
 const TOPICS = ["Premier League", "Champions League", "Cheltenham", "El Clásico", "NFL", "NBA", "Madrid Open", "IPL", "Line movement", "Free bets"];
 
 function pageWindow(current, last) {
@@ -58,7 +58,7 @@ export default async function NewsPage({ searchParams }) {
         <div className="container layout-split-wide">
           <div>
             <div className="tab-pills-scroll mb-4">
-              {TABS.map((t, i) => <button key={t} className={`tab-pill${i === 0 ? " active" : ""}`} disabled={i !== 0}>{t}</button>)}
+              <span className="tab-pill active" aria-current="true">All news</span>
             </div>
 
             {!articles.length ? (
@@ -70,7 +70,7 @@ export default async function NewsPage({ searchParams }) {
                   <div style={{ height: 340, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
                     {featured.image_path && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={featured.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={featured.image_path} alt={featured.headline || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                     )}
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(10,15,28,0.88))" }} />
                     <div style={{ position: "absolute", top: 24, left: 28, display: "flex", gap: 8 }}>
@@ -105,7 +105,7 @@ export default async function NewsPage({ searchParams }) {
                       <div style={{ height: 160, position: "relative", background: FALLBACK_GRAD }}>
                         {a.image_path && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={a.image_path} alt={a.headline || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                         )}
                         <div style={{ position: "absolute", bottom: 10, left: 14, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "0.08em", textTransform: "uppercase", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>{a.categoryName}</div>
                       </div>
@@ -147,7 +147,7 @@ export default async function NewsPage({ searchParams }) {
             <div className="card" style={{ padding: 20 }}>
               <h4 style={{ fontSize: 14, marginBottom: 14 }}>Topics</h4>
               <div className="flex gap-2 flex-wrap">
-                {TOPICS.map((t) => <a key={t} href="#" className="chip chip-muted">{t}</a>)}
+                {TOPICS.map((t) => <span key={t} className="chip chip-muted">{t}</span>)}
               </div>
             </div>
             <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))" }}>

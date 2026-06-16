@@ -308,6 +308,76 @@ export async function getSettings() {
   }
 }
 
+/**
+ * SEO-relevant fields from /settings, normalized for use in metadata + JSON-LD.
+ * Every field is optional — the CMS currently leaves most blank, so callers must
+ * fall back to their own defaults. As the team fills these in (description, OG
+ * image, social links, GSC/GA codes, contact details) they flow through with no
+ * code change. See .claude/instructions/api-reference.md for field meanings.
+ */
+export async function getSiteMeta() {
+  const s = await getSettings();
+  if (!s) return {};
+  const clean = (v) => {
+    const t = typeof v === "string" ? v.trim() : v;
+    return t ? t : null;
+  };
+  const sameAs = Array.isArray(s.social_links)
+    ? s.social_links.map((l) => clean(l?.link)).filter(Boolean)
+    : [];
+  const addressParts = [s.street_address, s.city, s.state, s.postal_code, s.country]
+    .map(clean)
+    .filter(Boolean);
+  return {
+    siteTitle: clean(s.site_title),
+    siteUrl: clean(s.site_Url),
+    description: clean(s.short_description),
+    ogImage: clean(s.site_og_image),
+    favicon: clean(s.favicon),
+    logo: clean(s.header_dark_logo) || clean(s.header_light_logo),
+    headerLogo: clean(s.header_dark_logo) || clean(s.header_light_logo),
+    footerLogo: clean(s.footer_dark_logo) || clean(s.footer_light_logo),
+    sameAs,
+    gscCode: clean(s.google_console_code),
+    gaCode: clean(s.google_analytics_code),
+    robotsTxt: clean(s.robots_txt_code),
+    email: clean(s.email),
+    phone: clean(s.phone_no),
+    address: addressParts.length ? addressParts.join(", ") : null,
+    contact: {
+      email: clean(s.email),
+      phone: clean(s.phone_no),
+      streetAddress: clean(s.street_address),
+      city: clean(s.city),
+      region: clean(s.state),
+      postalCode: clean(s.postal_code),
+      country: clean(s.country),
+    },
+  };
+}
+
+/**
+ * Per-sport SEO template settings from /seo-settings. Returns the raw `data`
+ * object: top-level { site_url, site_title, site_og_image } + a node per sport
+ * (football, basketball, tennis, icehockey, cricket) carrying `match_listings`,
+ * `match_detail`, `league_detail`, … sections whose {t,d,k,h,pd} strings contain
+ * %TOKEN% placeholders (%SITE_NAME%, %HOME_TEAM%, %AWAY_TEAM%, %LEAGUE_NAME%, %DATE%).
+ */
+export async function getSeoSettings() {
+  try {
+    const res = await fetch(`${API_BASE}/seo-settings`, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`seo-settings -> HTTP ${res.status}`);
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (err) {
+    console.error("[api] getSeoSettings failed:", err.message);
+    return null;
+  }
+}
+
 /** Header menu items from settings, normalized to { href, label, newTab }. */
 export async function getHeaderMenu() {
   const settings = await getSettings();

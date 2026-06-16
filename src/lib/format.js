@@ -158,16 +158,19 @@ export function oddsTriple(match) {
   // Impossible combined market → books disagree too much; use the single book
   // with the tightest (most coherent) margin instead of the cross-book max.
   const combined = invSum(by);
+  let usedFallback = false;
   if (combined > 0 && combined < 0.95) {
     const tightest = markets
       .map((m) => ({ m, ov: marketOverround(m) }))
       .filter((o) => o.ov != null)
       .sort((a, b) => a.ov - b.ov)[0];
-    if (tightest) by = lineFrom(tightest.m);
+    if (tightest) { by = lineFrom(tightest.m); usedFallback = true; }
   }
   if (by.home == null && by.draw == null && by.away == null) return null;
   // twoWay = a 2-outcome market (tennis, basketball moneyline) — no draw.
-  return { ...by, twoWay: by.draw == null, type: markets[0].type, books: markets.length };
+  // On the fallback path the displayed line comes from ONE book, so report 1 —
+  // not markets.length — to avoid implying a comparison that didn't happen.
+  return { ...by, twoWay: by.draw == null, type: markets[0].type, books: usedFallback ? 1 : markets.length };
 }
 
 // Order 1·X·2 outcomes Home, Draw, Away; everything else keeps feed order.

@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 // Simple site-wide gate (HTTP Basic Auth) — not a real user system, just a
 // single shared username/password so the preview isn't open to everyone.
-// Configure via BASIC_AUTH_USER / BASIC_AUTH_PASS in .env.local.
+// PREVIEW ONLY: the literal fallbacks below must NOT be relied on in production —
+// set BASIC_AUTH_USER / BASIC_AUTH_PASS in the environment, or remove this gate
+// entirely once a real auth/session layer exists (see PRODUCTION-READINESS.md).
 const USER = process.env.BASIC_AUTH_USER || "oddscheck";
 const PASS = process.env.BASIC_AUTH_PASS || "preview2026";
 
@@ -28,5 +30,5 @@ export function proxy(request) {
 // Gate every route except Next internals and public assets (so the login
 // challenge itself and the logo/favicon can still load).
 export const config = {
-  matcher: ["/((?!_next/|favicon|oddscheck\\.png|fav_icon\\.ico|og-default\\.svg|robots\\.txt|goal\\.mp3|crowd-cheers\\.mp3).*)"],
+  matcher: ["/((?!_next/|favicon|oddscheck\\.png|fav_icon\\.ico|og-default\\.svg|robots\\.txt|sitemap\\.xml|goal\\.mp3|crowd-cheers\\.mp3).*)"],
 };

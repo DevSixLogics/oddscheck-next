@@ -37,7 +37,7 @@ export default function Crest({ name, id, sport = "football", size }) {
     <img
       className={cls}
       src={url}
-      alt=""
+      alt={name ? `${name} crest` : ""}
       loading="lazy"
       decoding="async"
       onError={() => setFailed(true)}

@@ -5,6 +5,7 @@ import ExpertsList from "@/components/ExpertsList";
 export const metadata = {
   title: "Our experts & bookmakers — OddsCheck contributors",
   description: "Meet the bookmakers and writers behind OddsCheck — their profile, what they cover and every article they've published.",
+  alternates: { canonical: "/experts" },
 };
 
 // Server-rendered on demand so the experts list always reflects the live CMS.

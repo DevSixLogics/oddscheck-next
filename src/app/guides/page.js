@@ -8,6 +8,7 @@ export async function generateMetadata() {
   return {
     title: a?.headline,
     description: a?.strapline || a?.meta_description,
+    alternates: { canonical: "/guides" },
   };
 }
 

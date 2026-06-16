@@ -1,23 +1,35 @@
 import Link from "next/link";
 import { getMatches, flattenMatches, todayISO } from "@/lib/api";
 import { statusOf } from "@/lib/format";
+import { sportListJsonLd, sportListingContent } from "@/lib/seo";
 import MatchTable from "@/components/MatchTable";
 import DateNav from "@/components/DateNav";
+import JsonLd from "@/components/JsonLd";
 
 /**
  * Generic sport landing page (fixtures/results + 1·X·2 odds where available).
  * Reused by /football, /tennis, /basketball, /cricket, /racing — same feed shape.
+ * Heading + lead come from the CMS /seo-settings template (no static copy); the
+ * heading falls back to the sport name and the lead is omitted when absent.
  */
-export default async function SportPage({ sport, title, lead, subjectWord = "matches", date: dateProp }) {
+export default async function SportPage({ sport, subjectWord = "matches", date: dateProp }) {
   const reqDate = dateProp || todayISO();
-  const { groups, date } = await getMatches(sport, reqDate);
+  const [{ groups, date }, content] = await Promise.all([
+    getMatches(sport, reqDate),
+    sportListingContent(sport),
+  ]);
   const matches = flattenMatches(groups);
+  const { heading: title, lead } = content;
   // A selected day before today is fully played — never show "live" on it.
   const isPast = reqDate < todayISO();
   const liveCount = isPast ? 0 : matches.filter((m) => statusOf(m) === "live").length;
 
+  // Breadcrumb + CollectionPage/ItemList of fixtures (sport name from CMS heading).
+  const schema = sportListJsonLd({ slug: sport, matches, name: title });
+
   return (
     <>
+      <JsonLd data={schema} />
       <section
         style={{
           padding: "28px 0 16px",
@@ -29,13 +41,13 @@ export default async function SportPage({ sport, title, lead, subjectWord = "mat
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <li><Link href="/">Home</Link></li>
-              <li className="sep" aria-hidden="true">/</li>
-              <li><span className="current" aria-current="page">{title}</span></li>
+              {title && <li className="sep" aria-hidden="true">/</li>}
+              {title && <li><span className="current" aria-current="page">{title}</span></li>}
             </ol>
           </nav>
           <div className="flex justify-between items-end flex-wrap gap-4" style={{ marginTop: 12 }}>
             <div>
-              <h1 style={{ fontSize: "clamp(28px,4vw,38px)" }}>{title}</h1>
+              {title && <h1 style={{ fontSize: "clamp(28px,4vw,38px)" }}>{title}</h1>}
               {lead && <p className="sub" style={{ marginTop: 6, maxWidth: 560 }}>{lead}</p>}
               <div className="flex gap-3 flex-wrap" style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 6 }}>
                 <span><b className="num" style={{ color: "var(--text)" }}>{matches.length}</b> {subjectWord}</span>

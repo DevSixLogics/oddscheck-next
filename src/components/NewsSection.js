@@ -54,7 +54,7 @@ export default async function NewsSection() {
             <div style={{ flex: 1, minHeight: 240, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
               {featured.image_path && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={featured.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={featured.image_path} alt={featured.headline || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               )}
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 40%, rgba(10,15,28,0.85))" }} />
               <div style={{ position: "absolute", top: 18, left: 22, display: "flex", gap: 8 }}>
@@ -92,7 +92,7 @@ export default async function NewsSection() {
                 <div style={{ width: 104, flexShrink: 0, height: 104, borderRadius: 10, overflow: "hidden", background: FALLBACK_GRAD, position: "relative" }}>
                   {n.image_path && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={n.image_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={n.image_path} alt={n.headline || ""} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   )}
                   <div style={{ position: "absolute", bottom: 8, left: 10, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "0.08em", textTransform: "uppercase", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>{n.categoryName}</div>
                 </div>

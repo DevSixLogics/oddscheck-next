@@ -1,13 +1,21 @@
 import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
 import { getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
-import ConsoleLog from "@/components/ConsoleLog";
+import JsonLd from "@/components/JsonLd";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 export async function generateMetadata({ searchParams }) {
   const sp = await searchParams;
   const res = await getArticle(sp?.slug);
   if (!res) return { title: "Article" };
-  return { title: res.article.headline, description: res.article.meta_description || res.article.strapline };
+  const a = res.article;
+  return {
+    title: a.headline,
+    description: a.meta_description || a.strapline,
+    alternates: { canonical: `/article?slug=${a.slug}` },
+    openGraph: a.image_path ? { images: [a.image_path] } : undefined,
+  };
 }
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
@@ -53,10 +61,36 @@ export default async function ArticlePage({ searchParams }) {
 
   const { article: a, related, random } = res;
   const heroImg = a.image_path_jpg || a.image_path;
+  // Sanitize CMS-authored HTML before rendering (defence-in-depth with CSP).
+  const bodyHtml = DOMPurify.sanitize(a.editor || a.preview || "");
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsArticle",
+        headline: a.headline,
+        description: a.meta_description || a.strapline || undefined,
+        image: a.image_path ? [a.image_path] : undefined,
+        datePublished: a.start_date ? a.start_date.replace(" ", "T") : undefined,
+        author: a.authorName ? { "@type": "Person", name: a.authorName } : { "@type": "Organization", name: SITE_NAME },
+        publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: `${SITE_URL}/oddscheck.png` } },
+        mainEntityOfPage: `${SITE_URL}/article?slug=${a.slug}`,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          ...(a.categoryName ? [{ "@type": "ListItem", position: 2, name: a.categoryName }] : []),
+          { "@type": "ListItem", position: a.categoryName ? 3 : 2, name: a.headline },
+        ],
+      },
+    ],
+  };
 
   return (
     <>
-      <ConsoleLog label="article" data={{ article: a, related, random }} />
+      <JsonLd data={schema} />
       <section style={{ padding: "32px 0 24px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -94,10 +128,10 @@ export default async function ArticlePage({ searchParams }) {
             {heroImg && (
               <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 24, background: FALLBACK_GRAD }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={heroImg} alt={a.img_data?.alt_text || ""} style={{ width: "100%", display: "block" }} />
+                <img src={heroImg} alt={a.img_data?.alt_text || a.headline || ""} style={{ width: "100%", display: "block" }} />
               </div>
             )}
-            <div className="prose" dangerouslySetInnerHTML={{ __html: a.editor || a.preview || "" }} />
+            <div className="prose" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
             {a.authorName && a.bio && (
               <div className="card" style={{ padding: 18, marginTop: 28, display: "flex", gap: 12, alignItems: "center" }}>
                 <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>

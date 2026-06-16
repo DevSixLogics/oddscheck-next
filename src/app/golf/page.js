@@ -2,11 +2,12 @@ import Link from "next/link";
 import { getGolfTournaments, todayISO } from "@/lib/api";
 import { kickoffDate } from "@/lib/format";
 import DateNav from "@/components/DateNav";
+import JsonLd from "@/components/JsonLd";
+import { matchListingSeo, sportListingContent, breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata = {
-  title: "Golf — leaderboards & tournament scores",
-  description: "Live and completed golf leaderboards: positions, to-par and round-by-round scores across the PGA, DP World and LIV tours.",
-};
+export function generateMetadata() {
+  return matchListingSeo("golf");
+}
 
 function parColor(p) {
   if (p === "Par" || p === "E" || p === "0") return "var(--text)";
@@ -26,23 +27,33 @@ const COLS = "44px 1fr 64px 56px 56px 56px 56px 70px";
 export default async function GolfPage({ searchParams }) {
   const sp = await searchParams;
   const reqDate = sp?.date || todayISO();
-  const { tournaments } = await getGolfTournaments(reqDate);
+  const [{ tournaments }, content] = await Promise.all([
+    getGolfTournaments(reqDate),
+    sportListingContent("golf"),
+  ]);
+
+  // Breadcrumb JSON-LD — the sport crumb is added only when the CMS provides a heading.
+  const golfSchema = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    ...(content.heading ? [{ name: content.heading }] : []),
+  ]);
 
   return (
     <>
+      <JsonLd data={golfSchema} />
       <section style={{ padding: "28px 0 16px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <li><Link href="/">Home</Link></li>
-              <li className="sep" aria-hidden="true">/</li>
-              <li><span className="current" aria-current="page">Golf</span></li>
+              {content.heading && <li className="sep" aria-hidden="true">/</li>}
+              {content.heading && <li><span className="current" aria-current="page">{content.heading}</span></li>}
             </ol>
           </nav>
           <div className="flex justify-between items-end flex-wrap gap-4" style={{ marginTop: 12 }}>
             <div>
-              <h1 style={{ fontSize: "clamp(28px,4vw,38px)" }}>Golf leaderboards</h1>
-              <p className="sub" style={{ marginTop: 6, maxWidth: 580 }}>Positions, to-par and round-by-round scores from the PGA, DP World and LIV tours.</p>
+              {content.heading && <h1 style={{ fontSize: "clamp(28px,4vw,38px)" }}>{content.heading}</h1>}
+              {content.lead && <p className="sub" style={{ marginTop: 6, maxWidth: 580 }}>{content.lead}</p>}
               <div className="flex gap-3 flex-wrap" style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 6 }}>
                 <span><b className="num" style={{ color: "var(--text)" }}>{tournaments.length}</b> tournaments</span>
               </div>

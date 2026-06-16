@@ -92,7 +92,6 @@ export default function ToolsPage() {
             <div key={sec.title}>
               <div className="flex justify-between items-end mb-3 flex-wrap gap-2">
                 <h2 style={{ fontSize: 24 }}>{sec.title}</h2>
-                <Link href="#" style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600 }}>{sec.more}</Link>
               </div>
               <div className="grid grid-4">
                 {sec.tools.map((t) => (

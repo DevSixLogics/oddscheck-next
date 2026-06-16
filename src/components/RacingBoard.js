@@ -116,9 +116,9 @@ export default function RacingBoard({ meetings, date, isPast = false, children }
               <span className="chip chip-muted">{m.races?.length || m.nor} races</span>
             </div>
             <div className="table-scroll">
-              <table className="dt dt-compact" style={{ minWidth: 620 }}>
+              <table className="dt dt-compact" style={{ minWidth: 520 }}>
                 <thead>
-                  <tr><th>Off</th><th>Race</th><th className="text-center">Dist</th><th className="text-center">Runners</th><th className="text-right">Best odds</th><th /></tr>
+                  <tr><th>Off</th><th>Race</th><th className="text-center">Dist</th><th className="text-center">Runners</th><th /></tr>
                 </thead>
                 <tbody>
                   {(m.races || []).map((r) => (
@@ -127,9 +127,6 @@ export default function RacingBoard({ meetings, date, isPast = false, children }
                       <td><div style={{ fontWeight: 600, fontSize: 13 }}>{r.nm}</div></td>
                       <td className="text-center num">{r.dis || "–"}</td>
                       <td className="text-center num">{r.nor || "–"}</td>
-                      <td className="text-right">
-                        <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "4px 8px", fontSize: 12 }}>—</span>
-                      </td>
                       <td className="text-right">
                         <span className="flex items-center gap-2" style={{ justifyContent: "flex-end" }}>
                           {statusChip(r.status, isPast)}
@@ -151,7 +148,7 @@ export default function RacingBoard({ meetings, date, isPast = false, children }
               : <Link className="btn btn-primary" href="/football">Browse football odds</Link>}
           </div>
         )}
-        <p className="mute" style={{ fontSize: 11 }}>Racecards from the meetings feed. Per-runner prices aren&apos;t exposed by this API, so odds show as “—”.</p>
+        <p className="mute" style={{ fontSize: 11 }}>Racecards from the meetings feed.</p>
       </div>
     </div>
   );
