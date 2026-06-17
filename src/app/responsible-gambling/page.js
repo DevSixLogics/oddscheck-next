@@ -1,10 +1,6 @@
 import Link from "next/link";
 
-export const metadata = {
-  title: "Responsible gambling — stay in control",
-  description:
-    "Betting should stay fun. Set limits, spot the warning signs, and find free, confidential help — GamCare, GamStop, BeGambleAware and the National Gambling Helpline.",
-};
+export const metadata = { alternates: { canonical: "/responsible-gambling" } };
 
 const ic = (paths, fill = "none", w = 18) => (
   <svg viewBox="0 0 24 24" width={w} height={w} fill={fill} aria-hidden="true">{paths}</svg>

@@ -51,13 +51,13 @@ const COLUMNS = [
   },
 ];
 
-export default function SiteFooter() {
+export default function SiteFooter({ logo }) {
   return (
     <footer className="site-footer" role="contentinfo">
       <div className="container">
         <div className="footer-grid">
           <div className="footer-intro">
-            <Logo height={56} />
+            <Logo src={logo} height={56} />
             <p>
               Live odds comparison and betting intelligence across football, racing, tennis,
               basketball and 30+ sports. Built for serious sports fans.

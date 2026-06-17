@@ -1,4 +1,4 @@
-import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
+import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings, getGolfTournaments, getSiteMeta } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
@@ -10,9 +10,14 @@ import NewsSection from "@/components/NewsSection";
 import LearnToBet from "@/components/LearnToBet";
 import DashboardCTA from "@/components/DashboardCTA";
 
-export const metadata = {
-  title: "OddsCheck.com — compare best odds from top UK bookmakers",
-};
+// Home title comes entirely from the CMS /settings API (site_title) — no static
+// string here. `absolute` keeps the CMS title verbatim (no "| OddsCheck.com"
+// suffix). If the API has no title, we set nothing and inherit the root layout.
+// Description is inherited from the root layout (also driven by /settings).
+export async function generateMetadata() {
+  const meta = await getSiteMeta();
+  return meta.siteTitle ? { title: { absolute: meta.siteTitle } } : {};
+}
 
 // Match-feed sports for the "Today's top odds" in-place switcher.
 // Racing (meetings/races) and golf (leaderboards) use their own feeds — handled below.

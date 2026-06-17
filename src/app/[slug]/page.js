@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SportPage from "@/components/SportPage";
 import CategoryGrid from "@/components/CategoryGrid";
+import JsonLd from "@/components/JsonLd";
 import { getSettings, getCategoryBySlug } from "@/lib/api";
+import { matchListingSeo, articleListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 // One root dynamic segment handling any single-segment slug the CMS menu points at:
 //   • an allowed sport       → the sport fixtures/odds page,
@@ -13,14 +15,6 @@ export const dynamic = "force-dynamic";
 
 // ── Sports ──────────────────────────────────────────────────────────────────
 const CORE_SPORTS = ["football", "basketball", "tennis", "cricket", "baseball", "golf", "racing"];
-const SPORT_TITLES = {
-  "ice-hockey": "Ice Hockey", icehockey: "Ice Hockey", hockey: "Ice Hockey",
-  "american-football": "American Football", americanfootball: "American Football",
-  "rugby-union": "Rugby Union", "rugby-league": "Rugby League", rugby: "Rugby",
-  "horse-racing": "Horse Racing", horseracing: "Horse Racing",
-};
-const titleCase = (s = "") => s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-const sportLabel = (slug) => SPORT_TITLES[slug] || titleCase(slug);
 
 async function allowedSportSlugs() {
   const settings = await getSettings();
@@ -37,9 +31,10 @@ async function allowedSportSlugs() {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const s = slug.toLowerCase();
-  if ((await allowedSportSlugs()).has(s)) return { title: `${sportLabel(s)} odds` };
+  const canonical = `/${s}`;
+  if ((await allowedSportSlugs()).has(s)) return await matchListingSeo(s);
   const cat = await getCategoryBySlug(s);
-  if (cat) return { title: cat.name };
+  if (cat) return { title: cat.name, alternates: { canonical } };
   return {};
 }
 
@@ -51,16 +46,7 @@ export default async function DynamicSlugPage({ params, searchParams }) {
 
   // 1) Sport
   if ((await allowedSportSlugs()).has(s)) {
-    const label = sportLabel(s);
-    return (
-      <SportPage
-        sport={s}
-        date={sp?.date}
-        title={`${label} odds`}
-        lead={`${label} — live scores and best prices across bookmakers.`}
-        subjectWord="matches"
-      />
-    );
+    return <SportPage sport={s} date={sp?.date} subjectWord="matches" />;
   }
 
   // 2) Category
@@ -68,6 +54,8 @@ export default async function DynamicSlugPage({ params, searchParams }) {
   if (cat) {
     return (
       <>
+        <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: cat.name }])} />
+        <JsonLd data={articleListJsonLd({ name: cat.name, path: `/${s}`, articles: cat.articles })} />
         <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
           <div className="container">
             <nav className="crumbs" aria-label="Breadcrumb">

@@ -3,23 +3,23 @@ import { getRacingMeetings, getRaceRunners, todayISO } from "@/lib/api";
 import { kickoffTime } from "@/lib/format";
 import DateNav from "@/components/DateNav";
 import RacingBoard from "@/components/RacingBoard";
+import JsonLd from "@/components/JsonLd";
+import { matchListingSeo, sportListingContent } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site";
 
-export const metadata = {
-  title: "Horse racing odds — today's meetings & racecards",
-  description: "Today's race meetings, racecards, going and runners across UK, Ireland and worldwide.",
-};
-
-// Static editor tips (no racing tips endpoint in this API).
-const RACING_TIPS = [
-  { meet: "Feature · Each Way", pick: "Back the form pick each-way", conf: 4 },
-  { meet: "Value angle", pick: "Each-way places in big fields", conf: 3 },
-  { meet: "Trainer in form", pick: "Follow the in-form yard", conf: 4 },
-];
+export function generateMetadata() {
+  // Title comes from CMS /seo-settings; with no template nothing is emitted and the
+  // page title inherits the CMS site_title. No static/fallback copy.
+  return matchListingSeo("racing");
+}
 
 export default async function RacingPage({ searchParams }) {
   const sp = await searchParams;
   const reqDate = sp?.date || todayISO();
-  const { meetings, date } = await getRacingMeetings(reqDate);
+  const [{ meetings, date }, content] = await Promise.all([
+    getRacingMeetings(reqDate),
+    sportListingContent("racing"),
+  ]);
   const totalRaces = meetings.reduce((n, m) => n + (m.races?.length || 0), 0);
   // A selected day earlier than today is fully run — results, not live.
   const isPast = date < todayISO();
@@ -39,15 +39,46 @@ export default async function RacingPage({ searchParams }) {
     .sort((a, b) => String(a.st || "").localeCompare(String(b.st || "")))
     .slice(0, 4);
 
+  // Breadcrumb + CollectionPage/ItemList of today's races (each as a SportsEvent).
+  const raceEvents = allRaces.slice(0, 60).map((r, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "SportsEvent",
+      name: `${r.course} ${kickoffTime(r.st)} ${r.nm || ""}`.replace(/\s+/g, " ").trim(),
+      url: `${SITE_URL}/race?id=${r.id}`,
+    },
+  }));
+  const racingSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          // The sport crumb is emitted only when the CMS provides a heading — no static name.
+          ...(content.heading ? [{ "@type": "ListItem", position: 2, name: content.heading, item: `${SITE_URL}/racing` }] : []),
+        ],
+      },
+      {
+        "@type": "CollectionPage",
+        ...(content.heading ? { name: content.heading } : {}),
+        url: `${SITE_URL}/racing`,
+        ...(raceEvents.length ? { mainEntity: { "@type": "ItemList", numberOfItems: raceEvents.length, itemListElement: raceEvents } } : {}),
+      },
+    ],
+  };
+
   return (
     <>
+      <JsonLd data={racingSchema} />
       <section style={{ padding: "28px 0 24px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
             <ol style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
               <li><Link href="/">Home</Link></li>
-              <li className="sep" aria-hidden="true">/</li>
-              <li><span className="current" aria-current="page">Horse Racing</span></li>
+              {content.heading && <li className="sep" aria-hidden="true">/</li>}
+              {content.heading && <li><span className="current" aria-current="page">{content.heading}</span></li>}
             </ol>
           </nav>
           <div className="flex justify-between items-end flex-wrap gap-4" style={{ marginTop: 12 }}>
@@ -56,7 +87,7 @@ export default async function RacingPage({ searchParams }) {
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="none" aria-hidden="true"><path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" /></svg>
               </div>
               <div>
-                <h1 style={{ fontSize: "clamp(26px, 4vw, 38px)" }}>Horse Racing odds</h1>
+                {content.heading && <h1 style={{ fontSize: "clamp(26px, 4vw, 38px)" }}>{content.heading}</h1>}
                 <div className="flex gap-3 flex-wrap muted" style={{ fontSize: 13, marginTop: 6 }}>
                   <span><b className="num" style={{ color: "var(--text)" }}>{totalRaces}</b> races today</span>
                   <span className="mute">·</span>
@@ -91,9 +122,9 @@ export default async function RacingPage({ searchParams }) {
                   </div>
                 </div>
                 <div className="table-scroll">
-                  <table className="dt dt-compact" style={{ minWidth: 760 }}>
+                  <table className="dt dt-compact" style={{ minWidth: 560 }}>
                     <thead>
-                      <tr><th>#</th><th>Horse</th><th>Trainer / Jockey</th><th className="text-center">Form</th><th className="text-right">Best win</th><th className="text-right">EW</th><th /></tr>
+                      <tr><th>#</th><th>Horse</th><th>Trainer / Jockey</th><th className="text-center">Form</th><th /></tr>
                     </thead>
                     <tbody>
                       {featureRunners.map((r, i) => (
@@ -110,11 +141,7 @@ export default async function RacingPage({ searchParams }) {
                           </td>
                           <td><div style={{ fontSize: 12 }}>{r.tra}</div><div className="mute" style={{ fontSize: 11 }}>{r.joc}</div></td>
                           <td className="text-center"><span className="num" style={{ fontWeight: 600 }}>{r.ffg || "–"}</span></td>
-                          <td className="text-right">
-                            <span title="Odds not available" className="num" style={{ display: "inline-block", color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "5px 10px", fontSize: 13 }}>—</span>
-                          </td>
-                          <td className="text-right num muted" style={{ fontSize: 11 }}>—</td>
-                          <td className="text-right"><Link className="btn btn-primary btn-xs" href={`/race?id=${featureRace.id}`}>Bet</Link></td>
+                          <td className="text-right"><Link className="btn btn-primary btn-xs" href={`/race?id=${featureRace.id}`}>Card</Link></td>
                         </tr>
                       ))}
                     </tbody>
@@ -123,47 +150,22 @@ export default async function RacingPage({ searchParams }) {
               </div>
             )}
 
-            {/* Next 4 off + Today's tips */}
+            {/* Next 4 off — next races across all meetings, by start time (live data) */}
             {!isPast && next4.length > 0 && (
-              <div className="grid grid-2" style={{ gap: 20 }}>
-                <div className="card" style={{ padding: 22 }}>
-                  <h3 style={{ fontSize: 17, marginBottom: 6 }}>Next 4 off</h3>
-                  <div className="flex-col">
-                    {next4.map((r, i) => (
-                      <div key={r.id} className="flex items-center justify-between" style={{ padding: "12px 0", borderBottom: i === next4.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{r.course}</div>
-                          <div className="mute" style={{ fontSize: 11.5, marginTop: 2 }}>
-                            {[kickoffTime(r.st), r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "4px 9px", fontSize: 13 }}>—</span>
-                          <Link className="btn btn-primary btn-xs" href={`/race?id=${r.id}`}>Card</Link>
+              <div className="card" style={{ padding: 22 }}>
+                <h3 style={{ fontSize: 17, marginBottom: 6 }}>Next 4 off</h3>
+                <div className="flex-col">
+                  {next4.map((r, i) => (
+                    <div key={r.id} className="flex items-center justify-between" style={{ padding: "12px 0", borderBottom: i === next4.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{r.course}</div>
+                        <div className="mute" style={{ fontSize: 11.5, marginTop: 2 }}>
+                          {[kickoffTime(r.st), r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="card" style={{ padding: 22 }}>
-                  <h3 style={{ fontSize: 17, marginBottom: 6 }}>Today&apos;s tips</h3>
-                  <div className="flex-col">
-                    {RACING_TIPS.map((t, i) => (
-                      <div key={i} style={{ padding: "12px 0", borderBottom: i === RACING_TIPS.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
-                        <div className="mute" style={{ fontSize: 11.5 }}>{t.meet}</div>
-                        <div className="flex items-center justify-between" style={{ marginTop: 4 }}>
-                          <div style={{ fontWeight: 600, fontSize: 14 }}>{t.pick}</div>
-                          <span className="flex items-center gap-1" aria-label={`Confidence ${t.conf} of 5`}>
-                            {[0, 1, 2, 3, 4].map((d) => (
-                              <span key={d} style={{ width: 7, height: 7, borderRadius: "50%", background: d < t.conf ? "var(--accent)" : "var(--border-strong)", display: "inline-block" }} />
-                            ))}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Link className="btn btn-ghost btn-block" href="/tips" style={{ marginTop: 14 }}>All racing tips</Link>
+                      <Link className="btn btn-primary btn-xs" href={`/race?id=${r.id}`}>Card</Link>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

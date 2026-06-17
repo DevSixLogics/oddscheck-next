@@ -126,6 +126,7 @@ function LiveGolfCard({ t }) {
 export default function LiveBoard({ initialItems = [] }) {
   const socket = useSocket(SOCKET_URL);
   const [items, setItems] = useState(initialItems);
+  const [filter, setFilter] = useState("all"); // selected sport tab
 
   useEffect(() => {
     if (!socket) return;
@@ -164,28 +165,32 @@ export default function LiveBoard({ initialItems = [] }) {
     return () => subs.forEach(([ev, h]) => channel.stopListening(ev, h));
   }, [socket]);
 
+  const itemKey = (it) => (it.kind === "race" ? "racing" : it.kind === "golf" ? "golf" : it.sport);
   const counts = {};
   items.forEach((it) => {
-    const key = it.kind === "race" ? "racing" : it.kind === "golf" ? "golf" : it.sport;
+    const key = itemKey(it);
     counts[key] = (counts[key] || 0) + 1;
   });
   const total = items.length;
   const PILLS = [...MATCH_SPORTS.map((s) => s.key), "baseball", "racing", "golf"];
+  const shown = filter === "all" ? items : items.filter((it) => itemKey(it) === filter);
 
   return (
     <>
       <div className="tab-pills-scroll mb-4">
-        <button className="tab-pill active">All sports <span style={{ fontSize: 11, opacity: 0.7 }}>{total}</span></button>
+        <button type="button" className={`tab-pill${filter === "all" ? " active" : ""}`} onClick={() => setFilter("all")}>
+          All sports <span style={{ fontSize: 11, opacity: 0.7 }}>{total}</span>
+        </button>
         {PILLS.map((k) => (
-          <button key={k} className="tab-pill" disabled={!counts[k]}>
+          <button key={k} type="button" className={`tab-pill${filter === k ? " active" : ""}`} disabled={!counts[k]} onClick={() => setFilter(k)}>
             {PILL_LABELS[k]} <span style={{ fontSize: 11, opacity: 0.7 }}>{counts[k] || 0}</span>
           </button>
         ))}
       </div>
 
-      {total ? (
+      {shown.length ? (
         <div className="grid grid-3">
-          {items.map((it) =>
+          {shown.map((it) =>
             it.kind === "race" ? <LiveRaceCard key={`race-${it.id}`} r={it} />
             : it.kind === "golf" ? <LiveGolfCard key={`golf-${it.id}`} t={it} />
             : <LiveMatchCard key={`${it.sport}-${it.id}`} m={it} />

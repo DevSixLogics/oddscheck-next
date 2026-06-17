@@ -96,7 +96,7 @@ const SPORTS = [
 
 const ODDS_FORMATS = ["Decimal", "Fractional", "American"];
 
-export default function Header({ menu }) {
+export default function Header({ menu, logo }) {
   const pathname = usePathname();
   const NAV = Array.isArray(menu) && menu.length ? menu : NAV_FALLBACK;
   const [open, setOpen] = useState(false);
@@ -123,7 +123,7 @@ export default function Header({ menu }) {
     <>
       <header className="topnav" role="banner">
         <div className="topnav-inner">
-          <Logo />
+          <Logo src={logo} />
           <nav className="topnav-links" aria-label="Primary">
             {NAV.map((item) => (
               <Link
@@ -281,7 +281,7 @@ export default function Header({ menu }) {
       >
         <div className="drawer-inner">
           <div className="drawer-head">
-            <Logo />
+            <Logo src={logo} />
             <button type="button" className="btn btn-ghost btn-sm" aria-label="Close menu" onClick={() => setOpen(false)}>
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
                 <path d="m6 6 12 12M6 18 18 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

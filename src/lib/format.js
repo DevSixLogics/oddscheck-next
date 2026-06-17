@@ -158,16 +158,82 @@ export function oddsTriple(match) {
   // Impossible combined market → books disagree too much; use the single book
   // with the tightest (most coherent) margin instead of the cross-book max.
   const combined = invSum(by);
+  let usedFallback = false;
   if (combined > 0 && combined < 0.95) {
     const tightest = markets
       .map((m) => ({ m, ov: marketOverround(m) }))
       .filter((o) => o.ov != null)
       .sort((a, b) => a.ov - b.ov)[0];
-    if (tightest) by = lineFrom(tightest.m);
+    if (tightest) { by = lineFrom(tightest.m); usedFallback = true; }
   }
   if (by.home == null && by.draw == null && by.away == null) return null;
   // twoWay = a 2-outcome market (tennis, basketball moneyline) — no draw.
-  return { ...by, twoWay: by.draw == null, type: markets[0].type, books: markets.length };
+  // On the fallback path the displayed line comes from ONE book, so report 1 —
+  // not markets.length — to avoid implying a comparison that didn't happen.
+  return { ...by, twoWay: by.draw == null, type: markets[0].type, books: usedFallback ? 1 : markets.length };
+}
+
+// Order 1·X·2 outcomes Home, Draw, Away; everything else keeps feed order.
+const OUTCOME_ORDER = { h: 0, "1": 0, home: 0, d: 1, x: 1, draw: 1, a: 2, "2": 2, away: 2 };
+
+/**
+ * Group a match's odds by market for the event comparison tabs. Returns
+ * [{ name, outcomes:[outcomeName], rows:[{ bookmaker, link, prices:{[outcome]:odds} }], best:{[outcome]:odds} }].
+ * Works for any market (1x2, BTTS, Over/Under …) — outcomes are whatever the feed sends.
+ */
+export function oddsMarkets(match) {
+  const groups = new Map();
+  for (const m of marketList(match)) {
+    const name = (m.market_name || "").trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (!groups.has(key)) groups.set(key, { name, outcomes: [], rows: [] });
+    const g = groups.get(key);
+    const prices = {};
+    for (const o of m.outcomes || []) {
+      const on = String(o.name ?? "").trim();
+      const p = toNum(o.odds);
+      if (!on || !(p > 1)) continue;
+      prices[on] = p;
+      if (!g.outcomes.includes(on)) g.outcomes.push(on);
+    }
+    if (Object.keys(prices).length) g.rows.push({ bookmaker: m.bookmaker_name || "Bookmaker", link: m.oddsTrackingLink || null, prices });
+  }
+  const out = [];
+  for (const g of groups.values()) {
+    if (!g.rows.length) continue;
+    g.outcomes.sort((x, y) => (OUTCOME_ORDER[x.toLowerCase()] ?? 9) - (OUTCOME_ORDER[y.toLowerCase()] ?? 9));
+    const best = {};
+    for (const oc of g.outcomes) {
+      let b = null;
+      for (const r of g.rows) { const p = r.prices[oc]; if (p > 1 && (b == null || p > b)) b = p; }
+      best[oc] = b;
+    }
+    out.push({ name: g.name, outcomes: g.outcomes, rows: g.rows, best });
+  }
+  // Every market the feed prices becomes its own tab (1x2, Double Chance, BTTS …) —
+  // names are whatever the API returns, no static market list.
+  return out;
+}
+
+/** Display label for an outcome code — maps 1·X·2 to team names, else the raw name. */
+export function outcomeLabel(name, home, away) {
+  const n = String(name ?? "").toUpperCase();
+  if (n === "H" || n === "1" || n === "HOME") return home || "Home";
+  if (n === "A" || n === "2" || n === "AWAY") return away || "Away";
+  if (n === "D" || n === "X" || n === "DRAW") return "Draw";
+  return name;
+}
+
+/** Distinct market names present in a match's odds (e.g. ["1x2", "Double Chance"]). */
+export function marketNames(match) {
+  const names = [];
+  const seen = new Set();
+  for (const m of marketList(match)) {
+    const n = (m.market_name || "").trim();
+    if (n && !seen.has(n.toLowerCase())) { seen.add(n.toLowerCase()); names.push(n); }
+  }
+  return names;
 }
 
 /** The market name of the (plausible) winner market, e.g. "1x2" / "Moneyline", or null. */

@@ -5,15 +5,18 @@ import { OddsValue } from "./OddsFormatProvider";
 
 function PreviewRow({ match }) {
   const c = match.competitors || {};
-  const t = oddsTriple(match);
+  const bucket = statusOf(match);
+  // Finished matches keep stale pre-match odds in the feed — never show them.
+  const t = bucket === "finished" ? null : oddsTriple(match);
   const cells = [
-    { sym: "1", price: t.home },
-    { sym: "X", price: t.draw },
-    { sym: "2", price: t.away },
+    { sym: "1", price: t?.home },
+    { sym: "X", price: t?.draw },
+    { sym: "2", price: t?.away },
   ];
+  // Favourite = shortest (lowest) price across outcomes — highlighted in green.
   const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null; // shortest price = best/green
-  const live = statusOf(match) === "live";
+  const fav = prices.length ? Math.min(...prices) : null;
+  const live = bucket === "live";
 
   return (
     <div
@@ -42,11 +45,12 @@ function PreviewRow({ match }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
+          const isFav = has && x.price === fav;
           return (
             <button
               type="button"
               key={x.sym}
-              className={`odds-cell${has && x.price === fav ? " best" : ""}`}
+              className={`odds-cell${isFav ? " best" : ""}`}
             >
               <span className="flex justify-between items-center" style={{ gap: 4 }}>
                 <span className="meta">{x.sym}</span>
@@ -63,10 +67,11 @@ function PreviewRow({ match }) {
 /**
  * Hero "Live odds preview" widget — DATA-DRIVEN, styled to match the original
  * index.html hero-right card. Shows matches that carry a 1·X·2 market, favourite
- * (shortest price) highlighted in green via `.odds-cell.best`.
+ * (shortest price) highlighted via `.odds-cell.best`.
  */
 export default function TopOddsWidget({ matches, limit = 3 }) {
-  const withOdds = matches.filter((m) => oddsTriple(m));
+  // Exclude finished matches — their feed odds are stale pre-match prices.
+  const withOdds = matches.filter((m) => statusOf(m) !== "finished" && oddsTriple(m));
   const live = withOdds.filter((m) => statusOf(m) === "live");
   // prefer live matches first, then fill with the rest
   const ordered = [...live, ...withOdds.filter((m) => statusOf(m) !== "live")].slice(0, limit);
@@ -80,7 +85,7 @@ export default function TopOddsWidget({ matches, limit = 3 }) {
             Live odds preview
           </span>
         </div>
-        <span className="chip chip-muted">Updated just now</span>
+        <span className="chip chip-muted">Auto-updating</span>
       </div>
 
       {ordered.length ? (
@@ -92,7 +97,7 @@ export default function TopOddsWidget({ matches, limit = 3 }) {
       )}
 
       <div className="flex justify-between items-center" style={{ marginTop: 14, fontSize: 12, color: "var(--text-dim)" }}>
-        <span>Best price highlighted in green</span>
+        <span>Favourite (shortest price) highlighted</span>
         <Link href="/football" style={{ color: "var(--accent)", fontWeight: 600 }}>View all odds →</Link>
       </div>
     </aside>

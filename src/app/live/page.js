@@ -3,10 +3,7 @@ import { getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } fro
 import { statusOf } from "@/lib/format";
 import LiveBoard from "@/components/LiveBoard";
 
-export const metadata = {
-  title: "Live odds & in-play markets",
-  description: "Real-time prices across every live match and race, refreshed live over the socket. Best in-play price highlighted.",
-};
+export const metadata = { alternates: { canonical: "/live" } };
 
 const MATCH_SPORTS = [
   { key: "football", label: "Football" },

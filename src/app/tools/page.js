@@ -1,11 +1,11 @@
 import Link from "next/link";
 import BettingTools from "@/components/BettingTools";
 import DiscoveryTools from "@/components/DiscoveryTools";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/seo";
+import { SITE_URL } from "@/lib/site";
 
-export const metadata = {
-  title: "Smart betting tools — calculators, arbitrage, +EV & alerts",
-  description: "Pro-grade calculators, arbitrage finders, +EV picks, alerts and bet tracking — all in one place. Free to start.",
-};
+export const metadata = { alternates: { canonical: "/tools" } };
 
 const ic = (paths, fill = "none", w = 14) => <svg viewBox="0 0 24 24" width={w} height={w} fill={fill} aria-hidden="true">{paths}</svg>;
 const ICONS = {
@@ -38,9 +38,27 @@ const SECTIONS = [
 const tealBox = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,142,0,0.10)", color: "var(--accent)", border: "1px solid rgba(255,142,0,0.25)" };
 const goldBox = { width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "linear-gradient(135deg, rgba(218,180,107,0.18), rgba(194,140,66,0.10))", color: "var(--gold)", border: "1px solid rgba(218,180,107,0.3)" };
 
+// CollectionPage listing the actual calculator tools (each a real WebApplication).
+const TOOLS_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Smart betting tools",
+  url: `${SITE_URL}/tools`,
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: SECTIONS.flatMap((s) => s.tools).map((t, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: { "@type": "WebApplication", name: t.title, applicationCategory: "SportsApplication", url: `${SITE_URL}${t.href}` },
+    })),
+  },
+};
+
 export default function ToolsPage() {
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Smart betting tools" }])} />
+      <JsonLd data={TOOLS_SCHEMA} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -92,7 +110,6 @@ export default function ToolsPage() {
             <div key={sec.title}>
               <div className="flex justify-between items-end mb-3 flex-wrap gap-2">
                 <h2 style={{ fontSize: 24 }}>{sec.title}</h2>
-                <Link href="#" style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600 }}>{sec.more}</Link>
               </div>
               <div className="grid grid-4">
                 {sec.tools.map((t) => (

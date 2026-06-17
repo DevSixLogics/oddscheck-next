@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { getArticles } from "@/lib/api";
+import { getCategoryArticles } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
 import StaticNote from "@/components/StaticNote";
+import JsonLd from "@/components/JsonLd";
+import { articleListJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
-export const metadata = {
-  title: "Betting news & analysis — previews, team news & line moves",
-  description: "Match previews, injury updates and the stories moving the odds. From the OddsCheck newsroom.",
-};
+export const metadata = { alternates: { canonical: "/news" } };
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
-const TABS = ["All news", "Match previews", "Team news", "Injury updates", "Transfer news", "Line movement", "Bookmaker updates", "Strategy"];
 const TOPICS = ["Premier League", "Champions League", "Cheltenham", "El Clásico", "NFL", "NBA", "Madrid Open", "IPL", "Line movement", "Free bets"];
 
 function pageWindow(current, last) {
@@ -20,9 +18,13 @@ function pageWindow(current, last) {
 export default async function NewsPage({ searchParams }) {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp?.page) || 1);
-  const { articles, pagination } = await getArticles({ page, perPage: 10 });
+  // The News category feed (article/news) paginates properly, unlike the general
+  // /articles feed which ignores the `page` param.
+  const PER_PAGE = 6;
+  const { articles, pagination } = await getCategoryArticles("news", { page, perPage: PER_PAGE });
 
-  const last = pagination?.last_page || 1;
+  const total = pagination?.total || articles.length;
+  const last = Math.max(1, Math.ceil(total / (pagination?.per_page || PER_PAGE)));
   const current = pagination?.current_page || page;
   const featured = articles[0];
   const grid = articles.slice(1);
@@ -30,6 +32,8 @@ export default async function NewsPage({ searchParams }) {
 
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "News" }])} />
+      <JsonLd data={articleListJsonLd({ name: "Betting news & analysis", path: "/news", articles })} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -41,7 +45,7 @@ export default async function NewsPage({ searchParams }) {
           </nav>
           <span className="chip chip-best mb-3" style={{ marginTop: 12 }}>
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M13 2 4 13h7l-1 9 9-11h-7l1-9Z" /></svg>
-            Updated continuously{pagination ? ` · ${pagination.total} articles` : ""}
+            Updated continuously{pagination?.total ? ` · ${pagination.total} articles` : ""}
           </span>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", margin: "10px 0" }}>Betting news &amp; analysis</h1>
           <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.55 }}>
@@ -54,7 +58,7 @@ export default async function NewsPage({ searchParams }) {
         <div className="container layout-split-wide">
           <div>
             <div className="tab-pills-scroll mb-4">
-              {TABS.map((t, i) => <button key={t} className={`tab-pill${i === 0 ? " active" : ""}`} disabled={i !== 0}>{t}</button>)}
+              <span className="tab-pill active" aria-current="true">All news</span>
             </div>
 
             {!articles.length ? (
@@ -66,7 +70,7 @@ export default async function NewsPage({ searchParams }) {
                   <div style={{ height: 340, position: "relative", overflow: "hidden", background: FALLBACK_GRAD }}>
                     {featured.image_path && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={featured.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                      <img src={featured.image_path} alt={featured.headline || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                     )}
                     <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, transparent 50%, rgba(10,15,28,0.88))" }} />
                     <div style={{ position: "absolute", top: 24, left: 28, display: "flex", gap: 8 }}>
@@ -101,7 +105,7 @@ export default async function NewsPage({ searchParams }) {
                       <div style={{ height: 160, position: "relative", background: FALLBACK_GRAD }}>
                         {a.image_path && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.image_path} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img src={a.image_path} alt={a.headline || ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                         )}
                         <div style={{ position: "absolute", bottom: 10, left: 14, fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "0.08em", textTransform: "uppercase", textShadow: "0 1px 2px rgba(0,0,0,0.6)" }}>{a.categoryName}</div>
                       </div>
@@ -114,7 +118,6 @@ export default async function NewsPage({ searchParams }) {
                   ))}
                 </div>
 
-                {/* Pagination (real) */}
                 {last > 1 && (
                   <div className="pagination">
                     {current > 1 && <Link className="page" href={`/news?page=${current - 1}`}>‹</Link>}
@@ -144,7 +147,7 @@ export default async function NewsPage({ searchParams }) {
             <div className="card" style={{ padding: 20 }}>
               <h4 style={{ fontSize: 14, marginBottom: 14 }}>Topics</h4>
               <div className="flex gap-2 flex-wrap">
-                {TOPICS.map((t) => <a key={t} href="#" className="chip chip-muted">{t}</a>)}
+                {TOPICS.map((t) => <span key={t} className="chip chip-muted">{t}</span>)}
               </div>
             </div>
             <div className="card" style={{ padding: 20, background: "linear-gradient(135deg, rgba(255,142,0,0.04), rgba(56,189,248,0.03))" }}>

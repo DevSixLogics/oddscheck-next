@@ -99,8 +99,6 @@ export default function FeaturedEvent({ matches }) {
         { side: "away", label: c.atn, price: t.away },
       ]
     : [];
-  const prices = tiles.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null;
   const homeScored = flash === "home" || flash === "both";
   const awayScored = flash === "away" || flash === "both";
 
@@ -176,7 +174,7 @@ export default function FeaturedEvent({ matches }) {
           {tiles.length ? (
             <div className="grid grid-3" style={{ padding: 28, gap: 14 }}>
               {tiles.map((tile) => {
-                const isFav = typeof tile.price === "number" && tile.price === fav;
+                const isFav = false; // best/favourite highlight removed (not a backend value)
                 const scored = (tile.side === "home" && homeScored) || (tile.side === "away" && awayScored);
                 return (
                   <div

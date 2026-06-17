@@ -2,10 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import LoginForm from "@/components/LoginForm";
 
-export const metadata = {
-  title: "Sign in — OddsCheck",
-  description: "Sign in to your OddsCheck account to follow teams, track bets and get price alerts.",
-};
+export const metadata = { alternates: { canonical: "/login" } };
 
 export default function LoginPage() {
   return (

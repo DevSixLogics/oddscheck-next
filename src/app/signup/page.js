@@ -2,10 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import SignupForm from "@/components/SignupForm";
 
-export const metadata = {
-  title: "Join free in 30 seconds — create your OddsCheck account",
-  description: "Follow teams, leagues and bookmakers, get price alerts and track every bet. No card needed.",
-};
+export const metadata = { alternates: { canonical: "/signup" } };
 
 export default function SignupPage() {
   return (

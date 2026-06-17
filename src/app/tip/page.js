@@ -1,9 +1,6 @@
 import Link from "next/link";
 
-export const metadata = {
-  title: "Man City vs Arsenal: BTTS & Over 2.5 Goals @ 1.85 — tip",
-  description: "Both attacks are firing. The real value isn't in picking the winner — it's in the goals.",
-};
+export const metadata = { alternates: { canonical: "/tip" } };
 
 const COMPARE = [
   ["bet365", "BET365", "1.85", true],

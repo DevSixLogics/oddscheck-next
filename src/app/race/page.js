@@ -1,8 +1,30 @@
 import Link from "next/link";
 import { getRaceRunners } from "@/lib/api";
 import { kickoffTime, kickoffDate } from "@/lib/format";
+import JsonLd from "@/components/JsonLd";
+import { SITE_URL } from "@/lib/site";
+import { cmsSeo } from "@/lib/seo";
 
-export const metadata = { title: "Racecard" };
+export async function generateMetadata({ searchParams }) {
+  const sp = await searchParams;
+  const id = sp?.id;
+  const race = id ? await getRaceRunners(id) : null;
+  if (!race) return { title: "Racecard" };
+  // CMS /seo-settings (horseracing.match_detail.info) drives this; with no template
+  // it falls back to the race name from the feed — no static copy.
+  const cms = await cmsSeo({
+    sport: "racing",
+    kind: "detail",
+    replacements: {
+      RACE_NAME: race.nm || "",
+      PLAYER_NAME: race.nm || "",
+      COUNTRY_NAME: race.cnm || race.course || "",
+      DATE: kickoffDate(race.st) || "",
+    },
+    canonicalPath: `/race?id=${id}`,
+  });
+  return cms || { title: race.nm || "Racecard", description: null, alternates: { canonical: `/race?id=${id}` } };
+}
 
 export default async function RacePage({ searchParams }) {
   const sp = await searchParams;
@@ -23,8 +45,30 @@ export default async function RacePage({ searchParams }) {
   const runners = (race.runner || []).filter((r) => !r.non_r);
   const isResult = (race.st || "").toUpperCase() === "RESULT";
 
+  const schema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SportsEvent",
+        name: race.nm || "Horse race",
+        sport: "Horse racing",
+        url: `${SITE_URL}/race?id=${sp?.id}`,
+        eventStatus: "https://schema.org/EventScheduled",
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Horse Racing", item: `${SITE_URL}/racing` },
+          { "@type": "ListItem", position: 3, name: race.nm || "Racecard" },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <JsonLd data={schema} />
       <section style={{ padding: "28px 0 24px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -51,7 +95,7 @@ export default async function RacePage({ searchParams }) {
         <div className="container">
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div className="table-scroll">
-              <table className="dt dt-compact" style={{ minWidth: 720 }}>
+              <table className="dt dt-compact" style={{ minWidth: 620 }}>
                 <thead>
                   <tr>
                     <th style={{ width: 40 }}>{isResult ? "Pos" : "#"}</th>
@@ -59,7 +103,6 @@ export default async function RacePage({ searchParams }) {
                     <th>Jockey / Trainer</th>
                     <th className="text-center">Wgt</th>
                     <th className="text-center">Age</th>
-                    <th className="text-right">Best odds</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,16 +124,13 @@ export default async function RacePage({ searchParams }) {
                       <td><div style={{ fontSize: 12 }}>{r.joc}</div><div className="mute" style={{ fontSize: 11 }}>{r.tra}</div></td>
                       <td className="text-center num" style={{ fontSize: 12 }}>{r.wei || "–"}</td>
                       <td className="text-center num" style={{ fontSize: 12 }}>{r.age}{r.sex}</td>
-                      <td className="text-right">
-                        <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "4px 8px", fontSize: 12 }}>—</span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div style={{ padding: "12px 18px", fontSize: 11, color: "var(--text-mute)" }}>
-              Runners from the racecard feed (jockey, trainer, weight, silks). Per-runner prices aren&apos;t exposed by this API yet.
+              Runners from the racecard feed (jockey, trainer, weight, silks).
             </div>
           </div>
           <div style={{ marginTop: 18 }}>

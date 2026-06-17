@@ -30,16 +30,16 @@ const SPORT_ICONS = {
 
 function Row({ match, sport, fmt }) {
   const c = match.competitors || {};
-  const t = oddsTriple(match);
+  const bucket = statusOf(match);
+  // Finished matches keep stale pre-match odds in the feed — never show them.
+  const t = bucket === "finished" ? null : oddsTriple(match);
   const twoWay = t?.twoWay;
   const cells = twoWay
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
+  // Favourite = shortest (lowest) price across the shown outcomes — highlighted.
   const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  // Shortest price = the favourite (most likely outcome). Each cell already shows
-  // the best price across bookmakers, so we flag the favourite, not a "best" cell.
   const fav = prices.length ? Math.min(...prices) : null;
-  const bucket = statusOf(match);
   const sc = score(match);
 
   return (
@@ -73,7 +73,6 @@ function Row({ match, sport, fmt }) {
             <button type="button" key={x.sym} className={`odds-cell${isFav ? " best" : ""}`}>
               <span className="meta">{x.sym}</span>
               <span className="price">{has ? formatOdds(x.price, fmt) : "—"}</span>
-              {isFav && <span style={{ fontSize: 9, color: "var(--accent)", fontWeight: 700, marginTop: 2, letterSpacing: "0.06em" }}>FAV</span>}
             </button>
           );
         })}
@@ -238,9 +237,13 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
     .slice(0, limit);
   const golfItems = (current?.players || []).slice(0, limit);
   const count = (current?.players ?? current?.races ?? current?.matches ?? []).length;
-  const priced = matches.filter((m) => oddsTriple(m));
+  // "Priced" excludes finished matches — their odds are stale pre-match prices, so
+  // they must not float to the top of a "top odds" widget. They still render (in
+  // `rest`, at the bottom) with their odds suppressed by Row.
+  const isPriced = (m) => statusOf(m) !== "finished" && !!oddsTriple(m);
+  const priced = matches.filter(isPriced);
   const liveP = priced.filter((m) => statusOf(m) === "live");
-  const rest = matches.filter((m) => !oddsTriple(m));
+  const rest = matches.filter((m) => !isPriced(m));
   const ordered = [...liveP, ...priced.filter((m) => statusOf(m) !== "live"), ...rest].slice(0, limit);
 
   return (
