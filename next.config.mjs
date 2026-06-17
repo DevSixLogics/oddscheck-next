@@ -46,6 +46,9 @@ const securityHeaders = [
 const nextConfig = {
   // This project has its own lockfile; pin the tracing root to silence the
   // "multiple lockfiles" workspace-root warning.
+  htmlLimitedBots:
+    /Googlebot|Bingbot|Slurp|DuckDuckBot|Baiduspider|YandexBot|facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Applebot|PetalBot|SemrushBot|AhrefsBot|MJ12bot|DotBot|Screaming Frog|ClaudeBot|Claude-Web|anthropic-ai|GPTBot|OAI-SearchBot|ChatGPT-User|PerplexityBot|PerplexityBot\/|Google-Extended|CCBot|Bytespider|Amazonbot|Applebot-Extended|cohere-ai|Diffbot|YouBot|Meta-ExternalAgent|Meta-ExternalFetcher/,
+
   outputFileTracingRoot: path.join(process.cwd()),
   sassOptions: {
     // Modern Dart-Sass API uses loadPaths; lets modules do `@use "tokens"`.
