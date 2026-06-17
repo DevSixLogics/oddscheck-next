@@ -1,12 +1,9 @@
-import { SITE_URL } from "@/lib/site";
-import { getCategoryArticles, getAuthors, getSettings, getMatches, flattenMatches } from "@/lib/api";
+import { getBaseUrl } from "@/lib/base-url";
+import { getCategoryArticles, getAuthors, getSettings } from "@/lib/api";
 
-// Sports whose fixtures carry id'd events worth surfacing in the sitemap.
-const EVENT_SPORTS = ["football", "tennis", "basketball", "cricket"];
-
-// Re-generate at most hourly. Resilient: dynamic sections degrade to the static
-// route list if a feed is unavailable, so the sitemap never fails the build.
-export const revalidate = 3600;
+// Render per-request so the base URL reflects the live request host (vercel/custom
+// domain/localhost). The underlying CMS fetches are still cached (revalidate: 300).
+export const dynamic = "force-dynamic";
 
 const STATIC_PATHS = [
   "", "/live", "/news", "/experts", "/guides", "/tools", "/offers",
@@ -22,8 +19,11 @@ const toDate = (s) => {
 
 export default async function sitemap() {
   const now = new Date();
+  // Base origin comes from the request host (vercel/custom domain/localhost) — not hardcoded.
+  const base = await getBaseUrl();
+
   const entries = STATIC_PATHS.map((p) => ({
-    url: `${SITE_URL}${p || "/"}`,
+    url: `${base}${p || "/"}`,
     lastModified: now,
     changeFrequency: p === "" ? "hourly" : "daily",
     priority: p === "" ? 1 : 0.7,
@@ -35,7 +35,7 @@ export default async function sitemap() {
     for (const a of articles) {
       if (!a?.slug) continue;
       entries.push({
-        url: `${SITE_URL}/article?slug=${a.slug}`,
+        url: `${base}/article?slug=${a.slug}`,
         lastModified: toDate(a.start_date) || now,
         changeFrequency: "weekly",
         priority: 0.6,
@@ -48,7 +48,7 @@ export default async function sitemap() {
     const authors = await getAuthors();
     for (const au of authors) {
       if (!au?.slug) continue;
-      entries.push({ url: `${SITE_URL}/experts/${au.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.5 });
+      entries.push({ url: `${base}/experts/${au.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.5 });
     }
   } catch { /* feed down */ }
 
@@ -61,26 +61,14 @@ export default async function sitemap() {
       const path = `/${slug}`;
       if (slug && !seen.has(path)) {
         seen.add(path);
-        entries.push({ url: `${SITE_URL}${path}`, lastModified: now, changeFrequency: "daily", priority: 0.6 });
+        entries.push({ url: `${base}${path}`, lastModified: now, changeFrequency: "daily", priority: 0.6 });
       }
     }
   } catch { /* settings down — static sports still emitted */ }
 
-  // Today's fixtures as /event pages (bounded per sport so the sitemap stays lean).
-  for (const sport of EVENT_SPORTS) {
-    try {
-      const { groups } = await getMatches(sport);
-      for (const m of flattenMatches(groups).slice(0, 40)) {
-        if (!m?.id) continue;
-        entries.push({
-          url: `${SITE_URL}/event?sport=${sport}&id=${m.id}`,
-          lastModified: now,
-          changeFrequency: "hourly",
-          priority: 0.5,
-        });
-      }
-    } catch { /* sport feed down — skip its events */ }
-  }
+  // NOTE: per-event pages use query-string URLs (/event?sport=…&id=…). The raw "&"
+  // is invalid in a sitemap XML <loc>, and they're transient (today's fixtures), so
+  // they're intentionally NOT listed here — crawlers reach them via the sport pages.
 
   return entries;
 }
