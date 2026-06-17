@@ -1,11 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Smoke + a11y suite. Runs against a local production build. The site sits behind
-// HTTP Basic Auth (preview gate) — credentials come from env with preview defaults.
+// Smoke + a11y suite. Runs against a local production build.
 const PORT = process.env.E2E_PORT || 3940;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
-const USER = process.env.BASIC_AUTH_USER || "oddscheck";
-const PASS = process.env.BASIC_AUTH_PASS || "preview2026";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -16,7 +13,6 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: BASE_URL,
-    httpCredentials: { username: USER, password: PASS },
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
