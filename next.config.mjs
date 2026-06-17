@@ -44,6 +44,11 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep isomorphic-dompurify (and its jsdom dep) out of the server bundle so
+  // its dynamic requires are traced into the serverless function instead of
+  // being bundled. Bundling jsdom breaks the article page at runtime on Vercel
+  // (works in `next dev`, 500s in production) — see article/page.js.
+  serverExternalPackages: ["isomorphic-dompurify"],
   // This project has its own lockfile; pin the tracing root to silence the
   // "multiple lockfiles" workspace-root warning.
   htmlLimitedBots:
