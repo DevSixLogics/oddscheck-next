@@ -44,11 +44,6 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Keep isomorphic-dompurify (and its jsdom dep) out of the server bundle so
-  // its dynamic requires are traced into the serverless function instead of
-  // being bundled. Bundling jsdom breaks the article page at runtime on Vercel
-  // (works in `next dev`, 500s in production) — see article/page.js.
-  serverExternalPackages: ["isomorphic-dompurify"],
   // This project has its own lockfile; pin the tracing root to silence the
   // "multiple lockfiles" workspace-root warning.
   htmlLimitedBots:
@@ -77,6 +72,19 @@ const nextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+  // Serve the sitemap index at the canonical /sitemap.xml that crawlers and
+  // robots.txt expect. We can't use Next's metadata sitemap convention here (the
+  // root [slug] catch-all shadows it) nor a route handler literally at
+  // /sitemap.xml (reserved metadata name → Turbopack panic), so /sitemap.xml is
+  // rewritten to the real handler at /sitemap/index.xml. beforeFiles → beats the
+  // [slug] catch-all. Child sitemaps stay at /sitemap/{group}.xml.
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/sitemap.xml", destination: "/sitemap/index.xml" },
+      ],
+    };
   },
 };
 
