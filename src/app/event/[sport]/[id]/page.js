@@ -120,11 +120,15 @@ export default async function EventPage({ params }) {
             </ol>
           </nav>
 
+          {/* One primary H1 describing the match entity (SEO). The big team names
+              below are visual only, so they're styled divs, not extra headings. */}
+          <h1 className="sr-only">{c.htn} vs {c.atn} — odds, stats &amp; match info{d.tournament?.nm ? ` · ${d.tournament.nm}` : ""}</h1>
+
           <div className="event-head-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 12 }}>
             <div className="flex items-center gap-4" style={{ justifyContent: "flex-end" }}>
               <div style={{ textAlign: "right" }}>
                 <div className="mute" style={{ fontSize: 10, letterSpacing: "0.08em", fontWeight: 700, marginBottom: 6 }}>HOME</div>
-                <h1 style={{ fontSize: "clamp(26px, 4vw, 36px)" }}>{c.htn}</h1>
+                <div style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 700, lineHeight: 1.1 }}>{c.htn}</div>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}><FormPills form={c.htf} /></div>
               </div>
               <Crest name={c.htn} id={c.htid} sport={sport} size="xl" />
@@ -136,7 +140,7 @@ export default async function EventPage({ params }) {
               <Crest name={c.atn} id={c.atid} sport={sport} size="xl" />
               <div>
                 <div className="mute" style={{ fontSize: 10, letterSpacing: "0.08em", fontWeight: 700, marginBottom: 6 }}>AWAY</div>
-                <h1 style={{ fontSize: "clamp(26px, 4vw, 36px)" }}>{c.atn}</h1>
+                <div style={{ fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 700, lineHeight: 1.1 }}>{c.atn}</div>
                 <FormPills form={c.atf} />
               </div>
             </div>

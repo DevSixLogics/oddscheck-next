@@ -35,10 +35,18 @@ test("home exposes JSON-LD structured data", async ({ page }) => {
   expect(count).toBeGreaterThan(0);
 });
 
-test("sitemap and robots are served", async ({ request }) => {
-  const sitemap = await request.get("/sitemap.xml");
-  expect(sitemap.ok()).toBeTruthy();
-  expect(await sitemap.text()).toContain("<urlset");
+test("sitemap index, a child sitemap, and robots are served", async ({ request }) => {
+  // /sitemap.xml is now a sitemap INDEX listing per-section child sitemaps.
+  const index = await request.get("/sitemap.xml");
+  expect(index.ok()).toBeTruthy();
+  expect(await index.text()).toContain("<sitemapindex");
+
+  // …and each child is a urlset of real URLs.
+  const child = await request.get("/sitemap/pages.xml");
+  expect(child.ok()).toBeTruthy();
+  const childXml = await child.text();
+  expect(childXml).toContain("<urlset");
+  expect(childXml).toContain("<loc>");
 
   const robots = await request.get("/robots.txt");
   expect(robots.ok()).toBeTruthy();

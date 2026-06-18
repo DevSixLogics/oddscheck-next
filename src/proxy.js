@@ -8,6 +8,20 @@ import { NextResponse } from "next/server";
 const USER = process.env.BASIC_AUTH_USER || "oddscheck";
 const PASS = process.env.BASIC_AUTH_PASS || "preview2026";
 
+// Whether the Basic-Auth gate should run for this deployment.
+//   PREVIEW_PROTECT=0  → always off  (fully public)
+//   PREVIEW_PROTECT=1  → always on   (gate every request)
+//   unset (default)    → protect preview/dev, leave PRODUCTION public so search
+//                        engines and users can reach the live site. This is the
+//                        critical prod-readiness fix: a Basic-Auth gate on the
+//                        production deployment would 401 Googlebot and deindex
+//                        the whole site.
+function authGateEnabled() {
+  if (process.env.PREVIEW_PROTECT === "0") return false;
+  if (process.env.PREVIEW_PROTECT === "1") return true;
+  return process.env.VERCEL_ENV !== "production";
+}
+
 // Back-compat: map the old query-string content URLs to the clean path routes.
 // Returns a clean (query-free) destination path, or null if no rule matches.
 function legacyRedirect(pathname, sp) {
@@ -28,6 +42,9 @@ export function proxy(request) {
     url.search = "";
     return NextResponse.redirect(url, 308);
   }
+
+  // Production is public; only preview/dev (or an explicit PREVIEW_PROTECT=1) is gated.
+  if (!authGateEnabled()) return NextResponse.next();
 
   const header = request.headers.get("authorization");
   if (header?.startsWith("Basic ")) {

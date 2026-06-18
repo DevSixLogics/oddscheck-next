@@ -21,5 +21,8 @@ export default defineConfig({
     url: BASE_URL,
     timeout: 180_000,
     reuseExistingServer: !process.env.CI,
+    // Run the local prod server PUBLIC (Basic-Auth gate off) so the suite mirrors
+    // the real production deployment — otherwise every route would 401.
+    env: { PREVIEW_PROTECT: "0" },
   },
 });

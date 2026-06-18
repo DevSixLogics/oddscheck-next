@@ -44,3 +44,7 @@ jobs:
       - run: npm run test:e2e
         env:
           CI: "true"
+          # Run the build/start under test PUBLIC (gate off) so the route-crawl
+          # asserts real 200s, matching the production deployment. (Also set in
+          # playwright.config.js webServer.env; kept here for clarity.)
+          PREVIEW_PROTECT: "0"
