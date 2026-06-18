@@ -5,6 +5,13 @@ import LiveBoard from "@/components/LiveBoard";
 
 export const metadata = { alternates: { canonical: "/live" } };
 
+// Render fresh on every request: this is the LIVE page, so the initial server
+// snapshot must reflect matches that are in-play right now. Without this, the page
+// was served from the ISR cache (≤60s old) — so a match that kicked off after the
+// last revalidation was missing on refresh and only appeared once the client poll
+// caught up (the "matches vanish on refresh, then reappear" behaviour).
+export const dynamic = "force-dynamic";
+
 const MATCH_SPORTS = [
   { key: "football", label: "Football" },
   { key: "tennis", label: "Tennis" },
@@ -22,7 +29,8 @@ const golfIsLive = (t) =>
 export default async function LivePage() {
   // Initial snapshot (server). The socket then live-merges on the client.
   const [matchFeeds, racing, golf] = await Promise.all([
-    Promise.all(MATCH_SPORTS.map((s) => getMatches(s.key))),
+    // fresh: bypass the 60s data cache so the snapshot is current on every load.
+    Promise.all(MATCH_SPORTS.map((s) => getMatches(s.key, undefined, { fresh: true }))),
     getRacingMeetings(),
     getGolfTournaments(),
   ]);

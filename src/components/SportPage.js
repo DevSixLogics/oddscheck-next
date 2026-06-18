@@ -14,8 +14,12 @@ import JsonLd from "@/components/JsonLd";
  */
 export default async function SportPage({ sport, subjectWord = "matches", date: dateProp }) {
   const reqDate = dateProp || todayISO();
+  // Today's view fetches fresh so live matches appear immediately; past/future
+  // days stay cached. Without this the listing was served from the ISR/data cache
+  // and a match that kicked off after the last revalidation was missing (it only
+  // showed once the cache refreshed).
   const [{ groups, date }, content] = await Promise.all([
-    getMatches(sport, reqDate),
+    getMatches(sport, reqDate, { fresh: reqDate === todayISO() }),
     sportListingContent(sport),
   ]);
   const matches = flattenMatches(groups);

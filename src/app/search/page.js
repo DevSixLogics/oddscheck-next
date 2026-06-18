@@ -55,7 +55,7 @@ function ResultRow({ m }) {
           );
         })}
       </div>
-      <Link className="btn btn-primary btn-xs" href={`/event?sport=${m.sport}&id=${m.id}`}>Compare</Link>
+      <Link className="btn btn-primary btn-xs" href={`/event/${m.sport}/${m.id}`}>Compare</Link>
     </div>
   );
 }

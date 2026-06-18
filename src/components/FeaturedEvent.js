@@ -110,7 +110,7 @@ export default function FeaturedEvent({ matches }) {
             <div className="eyebrow">Match of the day</div>
             <h2>Featured event</h2>
           </div>
-          <Link className="btn btn-outline btn-sm" href={`/event?id=${m.id}`}>Full breakdown →</Link>
+          <Link className="btn btn-outline btn-sm" href={`/event/football/${m.id}`}>Full breakdown →</Link>
         </div>
 
         <article className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -207,7 +207,7 @@ export default function FeaturedEvent({ matches }) {
           )}
 
           <div style={{ padding: "0 28px 28px" }}>
-            <Link className="btn btn-primary btn-block btn-lg" href={`/event?id=${m.id}`}>
+            <Link className="btn btn-primary btn-block btn-lg" href={`/event/football/${m.id}`}>
               View full comparison →
             </Link>
           </div>

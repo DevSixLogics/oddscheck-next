@@ -62,7 +62,7 @@ export function sportListJsonLd({ slug, matches = [], name = "", limit = 50 }) {
       const c = m.competitors || {};
       const evName = c.htn && c.atn ? `${c.htn} v ${c.atn}` : m.nm || m.league || "";
       if (!evName) return null;
-      const item = { "@type": "SportsEvent", name: evName, url: `${SITE_URL}/event?sport=${String(slug).toLowerCase()}&id=${m.id}` };
+      const item = { "@type": "SportsEvent", name: evName, url: `${SITE_URL}/event/${String(slug).toLowerCase()}/${m.id}` };
       const start = m.dt || m.gdt;
       if (start) item.startDate = String(start).replace(" ", "T");
       return { "@type": "ListItem", position: i + 1, item };

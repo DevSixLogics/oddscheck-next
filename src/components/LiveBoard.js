@@ -103,7 +103,7 @@ function LiveMatchCard({ m }) {
       </div>
       <div className="flex justify-between items-center mute" style={{ fontSize: 11 }}>
         <span className="flex items-center gap-1"><span className="live-dot" /> Markets open</span>
-        <Link href={`/event?sport=${m.sport}&id=${m.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>All markets →</Link>
+        <Link href={`/event/${m.sport}/${m.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>All markets →</Link>
       </div>
     </article>
   );

@@ -76,11 +76,11 @@ function Row({ match, sport, isPast }) {
       <Odds match={match} />
 
       <div className={styles.compare} style={{ flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
-        <Link className="btn btn-primary btn-sm" href={`/event?sport=${sport}&id=${match.id}`}>
+        <Link className="btn btn-primary btn-sm" href={`/event/${sport}/${match.id}`}>
           Compare
         </Link>
         {books > 0 && (
-          <Link href={`/event?sport=${sport}&id=${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+          <Link href={`/event/${sport}/${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
             {books} book{books > 1 ? "s" : ""}
           </Link>
         )}
