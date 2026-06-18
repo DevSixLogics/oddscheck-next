@@ -28,6 +28,35 @@ const PILL_LABELS = {
   baseball: "Baseball", racing: "Horse Racing", golf: "Golf",
 };
 
+// Sports refreshed by the REST poll. Superset of the socket sports — baseball has
+// no live socket event, so the poll is its only live updater.
+const POLL_SPORTS = [...MATCH_SPORTS, { key: "baseball", label: "Baseball" }];
+
+// Merge a fresh batch of a sport's matches into the live board (shared by the
+// socket push AND the REST poll): update existing live cards, drop any that are
+// no longer live, and add newly-live matches. `incoming` may include non-live
+// matches (the REST feed returns all of them) — statusOf() decides what stays.
+function mergeSportInto(prev, sportKey, sportLabel, incoming) {
+  if (!incoming?.length) return prev;
+  const byId = new Map(incoming.map((m) => [String(m.id), m]));
+  // 1) merge updates into existing cards for this sport
+  let next = prev.map((it) =>
+    it.kind === "match" && it.sport === sportKey && byId.has(String(it.id))
+      ? { ...mergeMatch(it, byId.get(String(it.id))), kind: "match", sport: sportKey, sportLabel: it.sportLabel || sportLabel }
+      : it
+  );
+  // 2) drop ones that are no longer live (finished/postponed/etc.)
+  next = next.filter((it) => !(it.kind === "match" && it.sport === sportKey && byId.has(String(it.id)) && statusOf(it) !== "live"));
+  // 3) add newly-live matches not already shown
+  const present = new Set(next.filter((it) => it.kind === "match" && it.sport === sportKey).map((it) => String(it.id)));
+  incoming.forEach((m) => {
+    if (!present.has(String(m.id)) && statusOf(m) === "live") {
+      next = [...next, { ...m, kind: "match", sport: sportKey, sportLabel, league: m.league || m.tournament_name || sportLabel }];
+    }
+  });
+  return next;
+}
+
 function parColor(p) {
   if (typeof p === "string" && p.startsWith("-")) return "var(--accent)";
   if (typeof p === "string" && p.startsWith("+")) return "var(--down)";
@@ -128,6 +157,7 @@ export default function LiveBoard({ initialItems = [] }) {
   const [items, setItems] = useState(initialItems);
   const [filter, setFilter] = useState("all"); // selected sport tab
 
+  // Socket push (instant) — Tier 1 per sport. Merges into the live board.
   useEffect(() => {
     if (!socket) return;
     const channel = socket.channel("IPUB");
@@ -138,25 +168,7 @@ export default function LiveBoard({ initialItems = [] }) {
       const handler = (e) => {
         const incoming = flattenSocketLeagues(e?.data);
         if (!incoming.length) return;
-        setItems((prev) => {
-          const byId = new Map(incoming.map((m) => [String(m.id), m]));
-          // 1) merge updates into existing live cards for this sport
-          let next = prev.map((it) =>
-            it.kind === "match" && it.sport === s.key && byId.has(String(it.id))
-              ? { ...mergeMatch(it, byId.get(String(it.id))), kind: "match", sport: s.key, sportLabel: it.sportLabel }
-              : it
-          );
-          // 2) drop ones that just went non-live
-          next = next.filter((it) => !(it.kind === "match" && it.sport === s.key && byId.has(String(it.id)) && statusOf(it) !== "live"));
-          // 3) add newly-live matches not already shown
-          const present = new Set(next.filter((it) => it.kind === "match" && it.sport === s.key).map((it) => String(it.id)));
-          incoming.forEach((m) => {
-            if (!present.has(String(m.id)) && statusOf(m) === "live") {
-              next = [...next, { ...m, kind: "match", sport: s.key, sportLabel: s.label, league: m.league || m.tournament_name || s.label }];
-            }
-          });
-          return next;
-        });
+        setItems((prev) => mergeSportInto(prev, s.key, s.label, incoming));
       };
       channel.listen(ev, handler);
       subs.push([ev, handler]);
@@ -164,6 +176,32 @@ export default function LiveBoard({ initialItems = [] }) {
     // Unsubscribe our listeners only — never disconnect the shared socket.
     return () => subs.forEach(([ev, h]) => channel.stopListening(ev, h));
   }, [socket]);
+
+  // REST poll (reliable) — the socket may not carry every match (different
+  // backend ID space), and a sport can time out on the initial server render.
+  // Polling /api/matches every 20s re-syncs scores/minutes, drops finished
+  // matches, and pulls in any live match the snapshot/socket missed — so the
+  // live list converges to the true set instead of a random snapshot.
+  useEffect(() => {
+    let stop = false;
+    let timer;
+    const poll = async () => {
+      for (const s of POLL_SPORTS) {
+        if (stop) return;
+        try {
+          const res = await fetch(`/api/matches?sport=${s.key}`, { cache: "no-store" });
+          if (!res.ok) continue;
+          const { matches } = await res.json();
+          if (!stop && Array.isArray(matches)) setItems((prev) => mergeSportInto(prev, s.key, s.label, matches));
+        } catch { /* transient — next tick retries */ }
+      }
+      // Schedule the NEXT poll only after this one finishes, so a slow CMS cycle
+      // can't overlap/stack up.
+      if (!stop) timer = setTimeout(poll, 20000);
+    };
+    poll();
+    return () => { stop = true; clearTimeout(timer); };
+  }, []);
 
   const itemKey = (it) => (it.kind === "race" ? "racing" : it.kind === "golf" ? "golf" : it.sport);
   const counts = {};

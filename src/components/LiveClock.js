@@ -17,7 +17,8 @@ function isPaused(match) {
  */
 export default function LiveClock({ match }) {
   const running = !isPaused(match) && /\d/.test(String(match.mins || "")) && /half|live|playing|\d/.test(String(match.sun || "").toLowerCase());
-  const seed = parseInt(String(match.mins || "").replace(/[^\d]/g, ""), 10);
+  // Leading number only — keeps stoppage time sane ("45+3'" → 45, not 453).
+  const seed = parseInt(String(match.mins || "").trim(), 10);
   const ref = useRef({ base: running && Number.isFinite(seed) ? seed : null, at: Date.now() });
   const [min, setMin] = useState(ref.current.base);
 

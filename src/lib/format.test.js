@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   initials,
   statusOf,
+  score,
   formatOdds,
   oddsTriple,
   oddsMarkets,
@@ -49,6 +50,27 @@ describe("statusOf", () => {
   it("handles cricket status fields", () => {
     expect(statusOf({ cst: "inprogress" })).toBe("live");
     expect(statusOf({ bs: "live" })).toBe("live");
+  });
+});
+
+describe("score", () => {
+  it("reads the cfs scoreline for football even when the aggregate `as` is empty", () => {
+    // Regression: football carries `as: ""` (aggregate). "" != null wrongly fired
+    // the cricket branch and hid the real cfs, rendering a live 0-2 as 0-0.
+    const s = score({ cfs: "0-2", ft: "", as: "", mins: "80", sun: "2nd half" });
+    expect(s.home).toBe("0");
+    expect(s.away).toBe("2");
+  });
+  it("falls back to ft when cfs is empty", () => {
+    expect(score({ cfs: "", ft: "1-3" })).toMatchObject({ home: "1", away: "3" });
+  });
+  it("reads cricket runs from hs/as when there is no H-A scoreline", () => {
+    const s = score({ cfs: "", ft: "", hs: "104/4", as: "0", bs: "live" });
+    expect(s.home).toBe("104/4");
+    expect(s.away).toBe("0");
+  });
+  it("returns empty when there is no score", () => {
+    expect(score({ cfs: "", ft: "", as: "" })).toMatchObject({ home: "", away: "" });
   });
 });
 

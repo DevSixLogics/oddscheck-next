@@ -23,14 +23,17 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function fetchMatches(sport, date) {
+async function fetchMatches(sport, date, fresh = false) {
   // multi_odds=1 → `odds` is an array of per-bookmaker markets (1x2, DC, BTTS…).
   const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1`;
   const res = await fetch(url, {
-    // Treat as live-ish data; re-fetch at most once per REVALIDATE window.
-    next: { revalidate: REVALIDATE },
-    // Don't let a slow/unstable sport feed (e.g. racing) hang the request.
-    signal: AbortSignal.timeout(8000),
+    // `fresh` (live poll) bypasses the data cache so each poll sees current
+    // scores/minutes; otherwise re-fetch at most once per REVALIDATE window.
+    ...(fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE } }),
+    // The CMS often takes ~7s; an 8s cap made sports randomly time out, so the
+    // live board showed a different subset each visit. 15s gives real headroom
+    // while still bounding a genuinely hung feed.
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`${sport}/new-matches ${date} -> HTTP ${res.status}`);
   const json = await res.json();
@@ -52,13 +55,13 @@ export async function getMatchCount(sport) {
  * Returns { groups, date, source, sport } where source is
  * "live" | "sample-date" | "fallback" (football only) | "empty".
  */
-export async function getMatches(sport = "football", date = todayISO()) {
+export async function getMatches(sport = "football", date = todayISO(), { fresh = false } = {}) {
   try {
-    let groups = await fetchMatches(sport, date);
+    let groups = await fetchMatches(sport, date, fresh);
     if (groups.length) return { groups, date, source: "live", sport };
 
     if (date !== SAMPLE_DATE) {
-      groups = await fetchMatches(sport, SAMPLE_DATE);
+      groups = await fetchMatches(sport, SAMPLE_DATE, fresh);
       if (groups.length) return { groups, date: SAMPLE_DATE, source: "sample-date", sport };
     }
   } catch (err) {

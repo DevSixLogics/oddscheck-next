@@ -45,15 +45,22 @@ export function statusOf(match) {
 
 /** Display score "H-A" using current/final score, falling back to full-time. */
 export function score(match) {
-  // Cricket scores its own way (hs/as = runs, e.g. "421" and "17/0").
-  if (match.hs != null || match.as != null) {
+  // Standard "H-A" scoreline (football, tennis, basketball, …). Check this FIRST:
+  // football carries an `as` *aggregate* field that is often "" — and "" != null,
+  // so the old cricket check below wrongly fired and hid a real cfs like "0-2".
+  const s = match.cfs || match.ft || "";
+  if (s.includes("-")) {
+    const [h, a] = s.split("-");
+    return { home: (h ?? "").trim(), away: (a ?? "").trim(), raw: s };
+  }
+  // Cricket scores its own way (hs/as = runs, e.g. "421" and "17/0"), and has no
+  // H-A scoreline — only reach here when cfs/ft didn't provide one.
+  if ((match.hs ?? "") !== "" || (match.as ?? "") !== "") {
     const home = String(match.hs ?? "").trim();
     const away = String(match.as ?? "").trim();
     return { home, away, raw: home || away };
   }
-  const s = match.cfs || match.ft || "";
-  const [h, a] = s.split("-");
-  return { home: (h ?? "").trim(), away: (a ?? "").trim(), raw: s };
+  return { home: "", away: "", raw: s };
 }
 
 /** Short status label for the right rail: "67'", "HT", "FT", or kickoff time. */

@@ -9,7 +9,8 @@ export async function GET(request) {
   const sport = (searchParams.get("sport") || "football").toLowerCase();
   const date = searchParams.get("date") || undefined;
   try {
-    const { groups } = await getMatches(sport, date);
+    // fresh: bypass the 60s data cache so live polling sees current scores/minutes.
+    const { groups } = await getMatches(sport, date, { fresh: true });
     const matches = flattenMatches(groups).map((m) => ({ ...m, sport }));
     return Response.json({ matches });
   } catch {
