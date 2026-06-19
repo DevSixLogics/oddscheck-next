@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMatchDetail, getMatchH2H, getMatchTab } from "@/lib/api";
+import { getMatchDetail, getMatchH2H, getMatchTab, getMatchOdds } from "@/lib/api";
 import { oddsMarkets, statusLabel, kickoffTime, kickoffDate, score } from "@/lib/format";
 import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
@@ -113,6 +113,15 @@ export default async function EventPage({ params }) {
   // Kickoff datetime: football uses `dt`; cricket/others use `gdt`. Venue: football
   // `venue.name`, cricket `stad`. Score via score() (handles cricket runs + cfs).
   const ko = d.dt || d.gdt || "";
+  // Some sports (cricket) ship NO odds on the detail endpoint — the listing feed
+  // is the only odds source. Backfill from it so the comparison isn't empty.
+  if (!Array.isArray(d.odds) || !d.odds.length) {
+    const day = ko.slice(0, 10);
+    if (day) {
+      const odds = await getMatchOdds(sport, id, day);
+      if (odds.length) d.odds = odds;
+    }
+  }
   const sc = score(d);
   const venue = d.venue?.name || d.stad?.nm || "";
   // Dynamic tabs: driven by the match's own `tabs` list (so a match without a

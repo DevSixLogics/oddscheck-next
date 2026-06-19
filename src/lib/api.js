@@ -106,6 +106,28 @@ export async function getMatchDetail(sport = "football", id) {
 }
 
 /**
+ * Odds for a single match pulled from the LISTING feed (/{sport}/new-matches).
+ * Some sports (notably cricket) expose no `odds` on the match-detail endpoint —
+ * the listing feed is the only odds source — so the detail page backfills from
+ * here. `date` is the match's calendar day (YYYY-MM-DD, from gdt/dt).
+ * Returns the per-bookmaker odds array (possibly []); never throws.
+ */
+export async function getMatchOdds(sport, id, date) {
+  if (!id || !date) return [];
+  try {
+    const groups = await fetchMatches(sport, date, false);
+    for (const g of groups) {
+      for (const m of g.matches || []) {
+        if (String(m.id) === String(id)) return Array.isArray(m.odds) ? m.odds : [];
+      }
+    }
+  } catch (err) {
+    console.error("[api] getMatchOdds failed:", err.message);
+  }
+  return [];
+}
+
+/**
  * Cricket group standings for a match: /cricket/match/{id}/standings.
  * Returns an array of non-empty groups, each a row[] of
  * { grp, tnm, tid, pos, mt, wo, lo, dr, pts, nrr, prem }, or [] on error.

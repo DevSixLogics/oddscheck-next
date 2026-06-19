@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Crest from "./Crest";
 import Flag from "./Flag";
-import { kickoffTime, statusOf, statusLabel, score, oddsTriple } from "@/lib/format";
+import { kickoffTime, statusOf, statusLabel, score, oddsTriple, bookmakerCount } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import styles from "./MatchTable.module.scss";
 
@@ -38,7 +38,9 @@ function Row({ match, sport, isPast }) {
   const bucket = isPast ? "finished" : statusOf(match);
   const sc = score(match);
   const showScore = bucket !== "upcoming" && sc.raw;
-  const books = oddsTriple(match)?.books || 0;
+  // Distinct bookmakers (regional feeds of one brand collapsed) — matches the
+  // row count shown on the detail comparison.
+  const books = bookmakerCount(match);
 
   return (
     <div className={styles.row}>

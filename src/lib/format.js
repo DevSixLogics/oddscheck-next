@@ -180,6 +180,26 @@ export function oddsTriple(match) {
   return { ...by, twoWay: by.draw == null, type: markets[0].type, books: usedFallback ? 1 : markets.length };
 }
 
+/**
+ * Number of DISTINCT bookmakers pricing the match-winner market — one per
+ * bookmaker_name (regional feeds like "Betway ROA"/"Betway ZA" are separate
+ * books with their own prices, so they each count). A book is counted as long
+ * as it prices at least one outcome > 1 (a single broken leg, e.g. H=0.6, still
+ * counts — its bad price just renders as "—"). This equals the row count the
+ * detail comparison shows for the winner market.
+ */
+export function bookmakerCount(match) {
+  const names = new Set();
+  for (const m of marketList(match)) {
+    const outs = Array.isArray(m.outcomes) ? m.outcomes : [];
+    if (!outs.length || outs.length > 3) continue;
+    if (!outs.every((o) => side(o.name) != null)) continue; // 1x2 / moneyline only
+    // Any positive price counts (matches oddsMarkets, which now shows sub-1.0 prices).
+    if (outs.some((o) => toNum(o.odds) > 0)) names.add((m.bookmaker_name || "Bookmaker").trim());
+  }
+  return names.size;
+}
+
 // Order 1·X·2 outcomes Home, Draw, Away; everything else keeps feed order.
 const OUTCOME_ORDER = { h: 0, "1": 0, home: 0, d: 1, x: 1, draw: 1, a: 2, "2": 2, away: 2 };
 
@@ -200,10 +220,15 @@ export function oddsMarkets(match) {
     for (const o of m.outcomes || []) {
       const on = String(o.name ?? "").trim();
       const p = toNum(o.odds);
-      if (!on || !(p > 1)) continue;
+      // Show every price the feed sends, even a sub-1.0 one (e.g. HollywoodBet
+      // H=0.5). Only a missing/zero/non-numeric value is dropped (→ "—"). Note
+      // such a value is invalid as decimal odds; it renders raw and is faithful.
+      if (!on || !(p > 0)) continue;
       prices[on] = p;
       if (!g.outcomes.includes(on)) g.outcomes.push(on);
     }
+    // One row per bookmaker (each bookmaker_name — including regional feeds like
+    // "Betway ROA"/"Betway ZA" — is a distinct book with its own prices).
     if (Object.keys(prices).length) g.rows.push({ bookmaker: m.bookmaker_name || "Bookmaker", link: m.oddsTrackingLink || null, prices });
   }
   const out = [];
