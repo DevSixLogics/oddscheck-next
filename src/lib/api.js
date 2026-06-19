@@ -401,13 +401,25 @@ export async function getHeaderMenu() {
  * the general feed + the offers feed, then look up each author's profile.
  * Returns [{ slug, name, image, bio, postCount }] sorted by post count desc.
  */
+/**
+ * Author/bookmaker avatar URL, or null when the CMS returns its generic
+ * "default.png" placeholder. Returning null lets the UI fall back to a brand
+ * badge or initial circle instead of showing the same default image for every
+ * author until real photos are uploaded in the CMS.
+ */
+export function realAuthorImage(path) {
+  if (!path) return null;
+  const base = String(path).split(/[?#]/)[0].split("/").pop().toLowerCase();
+  return /^default\.(png|jpe?g|webp|svg|gif)$/.test(base) ? null : path;
+}
+
 export async function getAuthors() {
   const map = new Map();
   const collect = (arr) => {
     for (const a of arr || []) {
       const slug = (a.authorSlug || "").toLowerCase();
       if (!slug || map.has(slug)) continue;
-      map.set(slug, { slug, name: a.authorName || slug, image: a.profile_image_path || null });
+      map.set(slug, { slug, name: a.authorName || slug, image: realAuthorImage(a.profile_image_path) });
     }
   };
 

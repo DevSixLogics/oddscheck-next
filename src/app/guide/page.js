@@ -1,5 +1,7 @@
 import Link from "next/link";
 import styles from "./guide.module.scss";
+import JsonLd from "@/components/JsonLd";
+import { howToJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 export const metadata = { alternates: { canonical: "/guide" } };
 
@@ -13,6 +15,31 @@ const TOC = [
   ["tldr", "TL;DR"],
 ];
 
+// HowTo steps mirror the visible <h2> sections below — answer engines parse the
+// procedure even though Google retired the HowTo rich result. Text stays in sync
+// with the rendered copy (steps must be visible on the page to be valid).
+const HOWTO_STEPS = [
+  { name: "Decimal odds", text: "Multiply your stake by the decimal price to get your return: stake × decimal odds = return. £10 at 2.50 returns £25 (£15 profit)." },
+  { name: "Fractional odds", text: "The fraction shows profit per unit staked: 3/1 wins £3 for every £1 staked. Convert to decimal by dividing and adding 1 (3/1 → 4.00)." },
+  { name: "American odds", text: "Given as + or − a number. +150 wins £150 from a £100 stake; −110 means staking £110 to win £100. Plus is the underdog, minus the favourite." },
+  { name: "Implied probability", text: "Every price has a built-in probability: implied probability = 1 ÷ decimal odds × 100. 2.50 → 40%, 1.50 → 66.67%." },
+  { name: "The overround", text: "Add the implied probabilities of every outcome; the amount over 100% is the bookmaker's margin (the overround). A lower overround means better prices for you." },
+  { name: "Finding value", text: "Look for prices where the implied probability is lower than the real probability, and compare bookmakers to take the best available price on every bet." },
+];
+
+const guideSchema = [
+  howToJsonLd({
+    name: "How to read betting odds",
+    description: "Read decimal, fractional and American odds, convert prices to implied probability, and use the overround to find value.",
+    steps: HOWTO_STEPS,
+  }),
+  breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Guides", path: "/guides" },
+    { name: "How to read betting odds" },
+  ]),
+];
+
 const READ_NEXT = [
   ["What is implied probability?", "/guide/implied-probability"],
   ["What makes a value bet?", "/guide/value-bets"],
@@ -24,6 +51,7 @@ const READ_NEXT = [
 export default function GuidePage() {
   return (
     <>
+      {guideSchema.map((data, i) => <JsonLd key={i} data={data} />)}
       <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">

@@ -309,3 +309,40 @@ export function breadcrumbJsonLd(crumbs = []) {
     })),
   };
 }
+
+/**
+ * FAQPage JSON-LD from visible question/answer pairs. `faqs` = [{ q, a }];
+ * entries missing either side are dropped. Only call this when the Q&A is
+ * actually rendered on the page — answer engines (and Google's FAQ guidelines)
+ * expect the answer text to be visible to the user, not schema-only.
+ */
+export function faqJsonLd(faqs = []) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: (faqs || [])
+      .filter((f) => f?.q && f?.a)
+      .map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+  };
+}
+
+/**
+ * HowTo JSON-LD for a procedural guide. `steps` = [{ name, text }] in order;
+ * empty steps are dropped. `name`/`description` describe the overall task and
+ * are omitted when absent. As with FAQ, the steps should be visible on the page.
+ */
+export function howToJsonLd({ name, description, steps = [] } = {}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    step: (steps || [])
+      .filter((s) => s?.name && s?.text)
+      .map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.name, text: s.text })),
+  };
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArticleCard from "@/components/ArticleCard";
 import JsonLd from "@/components/JsonLd";
-import { getAuthorDetails } from "@/lib/api";
+import { getAuthorDetails, realAuthorImage } from "@/lib/api";
 import { SITE_URL } from "@/lib/site";
 
 // Expert / author profile — the author's real /author/details info (name, bio,
@@ -43,7 +43,7 @@ export default async function ExpertProfilePage({ params }) {
   const role = isBrand ? "Bookmaker" : (bio || "Contributor");
   const postCount = detail?.post_count ?? articles.length;
   const primary = articles[0] || null;
-  const img = detail?.image || detail?.profile_image_path || null;
+  const img = realAuthorImage(detail?.image || detail?.profile_image_path);
 
   // ProfilePage + Person/Organization (E-E-A-T): names the author entity, their
   // bio and photo when the CMS supplies them. Fields are omitted when absent.

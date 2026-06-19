@@ -1,0 +1,12 @@
+#!/bin/sh
+# Clean-URL guard — blocks commits that reintroduce legacy query-string URLs
+# (/article?slug=, /review?author=, /event?…). Enable once per clone with:
+#
+#   git config core.hooksPath .githooks
+#
+node scripts/check-urls.mjs || {
+  echo ""
+  echo "Commit blocked by the clean-URL guard (see above)."
+  echo "Migrate the listed file(s) to canonical paths, or run: npm run check:urls"
+  exit 1
+}
