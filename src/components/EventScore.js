@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import useSocket from "@/hooks/useSocket";
+import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, mergeMatch } from "@/lib/socket";
 import { statusOf, score, kickoffDate, kickoffTime } from "@/lib/format";
 import LiveClock from "./LiveClock";
@@ -72,6 +73,7 @@ export default function EventScore({ sport, id, match }) {
 
   const bucket = statusOf(m);
   const sc = score(m);
+  const updated = useFlashOnChange(m._updatedAt);
 
   return (
     <div className="event-head-vs" style={{ textAlign: "center", padding: "0 16px" }}>
@@ -80,9 +82,9 @@ export default function EventScore({ sport, id, match }) {
       ) : bucket === "finished" ? (
         <div className="chip chip-muted mb-3">Full time</div>
       ) : (
-        <div className="chip chip-best mb-3"><span className="live-dot" style={{ background: "var(--accent)" }} /> {kickoffDate(m.dt)} · {kickoffTime(m.dt)}</div>
+        <div className="chip chip-best mb-3"><span className="live-dot" style={{ background: "var(--accent)" }} /> {kickoffDate(m.dt || m.gdt)} · {kickoffTime(m.dt || m.gdt)}</div>
       )}
-      <div className="num" style={{ fontSize: 52, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "-0.04em", lineHeight: 1 }}>
+      <div className={`num${updated ? " match-flash" : ""}`} style={{ fontSize: 52, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "-0.04em", lineHeight: 1, borderRadius: 12 }}>
         {bucket !== "upcoming" && sc.raw ? `${sc.home}–${sc.away}` : "vs"}
       </div>
       <div className="flex gap-2 mt-3" style={{ justifyContent: "center", flexWrap: "wrap" }}>

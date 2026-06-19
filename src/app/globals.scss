@@ -805,6 +805,17 @@ select.input {
   color: #2ECC71; letter-spacing: 0.06em; animation: goalPulse 3s ease-out;
 }
 
+/* General live-update highlight — any socket/poll change to a match briefly
+   pulses the card/row in the brand accent, then reverts to the normal design.
+   Box-shadow/background follow the element's own border-radius. Reduced-motion
+   users get no animation. */
+@keyframes matchUpdatePulse {
+  0%   { background: rgba(255,142,0,0.20); box-shadow: 0 0 0 2px rgba(255,142,0,0.55), 0 0 26px rgba(255,142,0,0.22); }
+  100% { background: transparent; box-shadow: none; }
+}
+.match-flash { animation: matchUpdatePulse 2.5s ease-out; }
+@media (prefers-reduced-motion: reduce) { .match-flash { animation: none; } }
+
 /* Static-content flag — red border + soft glow around hardcoded/placeholder
    sections (offers, tips, tools, learn, hero stats — no live API source). */
 .static-flag {

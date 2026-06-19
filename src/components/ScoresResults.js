@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
+import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
 import { statusOf, statusLabel, score, kickoffTime } from "@/lib/format";
 import styles from "./ScoresResults.module.scss";
@@ -18,12 +19,13 @@ const goalsFor = (m) => {
 };
 
 function MatchRow({ match, bucket, flash }) {
+  const updated = useFlashOnChange(match._updatedAt);
   const c = match.competitors || {};
   const sc = score(match);
   const homeScored = flash === "home" || flash === "both";
   const awayScored = flash === "away" || flash === "both";
   return (
-    <div className={styles.match}>
+    <div className={`${styles.match}${updated ? " match-flash" : ""}`}>
       <div className={styles.teams}>
         <div className={styles.crests}>
           <Crest name={c.htn} id={c.htid} sport={match.sport} />

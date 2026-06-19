@@ -23,7 +23,12 @@ export default function DateNav({ date }) {
   const router = useRouter();
   const pathname = usePathname();
   const today = fmt(new Date());
-  const go = (d) => router.push(`${pathname}?date=${d}`);
+  // push to the new ?date, then refresh so the server component re-renders with
+  // the new date even if the client Router Cache still holds the old searchParams.
+  const go = (d) => {
+    router.push(`${pathname}?date=${d}`);
+    router.refresh();
+  };
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>

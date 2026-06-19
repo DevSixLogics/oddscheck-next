@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
+import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
 import { oddsTriple, statusOf, score, kickoffTime } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
@@ -64,6 +65,7 @@ function parColor(p) {
 }
 
 function LiveMatchCard({ m }) {
+  const flash = useFlashOnChange(m._updatedAt);
   const c = m.competitors || {};
   const t = oddsTriple(m);
   const sc = score(m);
@@ -71,10 +73,8 @@ function LiveMatchCard({ m }) {
   const cells = twoWay
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null;
   return (
-    <article className="card" style={LIVE_CARD}>
+    <article className={`card${flash ? " match-flash" : ""}`} style={LIVE_CARD}>
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <span className="chip chip-live" style={{ fontSize: 10 }}><LiveClock match={m} /></span>
@@ -93,8 +93,9 @@ function LiveMatchCard({ m }) {
       <div style={{ display: "grid", gridTemplateColumns: twoWay ? "1fr 1fr" : "1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
+          const isBest = false; // favourite/best highlight removed — not a backend value (re-enable when the feed flags a best price)
           return (
-            <button key={x.sym} className={`odds-cell${has && x.price === fav ? " best" : ""}`}>
+            <button key={x.sym} className={`odds-cell${isBest ? " best" : ""}`}>
               <span className="meta">{x.sym}</span>
               <span className="price">{has ? <OddsValue value={x.price} /> : "—"}</span>
             </button>
