@@ -92,9 +92,57 @@ export async function getMatchDetail(sport = "football", id) {
     });
     if (!res.ok) throw new Error(`${sport}/match/${id}/detail -> HTTP ${res.status}`);
     const json = await res.json();
-    return json?.data ?? null;
+    const data = json?.data ?? null;
+    // `odds` and `tabs` are TOP-LEVEL siblings of `data` (not nested) — attach
+    // them so oddsMarkets()/oddsTriple() can read d.odds, and the page can read
+    // d.tabs (the per-match list of available detail tabs, e.g. teams/standings/info).
+    if (data && json.odds != null && data.odds == null) data.odds = json.odds;
+    if (data && Array.isArray(json.tabs) && data.tabs == null) data.tabs = json.tabs;
+    return data;
   } catch (err) {
     console.error("[api] getMatchDetail failed:", err.message);
+    return null;
+  }
+}
+
+/**
+ * Cricket group standings for a match: /cricket/match/{id}/standings.
+ * Returns an array of non-empty groups, each a row[] of
+ * { grp, tnm, tid, pos, mt, wo, lo, dr, pts, nrr, prem }, or [] on error.
+ */
+export async function getMatchStandings(sport = "cricket", id) {
+  if (!id) return [];
+  try {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/standings`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`${sport}/match/${id}/standings -> HTTP ${res.status}`);
+    const json = await res.json();
+    const groups = Array.isArray(json?.data) ? json.data : [];
+    return groups.filter((g) => Array.isArray(g) && g.length);
+  } catch (err) {
+    console.error("[api] getMatchStandings failed:", err.message);
+    return [];
+  }
+}
+
+/**
+ * Generic match-detail TAB fetch: /{sport}/match/{id}/{tab} (teams, standings,
+ * info, scorecard, …). Returns the `data` payload or null.
+ */
+export async function getMatchTab(sport, id, tab) {
+  if (!id || !tab) return null;
+  try {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/${tab}`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`${sport}/match/${id}/${tab} -> HTTP ${res.status}`);
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (err) {
+    console.error(`[api] getMatchTab(${tab}) failed:`, err.message);
     return null;
   }
 }

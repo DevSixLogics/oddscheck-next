@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { getMatchDetail, getMatchH2H } from "@/lib/api";
-import { oddsMarkets, statusLabel, kickoffTime, kickoffDate } from "@/lib/format";
+import { getMatchDetail, getMatchH2H, getMatchTab } from "@/lib/api";
+import { oddsMarkets, statusLabel, kickoffTime, kickoffDate, score } from "@/lib/format";
 import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
 import OddsMarkets from "@/components/OddsMarkets";
+import MatchTabs from "@/components/MatchTabs";
 import JsonLd from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 import { cmsSeo } from "@/lib/seo";
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }) {
     LEAGUE_NAME: league,
     TOURNAMENT_NAME: league,
     COUNTRY_NAME: league,
-    DATE: kickoffDate(d.dt) || "",
+    DATE: kickoffDate(d.dt || d.gdt) || "",
   };
   // CMS /seo-settings match_detail template first; fall back to a built string.
   const cms = await cmsSeo({
@@ -52,10 +53,49 @@ function FormPills({ form }) {
   );
 }
 
+// Tabs we know how to render in MatchTabs, in display order.
+const SUPPORTED_TABS = ["standings", "teams", "info"];
+const TAB_ORDER = { standings: 0, teams: 1, info: 2 };
+
+// Shape a tab's raw payload for MatchTabs. For standings, keep only non-empty
+// groups and prefer the group(s) containing this match's teams.
+function processTab(key, data, teamIds) {
+  if (key === "standings") {
+    const groups = (Array.isArray(data) ? data : []).filter((g) => Array.isArray(g) && g.length);
+    const rel = groups.filter((g) => g.some((r) => teamIds.includes(String(r.tid))));
+    return rel.length ? rel : groups;
+  }
+  if (key === "teams") {
+    // Trim to only the fields the UI renders (avoids shipping player_id/etc. in the payload).
+    const squad = Array.isArray(data?.team_squards) ? data.team_squards : [];
+    return {
+      teams: data?.teams,
+      team_squards: squad.map((s) => ({
+        team_id: s.team_id,
+        player: s.player ? { id: s.player.id, nm: s.player.nm, bows: s.player.bows } : null,
+      })),
+    };
+  }
+  return data;
+}
+
+function tabHasData(key, data) {
+  if (key === "standings") return Array.isArray(data) && data.length > 0;
+  if (key === "teams") return !!(data?.teams || (Array.isArray(data?.team_squards) && data.team_squards.length));
+  if (key === "info") return !!(data && (data.type || data.stad || data.ts_win || data.match_umpires));
+  return data != null;
+}
+
 export default async function EventPage({ params }) {
   const { sport, id } = await params;
 
-  const [d, h2h] = await Promise.all([getMatchDetail(sport, id), getMatchH2H(sport, id)]);
+  const isCricket = sport === "cricket";
+  // Fetch detail + (football) H2H + (cricket) every supported tab in parallel.
+  const [d, h2h, ...tabRaw] = await Promise.all([
+    getMatchDetail(sport, id),
+    isCricket ? Promise.resolve(null) : getMatchH2H(sport, id),
+    ...(isCricket ? SUPPORTED_TABS.map((t) => getMatchTab(sport, id, t)) : []),
+  ]);
 
   if (!d) {
     return (
@@ -70,8 +110,24 @@ export default async function EventPage({ params }) {
   }
 
   const c = d.competitors || {};
+  // Kickoff datetime: football uses `dt`; cricket/others use `gdt`. Venue: football
+  // `venue.name`, cricket `stad`. Score via score() (handles cricket runs + cfs).
+  const ko = d.dt || d.gdt || "";
+  const sc = score(d);
+  const venue = d.venue?.name || d.stad?.nm || "";
+  // Dynamic tabs: driven by the match's own `tabs` list (so a match without a
+  // standings tab just shows the tabs it does have), keeping only ones with data.
+  const teamIdsArr = [c.htid, c.atid].map((x) => String(x));
+  const tabByKey = isCricket ? Object.fromEntries(SUPPORTED_TABS.map((t, i) => [t, tabRaw[i]])) : {};
+  const availableKeys = (Array.isArray(d.tabs) && d.tabs.length ? d.tabs : SUPPORTED_TABS).filter((t) => SUPPORTED_TABS.includes(t));
+  const matchTabs = isCricket
+    ? availableKeys
+        .map((key) => ({ key, data: processTab(key, tabByKey[key], teamIdsArr) }))
+        .filter((t) => tabHasData(t.key, t.data))
+        .sort((a, b) => (TAB_ORDER[a.key] ?? 9) - (TAB_ORDER[b.key] ?? 9))
+    : [];
   // A match on an earlier calendar day is finished — ignore stale "live" flags.
-  const matchDate = (d.dt || "").slice(0, 10);
+  const matchDate = ko.slice(0, 10);
   const isPast = /^\d{4}-\d{2}-\d{2}$/.test(matchDate) && matchDate < new Date().toISOString().slice(0, 10);
   const statusText = isPast ? (d.mins || "FT") : statusLabel(d);
 
@@ -84,9 +140,9 @@ export default async function EventPage({ params }) {
       {
         "@type": "SportsEvent",
         name: `${c.htn} vs ${c.atn}`,
-        startDate: d.dt ? d.dt.replace(" ", "T") : undefined,
+        startDate: ko ? ko.replace(" ", "T") : undefined,
         eventStatus: "https://schema.org/EventScheduled",
-        location: d.venue?.name ? { "@type": "Place", name: d.venue.name } : undefined,
+        location: venue ? { "@type": "Place", name: venue } : undefined,
         competitor: [
           { "@type": "SportsTeam", name: c.htn },
           { "@type": "SportsTeam", name: c.atn },
@@ -189,6 +245,7 @@ export default async function EventPage({ params }) {
                 )}
               </div>
             )}
+            {matchTabs.length > 0 && <MatchTabs tabs={matchTabs} teamIds={teamIdsArr} />}
           </div>
 
           <aside className="flex-col gap-4">
@@ -196,11 +253,13 @@ export default async function EventPage({ params }) {
               <h4 style={{ fontSize: 14, marginBottom: 14 }}>Match info</h4>
               <ul className="flex-col gap-2" style={{ fontSize: 13, color: "var(--text-2)", listStyle: "none", padding: 0 }}>
                 <li className="flex justify-between"><span className="mute">Competition</span><span>{d.tournament?.nm || "—"}</span></li>
-                <li className="flex justify-between"><span className="mute">Country</span><span>{d.tournament?.cat || "—"}</span></li>
+                <li className="flex justify-between"><span className="mute">Country</span><span>{d.tournament?.cat || d.stad?.ctry || "—"}</span></li>
                 {d.ro && <li className="flex justify-between"><span className="mute">Round</span><span>{d.ro}</span></li>}
-                <li className="flex justify-between"><span className="mute">Kickoff</span><span>{kickoffDate(d.dt)} · {kickoffTime(d.dt)}</span></li>
+                {d.mty && <li className="flex justify-between"><span className="mute">Format</span><span>{d.mty}</span></li>}
+                {venue && <li className="flex justify-between"><span className="mute">Venue</span><span style={{ textAlign: "right" }}>{venue}{d.stad?.cty ? `, ${d.stad.cty}` : ""}</span></li>}
+                {ko && <li className="flex justify-between"><span className="mute">{sport === "cricket" ? "Start" : "Kickoff"}</span><span>{kickoffDate(ko)} · {kickoffTime(ko)}</span></li>}
                 <li className="flex justify-between"><span className="mute">Status</span><span>{statusText}</span></li>
-                {(d.cfs || d.ft) && <li className="flex justify-between"><span className="mute">Score</span><span className="num">{d.cfs || d.ft}</span></li>}
+                {sc.raw && <li className="flex justify-between"><span className="mute">Score</span><span className="num">{sc.home}{sc.away ? ` – ${sc.away}` : ""}</span></li>}
               </ul>
             </div>
             <div className="card" style={{ padding: 20 }}>
