@@ -35,7 +35,7 @@ export default async function sitemap() {
     for (const a of articles) {
       if (!a?.slug) continue;
       entries.push({
-        url: `${base}/article?slug=${a.slug}`,
+        url: `${base}/article/${a.slug}`,
         lastModified: toDate(a.start_date) || now,
         changeFrequency: "weekly",
         priority: 0.6,
