@@ -47,7 +47,7 @@ export default async function BestOffers() {
             const name = o.authorName || (o.subjects?.[0]?.name ?? "Bookmaker");
             const slug = (o.authorSlug || "").toLowerCase();
             const cls = BRANDS.has(slug) ? `bm-${slug}` : "";
-            const href = o.slug ? `/article?slug=${o.slug}` : "/offers";
+            const href = o.slug ? `/article/${o.slug}` : "/offers";
             return (
               <article className="offer-card" key={o.id || o.slug} style={{ padding: 22 }}>
                 <div className="flex justify-between items-start mb-3">
@@ -61,7 +61,7 @@ export default async function BestOffers() {
                 <p style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 16, minHeight: 36 }}>{o.strapline}</p>
                 <div className="flex gap-2">
                   <Link className="btn btn-primary flex-1" href={href}>Read offer →</Link>
-                  <Link className="btn btn-ghost btn-sm" href={slug ? `/review?author=${slug}` : "/experts"}>Review</Link>
+                  <Link className="btn btn-ghost btn-sm" href={slug ? `/review/${slug}` : "/experts"}>Review</Link>
                 </div>
                 <div style={{ fontSize: 10, color: "var(--text-mute)", marginTop: 12, lineHeight: 1.5 }}>
                   18+ · Begambleaware.org · T&amp;Cs apply · Please gamble responsibly

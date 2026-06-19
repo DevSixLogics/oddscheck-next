@@ -228,7 +228,7 @@ export async function matchListingSeo(sport, { type = "all" } = {}) {
  * CollectionPage + ItemList(NewsArticle) JSON-LD for an article-listing page
  * (news, offers, guides, a category, …). Mirrors the CMS theme's buildArticlesJsonLd.
  * `name`/`description` should come from the CMS (omitted when empty); each article
- * becomes a NewsArticle item. Articles link to the real /article?slug= URL.
+ * becomes a NewsArticle item, linked by its clean /article/{slug} canonical URL.
  */
 export function articleListJsonLd({ name, description, path = "/", articles = [], limit = 50 }) {
   const url = `${SITE_URL}${path}`;
@@ -239,7 +239,7 @@ export function articleListJsonLd({ name, description, path = "/", articles = []
       const item = {
         "@type": "NewsArticle",
         headline: a.headline,
-        url: a.slug ? `${SITE_URL}/article?slug=${a.slug}` : url,
+        url: a.slug ? `${SITE_URL}/article/${a.slug}` : url,
       };
       const d = a.start_date ? new Date(String(a.start_date).replace(" ", "T")) : null;
       if (d && !isNaN(d)) { item.datePublished = d.toISOString(); item.dateModified = d.toISOString(); }

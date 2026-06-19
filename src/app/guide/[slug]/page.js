@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import JsonLd from "@/components/JsonLd";
+import { SITE_URL } from "@/lib/site";
 import styles from "../guide.module.scss";
 
 // Content for the topic guides (the rich "how to read betting odds" lives at /guide).
@@ -129,7 +131,49 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const g = GUIDES[slug];
   if (!g) return { title: "Guide" };
-  return { title: `${g.title} — betting guide`, description: g.intro };
+  return { title: `${g.title} — betting guide`, description: g.intro, alternates: { canonical: `/guide/${slug}` } };
+}
+
+// FAQPage (the guide title + each section as a Q&A) + BreadcrumbList. The guides
+// are question-led and answer-shaped, so this is exactly the structured-answer
+// markup AI/answer engines and rich results look for.
+function guideSchema(slug, g) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          { "@type": "Question", name: g.title, acceptedAnswer: { "@type": "Answer", text: g.intro } },
+          ...g.sections.map((s) => ({
+            "@type": "Question",
+            name: s.h,
+            acceptedAnswer: { "@type": "Answer", text: s.paras.join(" ") },
+          })),
+        ],
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Guides", item: `${SITE_URL}/guides` },
+          { "@type": "ListItem", position: 3, name: g.title, item: `${SITE_URL}/guide/${slug}` },
+        ],
+      },
+      {
+        // Marks the question (H1) + concise answer (intro) as voice-friendly for
+        // assistants / answer engines (SpeakableSpecification).
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/guide/${slug}`,
+        url: `${SITE_URL}/guide/${slug}`,
+        name: g.title,
+        speakable: {
+          "@type": "SpeakableSpecification",
+          cssSelector: ["h1", "#guide-intro"],
+        },
+      },
+    ],
+  };
 }
 
 export default async function GuideTopicPage({ params }) {
@@ -141,6 +185,7 @@ export default async function GuideTopicPage({ params }) {
 
   return (
     <>
+      <JsonLd data={guideSchema(slug, g)} />
       <section style={{ padding: "32px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -157,7 +202,7 @@ export default async function GuideTopicPage({ params }) {
             <span className="chip chip-muted">{g.time}</span>
           </div>
           <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", lineHeight: 1.1, maxWidth: "20ch", marginBottom: 14 }}>{g.title}</h1>
-          <p style={{ fontSize: 17, color: "var(--text-2)", lineHeight: 1.55, maxWidth: 680 }}>{g.intro}</p>
+          <p id="guide-intro" style={{ fontSize: 17, color: "var(--text-2)", lineHeight: 1.55, maxWidth: 680 }}>{g.intro}</p>
         </div>
       </section>
 

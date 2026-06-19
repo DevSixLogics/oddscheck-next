@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ArticleCard from "@/components/ArticleCard";
+import JsonLd from "@/components/JsonLd";
 import { getAuthorDetails } from "@/lib/api";
+import { SITE_URL } from "@/lib/site";
 
 // Expert / author profile — the author's real /author/details info (name, bio,
 // role, post count) plus every article they've published. Reached from the
@@ -41,9 +43,25 @@ export default async function ExpertProfilePage({ params }) {
   const role = isBrand ? "Bookmaker" : (bio || "Contributor");
   const postCount = detail?.post_count ?? articles.length;
   const primary = articles[0] || null;
+  const img = detail?.image || detail?.profile_image_path || null;
+
+  // ProfilePage + Person/Organization (E-E-A-T): names the author entity, their
+  // bio and photo when the CMS supplies them. Fields are omitted when absent.
+  const profileSchema = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": isBrand ? "Organization" : "Person",
+      name,
+      url: `${SITE_URL}/experts/${slug.toLowerCase()}`,
+      ...(bio ? { description: bio } : {}),
+      ...(img ? { image: img } : {}),
+    },
+  };
 
   return (
     <>
+      <JsonLd data={profileSchema} />
       <section style={{ padding: "40px 0 28px", background: "linear-gradient(180deg, rgba(255,142,0,0.04) 0%, transparent 100%)", borderBottom: "1px solid var(--border)" }}>
         <div className="container">
           <nav className="crumbs" aria-label="Breadcrumb">
@@ -58,7 +76,10 @@ export default async function ExpertProfilePage({ params }) {
           <div className="grid" style={{ gridTemplateColumns: "1fr 360px", gap: 36, alignItems: "start", marginTop: 12 }}>
             <div>
           <div className="flex items-center gap-4 mb-3 flex-wrap">
-            {isBrand
+            {img ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={img} alt={name} width={54} height={54} style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+            ) : isBrand
               ? <span className={`bm bm-lg bm-${key}`}>{brandCode(name)}</span>
               : <span style={{ width: 54, height: 54, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(255,142,0,0.12)", color: "var(--accent)", fontWeight: 700, fontSize: 22, flexShrink: 0 }}>{name.charAt(0).toUpperCase()}</span>}
             <h1 style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>{name}</h1>
@@ -75,14 +96,14 @@ export default async function ExpertProfilePage({ params }) {
                 : `${name} writes betting tips, previews and analysis for OddsCheck.`}
           </p>
           <div className="flex gap-2 mt-4 flex-wrap">
-            {primary && <Link className="btn btn-primary" href={`/article?slug=${primary.slug}`}>{isBrand ? "See latest offer" : "Read latest article"}</Link>}
+            {primary && <Link className="btn btn-primary" href={`/article/${primary.slug}`}>{isBrand ? "See latest offer" : "Read latest article"}</Link>}
             <Link className="btn btn-ghost" href="/experts">All experts</Link>
           </div>
             </div>
             <aside className="card" style={{ padding: 24 }}>
               <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 8 }}>Latest article</div>
               <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, lineHeight: 1.3 }}>{primary?.headline || "No articles yet"}</div>
-              {primary && <Link className="btn btn-primary btn-block" href={`/article?slug=${primary.slug}`}>Read article</Link>}
+              {primary && <Link className="btn btn-primary btn-block" href={`/article/${primary.slug}`}>Read article</Link>}
               <hr className="divider" style={{ margin: "16px 0" }} />
               <div className="flex justify-between" style={{ fontSize: 13 }}>
                 <span className="mute">Articles</span><b className="num">{postCount}</b>

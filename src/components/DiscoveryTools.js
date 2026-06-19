@@ -98,7 +98,7 @@ function BoostCard({ o }) {
       </div>
       <h4 style={{ fontSize: 16, lineHeight: 1.3 }}>{o.headline}</h4>
       {o.strapline && <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, flex: 1 }}>{o.strapline}</p>}
-      <Link className="btn btn-primary btn-sm" href={o.slug ? `/article?slug=${o.slug}` : "/offers"}>View offer →</Link>
+      <Link className="btn btn-primary btn-sm" href={o.slug ? `/article/${o.slug}` : "/offers"}>View offer →</Link>
     </article>
   );
 }

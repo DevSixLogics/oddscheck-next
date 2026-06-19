@@ -150,7 +150,6 @@ export default function Header({ menu, logo }) {
             <span className="kbd" aria-hidden="true">⌘K</span>
           </form>
           <div className="topnav-actions">
-            <Link className="btn btn-primary btn-sm" href="/signup" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Join free</Link>
             <button
               type="button"
               className="nav-toggle"
@@ -302,14 +301,6 @@ export default function Header({ menu, logo }) {
               <Link key={s.label} href={s.href} onClick={() => setOpen(false)}>{s.label}</Link>
             ))}
           </nav>
-          <div className="drawer-section-h">Account</div>
-          <nav className="drawer-nav">
-            <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
-            <Link href="/signup" onClick={() => setOpen(false)}>Join free</Link>
-          </nav>
-          <Link className="btn btn-primary btn-block btn-lg" href="/signup" style={{ marginTop: 16 }} onClick={() => setOpen(false)}>
-            Get started — free
-          </Link>
         </div>
       </aside>
     </>

@@ -27,7 +27,11 @@ function ExpertCard({ a }) {
   return (
     <Link className="card" href={`/experts/${a.slug}`} style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12, minHeight: 168 }}>
       <div className="flex items-center gap-3">
-        {isBrand
+        {a.image ? (
+          // Real author/bookmaker photo from the CMS when available.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={a.image} alt={a.name} width={46} height={46} style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+        ) : isBrand
           ? <span className={`bm bm-lg bm-${key}`}>{brandCode(a.name)}</span>
           : <span style={{ width: 46, height: 46, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(255,142,0,0.12)", color: "var(--accent)", fontWeight: 700, fontSize: 18, flexShrink: 0 }}>{a.name.charAt(0).toUpperCase()}</span>}
         <div>
