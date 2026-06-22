@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRaceRunners } from "@/lib/api";
 import { kickoffTime, kickoffDate } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import JsonLd from "@/components/JsonLd";
 import { SITE_URL } from "@/lib/site";
 import { cmsSeo } from "@/lib/seo";
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }) {
 
 export default async function RacePage({ params }) {
   const { id } = await params;
-  const race = await getRaceRunners(id);
+  const [race, tz] = await Promise.all([getRaceRunners(id), getViewerTimeZone()]);
 
   if (!race) {
     return (
@@ -80,12 +81,12 @@ export default async function RacePage({ params }) {
             </ol>
           </nav>
           <div className="flex gap-2 mb-3" style={{ marginTop: 12 }}>
-            {race.st && <span className="chip chip-best">{kickoffTime(race.st) || race.st}</span>}
+            {race.st && <span className="chip chip-best">{kickoffTime(race.st, tz) || race.st}</span>}
             {isResult && <span className="chip chip-muted">Result</span>}
           </div>
           <h1 style={{ fontSize: "clamp(22px, 3.5vw, 32px)", lineHeight: 1.2, maxWidth: "28ch" }}>{race.nm}</h1>
           <div className="mute" style={{ fontSize: 13, marginTop: 8 }}>
-            {[race.dis && `${race.dis}`, race.nor && `${race.nor} runners`, kickoffDate(race.st)].filter(Boolean).join(" · ")}
+            {[race.dis && `${race.dis}`, race.nor && `${race.nor} runners`, kickoffDate(race.st, tz)].filter(Boolean).join(" · ")}
           </div>
         </div>
       </section>

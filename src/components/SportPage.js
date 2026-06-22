@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getMatches, flattenMatches, todayISO } from "@/lib/api";
-import { statusOf } from "@/lib/format";
+import { getMatchesByLocalDate, flattenMatches } from "@/lib/api";
+import { statusOf, todayInZone } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import { sportListJsonLd, sportListingContent } from "@/lib/seo";
 import MatchTable from "@/components/MatchTable";
 import DateNav from "@/components/DateNav";
@@ -13,19 +14,22 @@ import JsonLd from "@/components/JsonLd";
  * heading falls back to the sport name and the lead is omitted when absent.
  */
 export default async function SportPage({ sport, subjectWord = "matches", date: dateProp }) {
-  const reqDate = dateProp || todayISO();
+  // Dates are the VIEWER'S LOCAL calendar day (DateNav is local-based). reqDate
+  // defaults to local-today; matches are fetched + grouped by local day so a
+  // late-UTC kickoff appears under the right local date (not the feed's UTC day).
+  const tz = await getViewerTimeZone();
+  const today = todayInZone(tz);
+  const reqDate = dateProp || today;
   // Today's view fetches fresh so live matches appear immediately; past/future
-  // days stay cached. Without this the listing was served from the ISR/data cache
-  // and a match that kicked off after the last revalidation was missing (it only
-  // showed once the cache refreshed).
+  // days stay cached.
   const [{ groups, date }, content] = await Promise.all([
-    getMatches(sport, reqDate, { fresh: reqDate === todayISO() }),
+    getMatchesByLocalDate(sport, reqDate, tz, { fresh: reqDate === today }),
     sportListingContent(sport),
   ]);
   const matches = flattenMatches(groups);
   const { heading: title, lead } = content;
-  // A selected day before today is fully played — never show "live" on it.
-  const isPast = reqDate < todayISO();
+  // A selected day before local-today is fully played — never show "live" on it.
+  const isPast = reqDate < today;
   const liveCount = isPast ? 0 : matches.filter((m) => statusOf(m) === "live").length;
 
   // Breadcrumb + CollectionPage/ItemList of fixtures (sport name from CMS heading).
@@ -93,7 +97,7 @@ export default async function SportPage({ sport, subjectWord = "matches", date: 
                 </div>
               </div>
               {matches.length ? (
-                <MatchTable groups={groups} sport={sport} isPast={isPast} />
+                <MatchTable groups={groups} sport={sport} isPast={isPast} tz={tz} />
               ) : (
                 <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
                   No {subjectWord} found for {date}. This sport&apos;s feed may be empty right now —

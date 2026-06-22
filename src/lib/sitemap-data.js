@@ -1,22 +1,60 @@
-import { getCategoryArticles, getAuthors, getSettings } from "@/lib/api";
+import { getCategoryArticles, getAuthors, getMatches, flattenMatches } from "@/lib/api";
 
 // Shared source of truth for the sitemap index (/sitemap.xml) and every child
 // sitemap (/sitemap/{id}.xml). We render the XML ourselves (explicit route
 // handlers) instead of the Next metadata convention so the index is always
 // emitted and the routes win over the root [slug] catch-all.
 
+// Static / hub pages (NON-sport). Sport hubs live in their own `sports` child.
 const STATIC_PATHS = [
-  "", "/live", "/news", "/experts", "/guides", "/tools", "/offers",
-  "/football", "/racing", "/tennis", "/basketball", "/cricket", "/baseball", "/golf",
-  "/responsible-gambling", "/about", "/contact",
+  "", "/live", "/offers", "/news", "/guides", "/experts",
+  "/tools", "/odds-calculator", "/responsible-gambling", "/about", "/contact",
 ];
 
-// Evergreen article categories. Each one is its OWN child sitemap
-// (/sitemap/{category}.xml) listing the clean /article/{slug} pages inside it.
-export const ARTICLE_CATEGORIES = [
-  "news", "best-betting-offers", "guides", "betting-basics",
-  "strategy-value", "bet-types", "offers-bonuses", "sport-specific",
+// Per-page crawl hints. Google ignores <priority> and mostly ignores
+// <changefreq>, but auditors read them — so they reflect each page's real
+// importance and update cadence. Unlisted paths use PAGE_DEFAULT.
+const PAGE_META = {
+  "": { priority: 1.0, changeFrequency: "daily" },        // homepage — top priority
+  "/live": { priority: 0.9, changeFrequency: "hourly" },  // live odds — changes constantly
+  "/offers": { priority: 0.9, changeFrequency: "daily" }, // commercial / high value
+  "/news": { priority: 0.8, changeFrequency: "daily" },
+  "/guides": { priority: 0.8, changeFrequency: "weekly" },
+  "/experts": { priority: 0.8, changeFrequency: "weekly" },
+  "/tools": { priority: 0.6, changeFrequency: "weekly" },
+  "/odds-calculator": { priority: 0.6, changeFrequency: "monthly" }, // standalone tool page
+  "/responsible-gambling": { priority: 0.4, changeFrequency: "monthly" },
+  "/about": { priority: 0.4, changeFrequency: "monthly" },
+  "/contact": { priority: 0.4, changeFrequency: "monthly" },
+};
+const PAGE_DEFAULT = { priority: 0.6, changeFrequency: "weekly" };
+
+// Sport landing pages. The first seven have dedicated fixture routes; the rest
+// resolve (200) via the [slug] catch-all as sport topic pages. All are real,
+// crawlable URLs (verified) — none 404.
+const SPORT_HUBS = [
+  { path: "/football", priority: 0.9 },
+  { path: "/horse-racing", priority: 0.9 },
+  { path: "/racing", priority: 0.8 },
+  { path: "/tennis", priority: 0.8 },
+  { path: "/cricket", priority: 0.8 },
+  { path: "/basketball", priority: 0.8 },
+  { path: "/baseball", priority: 0.8 },
+  { path: "/golf", priority: 0.8 },
+  { path: "/rugby", priority: 0.8 },
+  { path: "/rugby-union", priority: 0.8 },
+  { path: "/american-football", priority: 0.8 },
+  { path: "/ice-hockey", priority: 0.8 },
 ];
+
+// Content groups → the CMS article categories each one aggregates (merged and
+// deduped by article URL). These become the news / offers / guides child
+// sitemaps of clean /article/{slug} URLs.
+const CONTENT_GROUPS = {
+  news: ["news"],
+  offers: ["best-betting-offers", "offers-bonuses"],
+  guides: ["guides", "betting-basics", "strategy-value", "bet-types", "sport-specific"],
+};
 
 // Static guide hub pages (the GUIDES keys in app/guide/[slug]/page.js).
 const GUIDE_SLUGS = [
@@ -26,48 +64,48 @@ const GUIDE_SLUGS = [
 
 const MAX_PAGES = 20; // safety cap per category
 
+// Sports whose match detail pages live at /event/{sport}/{id} and have a working
+// fixtures feed. (Racing/golf use their own routes; baseball's feed 404s.)
+const MATCH_SPORTS = ["football", "tennis", "basketball", "cricket"];
+
 const toDate = (s) => {
   if (!s) return undefined;
   const d = new Date(String(s).replace(" ", "T"));
   return isNaN(d) ? undefined : d;
 };
 
-// The full list of child-sitemap ids the index links to (and the only ids the
-// child route will serve). "pages" + "experts" + one per article category.
+// The child-sitemap ids the index links to, in display order. Public URLs are
+// /sitemap-{id}.xml (via next.config rewrites → the /sitemap/{id} route handler):
+//   sitemap-pages · sitemap-news · sitemap-matches · sitemap-experts ·
+//   sitemap-offers · sitemap-guides · sitemap-sports
 export function sitemapGroupIds() {
-  return ["pages", "experts", ...ARTICLE_CATEGORIES];
+  return ["pages", "sports", "guides", "news", "experts", "offers", "matches"];
 }
 
 // --- per-group entry builders ----------------------------------------------
 
-// Static pages, guide hubs, and any extra CMS-allowed sports.
-async function pagesEntries(base, now) {
-  const entries = STATIC_PATHS.map((p) => ({
-    url: `${base}${p || "/"}`,
+// Homepage + core static landing pages ONLY (priority/changefreq from PAGE_META).
+// Guide detail pages live in the guides sitemap, sport hubs in the sports sitemap.
+function pagesEntries(base, now) {
+  return STATIC_PATHS.map((p) => {
+    const meta = PAGE_META[p] || PAGE_DEFAULT;
+    return {
+      url: `${base}${p || "/"}`,
+      lastModified: now,
+      changeFrequency: meta.changeFrequency,
+      priority: meta.priority,
+    };
+  });
+}
+
+// Sport hub listing pages — their own child sitemap (/sitemap/sports.xml).
+function sportsEntries(base, now) {
+  return SPORT_HUBS.map((s) => ({
+    url: `${base}${s.path}`,
     lastModified: now,
-    changeFrequency: p === "" ? "hourly" : "daily",
-    priority: p === "" ? 1 : 0.7,
+    changeFrequency: "daily",
+    priority: s.priority,
   }));
-
-  for (const slug of GUIDE_SLUGS) {
-    entries.push({ url: `${base}/guide/${slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.6 });
-  }
-
-  // Any extra CMS-allowed sports not already in STATIC_PATHS (ice hockey, rugby, …).
-  try {
-    const settings = await getSettings();
-    const seen = new Set(STATIC_PATHS);
-    for (const name of settings?.allowed_sports || []) {
-      const slug = String(name).toLowerCase().trim().replace(/\s+/g, "-");
-      const path = `/${slug}`;
-      if (slug && !seen.has(path)) {
-        seen.add(path);
-        entries.push({ url: `${base}${path}`, lastModified: now, changeFrequency: "daily", priority: 0.6 });
-      }
-    }
-  } catch { /* settings down — static sports still emitted */ }
-
-  return entries;
 }
 
 // Expert / author profiles.
@@ -80,6 +118,40 @@ async function expertsEntries(base, now) {
       entries.push({ url: `${base}/experts/${au.slug}`, lastModified: now, changeFrequency: "weekly", priority: 0.5 });
     }
   } catch { /* feed down */ }
+  return entries;
+}
+
+// Today's match detail pages (/event/{sport}/{id}) across the match-feed sports.
+// These are time-sensitive (a short changefreq), and finished games still carry
+// teams / score / stats, so they're included for complete coverage. Each sport's
+// feed is fetched in parallel and failures degrade to no entries for that sport.
+async function matchesEntries(base, now) {
+  const entries = [];
+  const seen = new Set();
+  const perSport = await Promise.all(
+    MATCH_SPORTS.map(async (sport) => {
+      try {
+        const { groups } = await getMatches(sport);
+        return { sport, matches: flattenMatches(groups) };
+      } catch {
+        return { sport, matches: [] };
+      }
+    })
+  );
+  for (const { sport, matches } of perSport) {
+    for (const m of matches) {
+      if (!m?.id) continue;
+      const key = `${sport}/${m.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      entries.push({
+        url: `${base}/event/${sport}/${m.id}`,
+        lastModified: now,
+        changeFrequency: "hourly",
+        priority: 0.5,
+      });
+    }
+  }
   return entries;
 }
 
@@ -111,13 +183,46 @@ async function categoryEntries(base, now, category) {
   return entries;
 }
 
+// Guides child: the static /guide/{slug} education hubs (priority 0.6, monthly)
+// PLUS the guide-category articles (/article/{slug}), merged. Guide detail pages
+// live HERE, not in pages.xml. Hubs and articles use different paths (no overlap).
+async function guidesEntries(base, now) {
+  const hubs = GUIDE_SLUGS.map((slug) => ({
+    url: `${base}/guide/${slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.6,
+  }));
+  const seen = new Set(hubs.map((h) => h.url));
+  const articles = (await contentGroupEntries(base, now, "guides")).filter((a) => !seen.has(a.url));
+  return [...hubs, ...articles];
+}
+
+// A content group (news / offers / guides) = one or more CMS categories merged
+// and deduped by article URL → clean /article/{slug} entries.
+async function contentGroupEntries(base, now, group) {
+  const out = [];
+  const seen = new Set();
+  for (const cat of CONTENT_GROUPS[group] || []) {
+    for (const e of await categoryEntries(base, now, cat)) {
+      if (seen.has(e.url)) continue;
+      seen.add(e.url);
+      out.push(e);
+    }
+  }
+  return out;
+}
+
 // Build the <url> entries for one child sitemap id. Returns null for an unknown
 // id so the route can answer 404.
 export async function sitemapEntries(id, base) {
   const now = new Date();
   if (id === "pages") return pagesEntries(base, now);
+  if (id === "sports") return sportsEntries(base, now);
+  if (id === "guides") return guidesEntries(base, now);
   if (id === "experts") return expertsEntries(base, now);
-  if (ARTICLE_CATEGORIES.includes(id)) return categoryEntries(base, now, id);
+  if (id === "matches") return matchesEntries(base, now);
+  if (CONTENT_GROUPS[id]) return contentGroupEntries(base, now, id); // news, offers
   return null;
 }
 

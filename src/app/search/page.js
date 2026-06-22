@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
-import { oddsTriple, statusOf, statusLabel, score, kickoffTime } from "@/lib/format";
+import { oddsTriple, statusOf, statusLabel, score, kickoffLabel } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import { OddsValue } from "@/components/OddsFormatProvider";
 import Crest from "@/components/Crest";
 
@@ -15,7 +16,7 @@ const SPORTS = [
   { key: "baseball", label: "Baseball" },
 ];
 
-function ResultRow({ m }) {
+function ResultRow({ m, tz }) {
   const c = m.competitors || {};
   const t = oddsTriple(m);
   const sc = score(m);
@@ -41,7 +42,7 @@ function ResultRow({ m }) {
       <div style={{ fontSize: 12, color: "var(--text-2)", minWidth: 130 }}>
         <span className="chip chip-muted" style={{ fontSize: 10, marginRight: 6 }}>{m.sportLabel}</span>{m.league}
         <div className="mute" style={{ fontSize: 11, marginTop: 3 }}>
-          {bucket === "live" ? <span style={{ color: "var(--down)", fontWeight: 700 }}>{statusLabel(m)}</span> : bucket === "finished" ? "FT" : kickoffTime(m.dt)}
+          {bucket === "live" ? <span style={{ color: "var(--down)", fontWeight: 700 }}>{statusLabel(m, tz)}</span> : bucket === "finished" ? "FT" : kickoffLabel(m.dt, tz)}
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 5, minWidth: 170 }}>
@@ -60,7 +61,7 @@ function ResultRow({ m }) {
   );
 }
 
-function RaceRow({ r }) {
+function RaceRow({ r, tz }) {
   const s = (r.status || "").toUpperCase();
   const live = s === "OFF";
   const done = s === "RESULT" || s === "INTERIM";
@@ -74,7 +75,7 @@ function RaceRow({ r }) {
         <span className="chip chip-muted" style={{ fontSize: 10, marginRight: 6 }}>Horse Racing</span>
         {[r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
         <div className="mute" style={{ fontSize: 11, marginTop: 3 }}>
-          {live ? <span style={{ color: "var(--down)", fontWeight: 700 }}>LIVE</span> : done ? "Result" : kickoffTime(r.st)}
+          {live ? <span style={{ color: "var(--down)", fontWeight: 700 }}>LIVE</span> : done ? "Result" : kickoffLabel(r.st, tz)}
         </div>
       </div>
       <Link className="btn btn-primary btn-xs" href={`/race?id=${r.id}`}>Card</Link>
@@ -102,6 +103,7 @@ export default async function SearchPage({ searchParams }) {
   const sp = await searchParams;
   const q = (sp?.q || "").trim();
   const ql = q.toLowerCase();
+  const tz = await getViewerTimeZone();
 
   let results = [];
   if (ql) {
@@ -175,9 +177,9 @@ export default async function SearchPage({ searchParams }) {
             {results.length ? (
               <div className="flex-col gap-2">
                 {results.slice(0, 50).map((item, idx) =>
-                  item.kind === "race" ? <RaceRow key={`race-${item.id}`} r={item} />
+                  item.kind === "race" ? <RaceRow key={`race-${item.id}`} r={item} tz={tz} />
                   : item.kind === "golf" ? <GolfRow key={`golf-${item.id}-${item.player || "t"}-${idx}`} g={item} />
-                  : <ResultRow key={`${item.sport}-${item.id}`} m={item} />
+                  : <ResultRow key={`${item.sport}-${item.id}`} m={item} tz={tz} />
                 )}
               </div>
             ) : (

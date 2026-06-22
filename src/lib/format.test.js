@@ -6,8 +6,15 @@ import {
   formatOdds,
   oddsTriple,
   oddsMarkets,
+  oddsLineCount,
   outcomeLabel,
   marketNames,
+  kickoffTime,
+  kickoffDate,
+  kickoffLabel,
+  localDay,
+  todayInZone,
+  tzOffsetMinutes,
 } from "./format.js";
 
 describe("initials", () => {
@@ -74,10 +81,55 @@ describe("score", () => {
   });
 });
 
+describe("kickoffTime / kickoffDate (UTC feed → viewer timezone)", () => {
+  it("converts a UTC kickoff to the viewer's timezone", () => {
+    expect(kickoffTime("2026-06-22 17:00:00", "Asia/Karachi")).toBe("22:00"); // +5
+    expect(kickoffTime("2026-06-22 17:00:00", "UTC")).toBe("17:00");
+    expect(kickoffTime("2026-06-22 17:00:00")).toBe("17:00"); // default UTC
+    expect(kickoffTime("")).toBe("");
+  });
+  it("rolls the date when the local time crosses midnight", () => {
+    // 23:30 UTC + 5h = 04:30 next day in Karachi → date is the 23rd.
+    expect(kickoffDate("2026-06-22 23:30:00", "Asia/Karachi")).toBe("23 Jun");
+    expect(kickoffDate("2026-06-22 23:30:00", "UTC")).toBe("22 Jun");
+  });
+  it("does NOT shift a bare calendar date (no clock time) across zones", () => {
+    expect(kickoffDate("2026-06-22", "Asia/Karachi")).toBe("22 Jun");
+    expect(kickoffDate("2026-05-31", "America/Chicago")).toBe("31 May");
+  });
+  it("kickoffLabel prefixes the date only when the local day differs from UTC", () => {
+    // 21:00 UTC → 02:00 next day in Karachi → show the rolled date.
+    expect(kickoffLabel("2026-06-22 21:00:00", "Asia/Karachi")).toBe("23 Jun 02:00");
+    // Same local day → time only.
+    expect(kickoffLabel("2026-06-22 14:00:00", "Asia/Karachi")).toBe("19:00");
+    expect(kickoffLabel("2026-06-22 14:00:00", "UTC")).toBe("14:00");
+  });
+});
+
+describe("local-date grouping helpers", () => {
+  it("localDay returns the viewer-local calendar day of a UTC kickoff", () => {
+    expect(localDay("2026-06-22 21:00:00", "Asia/Karachi")).toBe("2026-06-23"); // rolls forward
+    expect(localDay("2026-06-22 14:00:00", "Asia/Karachi")).toBe("2026-06-22");
+    expect(localDay("2026-06-23 01:00:00", "America/New_York")).toBe("2026-06-22"); // rolls back
+    expect(localDay("")).toBe("");
+  });
+  it("todayInZone returns a YYYY-MM-DD string", () => {
+    expect(todayInZone("UTC")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it("tzOffsetMinutes gives the DST-aware offset used to pick the neighbour day", () => {
+    expect(tzOffsetMinutes("Asia/Karachi", "2026-06-22")).toBe(300);   // +5
+    expect(tzOffsetMinutes("America/New_York", "2026-06-22")).toBe(-240); // EDT -4
+    expect(tzOffsetMinutes("UTC", "2026-06-22")).toBe(0);
+  });
+});
+
 describe("formatOdds", () => {
-  it("formats decimal to 2dp", () => {
-    expect(formatOdds(2.5)).toBe("2.50");
-    expect(formatOdds("3")).toBe("3.00");
+  it("shows decimals as the feed provides them — no forced trailing zeros, capped at 2dp", () => {
+    expect(formatOdds(5.4)).toBe("5.4");   // not "5.40"
+    expect(formatOdds(1.1)).toBe("1.1");   // not "1.10"
+    expect(formatOdds(5.75)).toBe("5.75");
+    expect(formatOdds("3")).toBe("3");     // not "3.00"
+    expect(formatOdds(1.6153846153846154)).toBe("1.62"); // long fractional value capped at 2dp
   });
   it("returns dash for non-numbers", () => {
     expect(formatOdds(null)).toBe("—");
@@ -154,6 +206,29 @@ describe("oddsMarkets", () => {
   });
   it("returns empty array for no odds", () => {
     expect(oddsMarkets({})).toEqual([]);
+  });
+});
+
+describe("oddsLineCount", () => {
+  it("counts every priced (bookmaker x market) line across all markets", () => {
+    // 498557-shaped: 2 x 1X2 + 1 Double Chance + 1 BTTS = 4 lines, 2 bookmakers.
+    const match = {
+      odds: [
+        { market_name: "1x2", bookmaker_name: "Betway", outcomes: [{ name: "H", odds: 3.3 }, { name: "D", odds: 3.1 }, { name: "A", odds: 2.15 }] },
+        { market_name: "Double Chance", bookmaker_name: "Betway", outcomes: [{ name: "HD", odds: 1.65 }, { name: "HA", odds: 1.375 }, { name: "DA", odds: 1.3 }] },
+        { market_name: "Both Teams to Score", bookmaker_name: "Betway", outcomes: [{ name: "Y", odds: 2.2 }, { name: "N", odds: 1.61 }] },
+        { market_name: "1x2", bookmaker_name: "Betway ZA", outcomes: [{ name: "H", odds: 3.55 }, { name: "D", odds: 3.2 }, { name: "A", odds: 2.02 }] },
+      ],
+    };
+    expect(oddsLineCount(match)).toBe(4);
+  });
+  it("ignores lines with no valid price and handles empty odds", () => {
+    expect(oddsLineCount({})).toBe(0);
+    expect(oddsLineCount({ odds: [{ market_name: "1x2", bookmaker_name: "X", outcomes: [{ name: "H", odds: 0 }, { name: "A", odds: 0 }] }] })).toBe(0);
+  });
+  it("handles the single-object (non multi_odds) shape as one line", () => {
+    const single = { odds: { market_name: "1x2", bookmaker_name: "Betway", outcomes: [{ name: "H", odds: 2 }, { name: "A", odds: 3 }] } };
+    expect(oddsLineCount(single)).toBe(1);
   });
 });
 

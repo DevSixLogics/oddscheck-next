@@ -9,9 +9,10 @@ import { sitemapGroupIds, sitemapEntries, renderUrlset, renderIndex } from "@/li
 // the children at build. Route handlers give a working, host-dynamic result
 // whose XML output is fully sitemaps.org-compliant.
 //
-//   /sitemap/index.xml     → the sitemap INDEX (also served at /sitemap.xml via a
+//   /sitemap/index.xml     → the sitemap INDEX (served at /sitemap.xml via a
 //                            next.config rewrite — the canonical crawler path)
-//   /sitemap/{group}.xml   → one child sitemap per content group
+//   /sitemap/{group}.xml   → one child sitemap per group (served publicly as
+//                            /sitemap-{group}.xml via next.config rewrites)
 export const dynamic = "force-dynamic";
 
 const XML_HEADERS = { "Content-Type": "application/xml; charset=utf-8" };
@@ -24,7 +25,7 @@ export async function GET(_request, { params }) {
   // Index → list every child sitemap.
   if (id === "index") {
     const now = new Date();
-    const children = sitemapGroupIds().map((gid) => ({ loc: `${base}/sitemap/${gid}.xml`, lastmod: now }));
+    const children = sitemapGroupIds().map((gid) => ({ loc: `${base}/sitemap-${gid}.xml`, lastmod: now }));
     return new Response(renderIndex(children), { headers: XML_HEADERS });
   }
 

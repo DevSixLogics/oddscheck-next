@@ -6,9 +6,10 @@ import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
 import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
-import { oddsTriple, statusOf, score, kickoffTime } from "@/lib/format";
+import { oddsTriple, statusOf, score, kickoffLabel } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import LiveClock from "./LiveClock";
+import { useTimeZone } from "./TimeZoneProvider";
 
 // Highlight applied to every in-play card.
 const LIVE_CARD = {
@@ -111,11 +112,12 @@ function LiveMatchCard({ m }) {
 }
 
 function LiveRaceCard({ r }) {
+  const tz = useTimeZone();
   return (
     <article className="card" style={LIVE_CARD}>
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2"><span className="chip chip-live" style={{ fontSize: 10 }}>LIVE</span><span className="chip chip-muted">Horse Racing</span></div>
-        <span className="mute" style={{ fontSize: 11 }}>{kickoffTime(r.st)}</span>
+        <span className="mute" style={{ fontSize: 11 }}>{kickoffLabel(r.st, tz)}</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{r.course}</div>
       <div className="mute" style={{ fontSize: 13, marginBottom: 14 }}>{r.nm}</div>

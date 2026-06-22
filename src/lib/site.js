@@ -6,11 +6,12 @@ export function normalizeUrl(u) {
   return s.replace(/\/+$/, "");
 }
 
-// Env-configured fallback origin (used by sitemap, robots and JSON-LD). The
-// canonical/OG base in page metadata prefers the CMS `site_url` at runtime — see
-// the metadataBase resolution in layout.js — so this only applies when the CMS
-// value is unavailable. Set NEXT_PUBLIC_SITE_URL to pin a production domain.
-export const SITE_URL = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || "https://oddscheck.com");
+// Env-configured origin (used by sitemap, robots and JSON-LD). Comes from the
+// NEXT_PUBLIC_SITE_URL environment variable — no production domain is hardcoded.
+// Falls back to localhost for local dev when the env var isn't set. The
+// canonical/OG base in page metadata prefers the CMS `site_url` at runtime (see
+// the metadataBase resolution in layout.js); this applies when that's absent.
+export const SITE_URL = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
 export const SITE_NAME = "OddsCheck.com";
 
 /** Absolute URL for a site-relative path. */

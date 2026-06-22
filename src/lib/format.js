@@ -1,19 +1,89 @@
 // Pure helpers for turning the raw API fields into display values.
 // Field meanings: see .claude/instructions/api-reference.md
 
-/** "2026-05-20 16:45:00" -> "16:45" */
-export function kickoffTime(dt) {
-  if (!dt) return "";
-  const m = /\d{4}-\d{2}-\d{2}[ T](\d{2}:\d{2})/.exec(dt);
-  return m ? m[1] : "";
+// Feed datetimes ("YYYY-MM-DD HH:MM:SS") are UTC. Parse as UTC so we can
+// re-render in the viewer's timezone. Date-only strings get a midnight time so
+// they stay valid. Returns an invalid Date for junk input.
+function parseUtc(dt) {
+  let s = String(dt).trim().replace(" ", "T");
+  if (!s.includes("T")) s += "T00:00:00"; // date-only → midnight
+  return new Date(s + "Z");
 }
 
-/** "2026-05-20 16:45:00" -> "20 May" */
-export function kickoffDate(dt) {
+// True when the value carries a clock time (vs a bare calendar date).
+function hasClock(dt) {
+  return /\d{2}:\d{2}/.test(String(dt));
+}
+
+// YYYY-MM-DD for an instant in a given zone (for cross-midnight day comparison).
+function dayInZone(d, tz) {
+  return d.toLocaleDateString("en-CA", { timeZone: tz || "UTC" });
+}
+
+/** The viewer-local calendar day ("YYYY-MM-DD") for a UTC feed datetime, or "". */
+export function localDay(dt, tz) {
+  const d = parseUtc(dt);
+  return isNaN(d) ? "" : dayInZone(d, tz);
+}
+
+/** Today's calendar day ("YYYY-MM-DD") in the viewer's timezone. */
+export function todayInZone(tz) {
+  return new Date().toLocaleDateString("en-CA", { timeZone: tz || "UTC" });
+}
+
+/**
+ * Offset of `tz` from UTC, in minutes, at noon on `dateISO` (DST-aware).
+ * Positive = east of UTC (e.g. Asia/Karachi → 300). Used to decide which
+ * adjacent UTC day a local day overlaps.
+ */
+export function tzOffsetMinutes(tz, dateISO) {
+  const at = new Date(`${dateISO}T12:00:00Z`);
+  if (isNaN(at)) return 0;
+  const p = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz || "UTC", hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(at).reduce((a, x) => ((a[x.type] = x.value), a), {});
+  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +(p.hour % 24), +p.minute, +p.second);
+  return Math.round((asUtc - at.getTime()) / 60000);
+}
+
+/** "2026-05-20 16:45:00" (UTC) -> "16:45" in the viewer's timezone `tz`. */
+export function kickoffTime(dt, tz) {
   if (!dt) return "";
-  const d = new Date(dt.replace(" ", "T"));
+  const d = parseUtc(dt);
+  if (isNaN(d)) {
+    const m = /\d{4}-\d{2}-\d{2}[ T](\d{2}:\d{2})/.exec(dt); // non-ISO fallback
+    return m ? m[1] : "";
+  }
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: tz || "UTC" });
+}
+
+/**
+ * "2026-05-20 16:45:00" (UTC) -> "20 May" in the viewer's timezone `tz`.
+ * A bare calendar date (no clock time, e.g. a golf tournament day) is rendered
+ * as-is in UTC — it isn't an instant, so it must not shift across timezones.
+ */
+export function kickoffDate(dt, tz) {
+  if (!dt) return "";
+  const d = parseUtc(dt);
   if (isNaN(d)) return "";
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: hasClock(dt) ? (tz || "UTC") : "UTC" });
+}
+
+/**
+ * Listing-friendly kickoff label: the local time, PREFIXED with the local date
+ * when the timezone conversion pushes the match onto a different calendar day
+ * than the feed's UTC day (e.g. a 21:00 UTC match → "23 Jun 02:00" in Karachi).
+ * Same-day matches just show the time, so dense lists stay compact.
+ */
+export function kickoffLabel(dt, tz) {
+  const t = kickoffTime(dt, tz);
+  if (!t) return t;
+  const d = parseUtc(dt);
+  if (isNaN(d) || !hasClock(dt)) return t;
+  if (dayInZone(d, tz) === dayInZone(d, "UTC")) return t;
+  return `${kickoffDate(dt, tz)} ${t}`;
 }
 
 const FINISHED = new Set(["finished", "ft", "aet", "pen"]);
@@ -64,12 +134,12 @@ export function score(match) {
 }
 
 /** Short status label for the right rail: "67'", "HT", "FT", or kickoff time. */
-export function statusLabel(match) {
+export function statusLabel(match, tz) {
   const bucket = statusOf(match);
   if (bucket === "finished") return match.mins || "FT";
   // Cricket has no running minute — fall back to its status text (e.g. "Live").
   if (bucket === "live") return match.mins || match.bs || "LIVE";
-  return kickoffTime(match.dt || match.gdt);
+  return kickoffTime(match.dt || match.gdt, tz);
 }
 
 // Outcome names that belong to the match-winner (1·X·2 / moneyline) market.
@@ -181,23 +251,20 @@ export function oddsTriple(match) {
 }
 
 /**
- * Number of DISTINCT bookmakers pricing the match-winner market — one per
- * bookmaker_name (regional feeds like "Betway ROA"/"Betway ZA" are separate
- * books with their own prices, so they each count). A book is counted as long
- * as it prices at least one outcome > 1 (a single broken leg, e.g. H=0.6, still
- * counts — its bad price just renders as "—"). This equals the row count the
- * detail comparison shows for the winner market.
+ * Total number of odds LINES available for a match — one per (bookmaker × market)
+ * entry that carries at least one valid price (> 0), across EVERY market (1X2,
+ * Double Chance, BTTS, …). This equals the number of rows the detail comparison
+ * renders, so the homepage/listing badge matches what the detail page shows.
+ * Note: this is a line count, not a distinct-bookmaker count — the same
+ * bookmaker offering several markets contributes several lines.
  */
-export function bookmakerCount(match) {
-  const names = new Set();
+export function oddsLineCount(match) {
+  let n = 0;
   for (const m of marketList(match)) {
     const outs = Array.isArray(m.outcomes) ? m.outcomes : [];
-    if (!outs.length || outs.length > 3) continue;
-    if (!outs.every((o) => side(o.name) != null)) continue; // 1x2 / moneyline only
-    // Any positive price counts (matches oddsMarkets, which now shows sub-1.0 prices).
-    if (outs.some((o) => toNum(o.odds) > 0)) names.add((m.bookmaker_name || "Bookmaker").trim());
+    if (outs.some((o) => toNum(o.odds) > 0)) n++;
   }
-  return names.size;
+  return n;
 }
 
 // Order 1·X·2 outcomes Home, Draw, Away; everything else keeps feed order.
@@ -331,13 +398,17 @@ export function formatOdds(value, fmt = "Decimal") {
   if (!n || Number.isNaN(n)) return "—";
   if (fmt === "Fractional") return toFractional(n);
   if (fmt === "American") return toAmerican(n);
-  return n.toFixed(2);
+  // Decimal: render the value as the feed provides it — NO forced trailing zeros
+  // (so 5.4 stays "5.4", not "5.40", matching the backend), capped at 2 dp so a
+  // long fractional conversion (e.g. 1.6153846…) doesn't spill. The underlying
+  // number is untouched — this only affects the displayed string.
+  return String(Number(n.toFixed(2)));
 }
 
 /** "2026-06-02 07:51:55" -> "37 min ago" / "2h ago" / "3d ago" / "12 May". */
-export function timeAgo(dateStr) {
+export function timeAgo(dateStr, tz) {
   if (!dateStr) return "";
-  const then = new Date(dateStr.replace(" ", "T"));
+  const then = parseUtc(dateStr);
   if (isNaN(then)) return "";
   const sec = Math.max(0, (Date.now() - then.getTime()) / 1000);
   if (sec < 60) return "just now";
@@ -347,7 +418,7 @@ export function timeAgo(dateStr) {
   if (hr < 24) return `${hr}h ago`;
   const day = Math.floor(hr / 24);
   if (day < 7) return `${day}d ago`;
-  return then.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return then.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: tz || "UTC" });
 }
 
 /** Two-letter crest abbreviation from a team/author name (logos are not in the API). */

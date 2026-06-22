@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getRacingMeetings, getRaceRunners, todayISO } from "@/lib/api";
-import { kickoffTime } from "@/lib/format";
+import { kickoffTime, kickoffLabel } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import DateNav from "@/components/DateNav";
 import RacingBoard from "@/components/RacingBoard";
 import JsonLd from "@/components/JsonLd";
@@ -16,9 +17,10 @@ export function generateMetadata() {
 export default async function RacingPage({ searchParams }) {
   const sp = await searchParams;
   const reqDate = sp?.date || todayISO();
-  const [{ meetings, date }, content] = await Promise.all([
+  const [{ meetings, date }, content, tz] = await Promise.all([
     getRacingMeetings(reqDate),
     sportListingContent("racing"),
+    getViewerTimeZone(),
   ]);
   const totalRaces = meetings.reduce((n, m) => n + (m.races?.length || 0), 0);
   // A selected day earlier than today is fully run — results, not live.
@@ -111,14 +113,14 @@ export default async function RacingPage({ searchParams }) {
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M12 2c1 4 5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 1.5 1 2 2 2 0-3-2-4 1-7Z" /></svg>
                       Feature race
                     </span>
-                    <h2 style={{ fontSize: 22, marginTop: 8 }}>{kickoffTime(featureRace.st)} {featureMeeting.cnm} · {featureRace.nm}</h2>
+                    <h2 style={{ fontSize: 22, marginTop: 8 }}>{kickoffLabel(featureRace.st, tz)} {featureMeeting.cnm} · {featureRace.nm}</h2>
                     <div className="mute" style={{ fontSize: 12, marginTop: 6 }}>
                       {[featureMeeting.go && `Going: ${featureMeeting.go}`, `${featureRunners.length} runners`, featureRace.dis].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em" }}>{isPast ? "Off was" : "Off at"}</div>
-                    <div className="num" style={{ fontSize: 24, fontWeight: 700, color: "var(--accent)" }}>{kickoffTime(featureRace.st)}</div>
+                    <div className="num" style={{ fontSize: 24, fontWeight: 700, color: "var(--accent)" }}>{kickoffLabel(featureRace.st, tz)}</div>
                   </div>
                 </div>
                 <div className="table-scroll">
@@ -160,7 +162,7 @@ export default async function RacingPage({ searchParams }) {
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>{r.course}</div>
                         <div className="mute" style={{ fontSize: 11.5, marginTop: 2 }}>
-                          {[kickoffTime(r.st), r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
+                          {[kickoffLabel(r.st, tz), r.dis, r.nor && `${r.nor} runners`].filter(Boolean).join(" · ")}
                         </div>
                       </div>
                       <Link className="btn btn-primary btn-xs" href={`/race?id=${r.id}`}>Card</Link>

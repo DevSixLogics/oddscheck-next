@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCategoryArticles, getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import StaticNote from "./StaticNote";
 import styles from "./NewsSection.module.scss";
 
@@ -14,7 +15,10 @@ function excerpt(html, n = 260) {
 
 export default async function NewsSection() {
   // article/news carries real image_path + strapline directly.
-  const { articles } = await getCategoryArticles("news", { perPage: 10 });
+  const [{ articles }, tz] = await Promise.all([
+    getCategoryArticles("news", { perPage: 10 }),
+    getViewerTimeZone(),
+  ]);
 
   if (!articles.length) {
     return (
@@ -77,7 +81,7 @@ export default async function NewsSection() {
                   <span className="avatar" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(featured.authorName)}</span>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 600 }}>{featured.authorName}</div>
-                    <div className="mute" style={{ fontSize: 11 }}>{timeAgo(featured.start_date)}</div>
+                    <div className="mute" style={{ fontSize: 11 }}>{timeAgo(featured.start_date, tz)}</div>
                   </div>
                 </div>
                 <Link className="btn btn-ghost btn-sm" href={`/article/${featured.slug}`}>Read article →</Link>
@@ -103,7 +107,7 @@ export default async function NewsSection() {
                     <p className="mute" style={{ fontSize: 12, lineHeight: 1.45, margin: 0, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{n.summary}</p>
                   )}
                   <div className="flex justify-between items-center mt-3 mute" style={{ fontSize: 11 }}>
-                    <span>{n.authorName} · {timeAgo(n.start_date)}</span>
+                    <span>{n.authorName} · {timeAgo(n.start_date, tz)}</span>
                     <Link href={`/article/${n.slug}`} style={{ color: "var(--accent)" }}>Read →</Link>
                   </div>
                 </div>

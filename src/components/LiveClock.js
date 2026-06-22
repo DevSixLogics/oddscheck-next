@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { statusLabel } from "@/lib/format";
+import { useTimeZone } from "./TimeZoneProvider";
 
 const TICK_MS = 15000;
 // Bound the staleness we add to a feed value, so a minute captured BEFORE a
@@ -44,6 +45,7 @@ function feedLatencyMin(match) {
  * which is the most the frontend can derive without a backend period-start time.
  */
 export default function LiveClock({ match }) {
+  const tz = useTimeZone();
   const feedMin = parseInt(String(match.mins || "").trim(), 10);
   const running = !isPaused(match) && Number.isFinite(feedMin);
   const base0 = running ? feedMin + feedLatencyMin(match) : NaN;
@@ -77,7 +79,7 @@ export default function LiveClock({ match }) {
     return () => clearInterval(id);
   }, [running]);
 
-  if (isPaused(match)) return <>{statusLabel(match) || "HT"}</>;
-  if (shown == null) return <>{statusLabel(match)}</>;
+  if (isPaused(match)) return <>{statusLabel(match, tz) || "HT"}</>;
+  if (shown == null) return <>{statusLabel(match, tz)}</>;
   return <>{shown}&apos;</>;
 }

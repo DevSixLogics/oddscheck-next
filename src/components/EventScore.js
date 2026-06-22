@@ -6,6 +6,7 @@ import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, mergeMatch } from "@/lib/socket";
 import { statusOf, score, kickoffDate, kickoffTime } from "@/lib/format";
 import LiveClock from "./LiveClock";
+import { useTimeZone } from "./TimeZoneProvider";
 
 // Sports whose live score/minute can be refreshed from the /api/matches feed.
 const POLLABLE = new Set(["football", "tennis", "basketball", "cricket", "baseball"]);
@@ -20,6 +21,7 @@ const DETAIL = {
 
 /** Live header score + status for a single match, fed by the socket. */
 export default function EventScore({ sport, id, match }) {
+  const tz = useTimeZone();
   const socket = useSocket(SOCKET_URL);
   const [m, setM] = useState(match);
 
@@ -82,7 +84,7 @@ export default function EventScore({ sport, id, match }) {
       ) : bucket === "finished" ? (
         <div className="chip chip-muted mb-3">Full time</div>
       ) : (
-        <div className="chip chip-best mb-3"><span className="live-dot" style={{ background: "var(--accent)" }} /> {kickoffDate(m.dt || m.gdt)} · {kickoffTime(m.dt || m.gdt)}</div>
+        <div className="chip chip-best mb-3"><span className="live-dot" style={{ background: "var(--accent)" }} /> {kickoffDate(m.dt || m.gdt, tz)} · {kickoffTime(m.dt || m.gdt, tz)}</div>
       )}
       <div className={`num${updated ? " match-flash" : ""}`} style={{ fontSize: 52, fontWeight: 700, color: "var(--text-mute)", letterSpacing: "-0.04em", lineHeight: 1, borderRadius: 12 }}>
         {bucket !== "upcoming" && sc.raw ? `${sc.home}–${sc.away}` : "vs"}

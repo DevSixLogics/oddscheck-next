@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMatchDetail, getMatchH2H, getMatchTab, getMatchOdds } from "@/lib/api";
-import { oddsMarkets, statusLabel, kickoffTime, kickoffDate, score } from "@/lib/format";
+import { oddsMarkets, statusLabel, statusOf, kickoffTime, kickoffDate, score } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import EventScore from "@/components/EventScore";
 import Crest from "@/components/Crest";
 import OddsMarkets from "@/components/OddsMarkets";
@@ -90,6 +91,7 @@ export default async function EventPage({ params }) {
   const { sport, id } = await params;
 
   const isCricket = sport === "cricket";
+  const tz = await getViewerTimeZone();
   // Fetch detail + (football) H2H + (cricket) every supported tab in parallel.
   const [d, h2h, ...tabRaw] = await Promise.all([
     getMatchDetail(sport, id),
@@ -113,10 +115,16 @@ export default async function EventPage({ params }) {
   // Kickoff datetime: football uses `dt`; cricket/others use `gdt`. Venue: football
   // `venue.name`, cricket `stad`. Score via score() (handles cricket runs + cfs).
   const ko = d.dt || d.gdt || "";
+  // A match on an earlier calendar day, or flagged finished by the feed, is over.
+  const matchDate = ko.slice(0, 10);
+  const isPast = /^\d{4}-\d{2}-\d{2}$/.test(matchDate) && matchDate < new Date().toISOString().slice(0, 10);
+  const finished = isPast || statusOf(d) === "finished";
   // Some sports (cricket) ship NO odds on the detail endpoint — the listing feed
-  // is the only odds source. Backfill from it so the comparison isn't empty.
-  if (!Array.isArray(d.odds) || !d.odds.length) {
-    const day = ko.slice(0, 10);
+  // is the only odds source, so backfill from it. But NOT for finished matches:
+  // their pre-match odds are stale and pruned upstream, and showing them here
+  // would contradict the listing (which hides odds for finished matches).
+  if (!finished && (!Array.isArray(d.odds) || !d.odds.length)) {
+    const day = matchDate;
     if (day) {
       const odds = await getMatchOdds(sport, id, day);
       if (odds.length) d.odds = odds;
@@ -135,13 +143,11 @@ export default async function EventPage({ params }) {
         .filter((t) => tabHasData(t.key, t.data))
         .sort((a, b) => (TAB_ORDER[a.key] ?? 9) - (TAB_ORDER[b.key] ?? 9))
     : [];
-  // A match on an earlier calendar day is finished — ignore stale "live" flags.
-  const matchDate = ko.slice(0, 10);
-  const isPast = /^\d{4}-\d{2}-\d{2}$/.test(matchDate) && matchDate < new Date().toISOString().slice(0, 10);
-  const statusText = isPast ? (d.mins || "FT") : statusLabel(d);
+  const statusText = isPast ? (d.mins || "FT") : statusLabel(d, tz);
 
   // All odds markets (1x2, BTTS, …) grouped for the interactive comparison tabs.
-  const markets = oddsMarkets(d);
+  // Finished matches show no pre-match odds (stale) — consistent with the listing.
+  const markets = finished ? [] : oddsMarkets(d);
 
   const schema = {
     "@context": "https://schema.org",
@@ -189,7 +195,7 @@ export default async function EventPage({ params }) {
               below are visual only, so they're styled divs, not extra headings. */}
           <h1 className="sr-only">{c.htn} vs {c.atn} — odds, stats &amp; match info{d.tournament?.nm ? ` · ${d.tournament.nm}` : ""}</h1>
 
-          <div className="event-head-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 32, marginTop: 12 }}>
+          <div className="event-head-grid" style={{ marginTop: 12 }}>
             <div className="flex items-center gap-4" style={{ justifyContent: "flex-end" }}>
               <div style={{ textAlign: "right" }}>
                 <div className="mute" style={{ fontSize: 10, letterSpacing: "0.08em", fontWeight: 700, marginBottom: 6 }}>HOME</div>
@@ -217,7 +223,7 @@ export default async function EventPage({ params }) {
       <section style={{ padding: "32px 0 64px" }}>
         <div className="container layout-split-wide">
           <div className="flex-col gap-5">
-            <OddsMarkets markets={markets} home={c.htn} away={c.atn} />
+            <OddsMarkets markets={markets} home={c.htn} away={c.atn} finished={finished} />
 
             {h2h && (h2h.stats || h2h.meetings.length > 0) && (
               <div className="card" style={{ padding: 22 }}>
@@ -245,7 +251,7 @@ export default async function EventPage({ params }) {
                     <div className="flex-col gap-1">
                       {h2h.meetings.slice(0, 6).map((mm) => (
                         <div key={mm.id} className="flex items-center" style={{ fontSize: 13, padding: "7px 0", borderBottom: "1px solid var(--border-soft)", gap: 10 }}>
-                          <span className="mute" style={{ fontSize: 11, minWidth: 64 }}>{kickoffDate(mm.dt)}</span>
+                          <span className="mute" style={{ fontSize: 11, minWidth: 64 }}>{kickoffDate(mm.dt, tz)}</span>
                           <span style={{ flex: 1, textAlign: "center" }}>{mm.competitors?.htn} <b className="num">{mm.cfs || mm.ft}</b> {mm.competitors?.atn}</span>
                         </div>
                       ))}
@@ -266,7 +272,7 @@ export default async function EventPage({ params }) {
                 {d.ro && <li className="flex justify-between"><span className="mute">Round</span><span>{d.ro}</span></li>}
                 {d.mty && <li className="flex justify-between"><span className="mute">Format</span><span>{d.mty}</span></li>}
                 {venue && <li className="flex justify-between"><span className="mute">Venue</span><span style={{ textAlign: "right" }}>{venue}{d.stad?.cty ? `, ${d.stad.cty}` : ""}</span></li>}
-                {ko && <li className="flex justify-between"><span className="mute">{sport === "cricket" ? "Start" : "Kickoff"}</span><span>{kickoffDate(ko)} · {kickoffTime(ko)}</span></li>}
+                {ko && <li className="flex justify-between"><span className="mute">{sport === "cricket" ? "Start" : "Kickoff"}</span><span>{kickoffDate(ko, tz)} · {kickoffTime(ko, tz)}</span></li>}
                 <li className="flex justify-between"><span className="mute">Status</span><span>{statusText}</span></li>
                 {sc.raw && <li className="flex justify-between"><span className="mute">Score</span><span className="num">{sc.home}{sc.away ? ` – ${sc.away}` : ""}</span></li>}
               </ul>

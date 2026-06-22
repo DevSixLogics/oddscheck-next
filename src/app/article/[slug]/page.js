@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sanitizeArticleHtml } from "@/lib/sanitize";
 import { getArticle } from "@/lib/api";
 import { timeAgo, initials } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import JsonLd from "@/components/JsonLd";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }) {
 
 const FALLBACK_GRAD = "linear-gradient(135deg, #143138, #0F1729)";
 
-function MiniArticle({ a }) {
+function MiniArticle({ a, tz }) {
   return (
     <Link href={`/article/${a.slug}`} className="flex gap-3" style={{ padding: "10px 0", borderBottom: "1px solid var(--border-soft)" }}>
       <div style={{ width: 72, flexShrink: 0, height: 56, borderRadius: 8, overflow: "hidden", background: FALLBACK_GRAD, display: "grid", placeItems: "center" }}>
@@ -37,7 +38,7 @@ function MiniArticle({ a }) {
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.35 }}>{a.headline}</div>
-        <div className="mute" style={{ fontSize: 11, marginTop: 4 }}>{a.authorName} · {timeAgo(a.start_date)}</div>
+        <div className="mute" style={{ fontSize: 11, marginTop: 4 }}>{a.authorName} · {timeAgo(a.start_date, tz)}</div>
       </div>
     </Link>
   );
@@ -45,7 +46,7 @@ function MiniArticle({ a }) {
 
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
-  const res = await getArticle(slug);
+  const [res, tz] = await Promise.all([getArticle(slug), getViewerTimeZone()]);
 
   if (!res) {
     return (
@@ -112,11 +113,11 @@ export default async function ArticlePage({ params }) {
                 <span className="avatar avatar-lg" style={{ background: "linear-gradient(135deg,#A855F7,#6D28D9)" }}>{initials(a.authorName)}</span>
                 <div>
                   <div style={{ fontWeight: 600 }}>{a.authorName}</div>
-                  <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date)}</div>
+                  <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date, tz)}</div>
                 </div>
               </>
             ) : (
-              <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date)}</div>
+              <div className="mute" style={{ fontSize: 12 }}>Updated {timeAgo(a.start_date, tz)}</div>
             )}
           </div>
         </div>
@@ -147,13 +148,13 @@ export default async function ArticlePage({ params }) {
             {related.length > 0 && (
               <div className="card" style={{ padding: 20 }}>
                 <h4 style={{ fontSize: 14, marginBottom: 6 }}>Related articles</h4>
-                {related.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} />)}
+                {related.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} tz={tz} />)}
               </div>
             )}
             {random.length > 0 && (
               <div className="card" style={{ padding: 20 }}>
                 <h4 style={{ fontSize: 14, marginBottom: 6 }}>More stories</h4>
-                {random.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} />)}
+                {random.slice(0, 5).map((r) => <MiniArticle key={r.id} a={r} tz={tz} />)}
               </div>
             )}
             <div className="rg-banner" style={{ margin: 0 }}>

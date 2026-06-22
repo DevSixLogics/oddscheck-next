@@ -20,13 +20,15 @@ function overround(prices, outcomes) {
  * Interactive market comparison. `markets` = output of oddsMarkets(match); the
  * tabs switch the active market and the table re-renders for it.
  */
-export default function OddsMarkets({ markets = [], home, away }) {
+export default function OddsMarkets({ markets = [], home, away, finished = false }) {
   const [active, setActive] = useState(0);
 
   if (!markets.length) {
     return (
       <div className="card" style={{ padding: 22, color: "var(--text-dim)", fontSize: 13 }}>
-        Odds aren&apos;t published for this match yet — check back closer to kickoff.
+        {finished
+          ? "This match has finished — pre-match odds are no longer shown."
+          : "Odds aren't published for this match yet — check back closer to kickoff."}
       </div>
     );
   }

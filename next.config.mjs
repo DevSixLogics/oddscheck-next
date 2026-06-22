@@ -73,16 +73,23 @@ const nextConfig = {
       },
     ];
   },
-  // Serve the sitemap index at the canonical /sitemap.xml that crawlers and
-  // robots.txt expect. We can't use Next's metadata sitemap convention here (the
-  // root [slug] catch-all shadows it) nor a route handler literally at
-  // /sitemap.xml (reserved metadata name → Turbopack panic), so /sitemap.xml is
-  // rewritten to the real handler at /sitemap/index.xml. beforeFiles → beats the
-  // [slug] catch-all. Child sitemaps stay at /sitemap/{group}.xml.
+  // Sitemap index at the canonical /sitemap.xml + flat /sitemap-{group}.xml
+  // children (sitemap-pages.xml, sitemap-sports.xml, …). We can't use Next's
+  // metadata sitemap convention here (the root [slug] catch-all shadows it) nor
+  // route handlers literally named *.xml (reserved metadata name → Turbopack
+  // panic), so these public URLs rewrite to the real handler at /sitemap/{id}.
+  // beforeFiles → beats the [slug] catch-all.
   async rewrites() {
     return {
       beforeFiles: [
         { source: "/sitemap.xml", destination: "/sitemap/index.xml" },
+        { source: "/sitemap-pages.xml", destination: "/sitemap/pages.xml" },
+        { source: "/sitemap-news.xml", destination: "/sitemap/news.xml" },
+        { source: "/sitemap-matches.xml", destination: "/sitemap/matches.xml" },
+        { source: "/sitemap-experts.xml", destination: "/sitemap/experts.xml" },
+        { source: "/sitemap-offers.xml", destination: "/sitemap/offers.xml" },
+        { source: "/sitemap-guides.xml", destination: "/sitemap/guides.xml" },
+        { source: "/sitemap-sports.xml", destination: "/sitemap/sports.xml" },
       ],
     };
   },

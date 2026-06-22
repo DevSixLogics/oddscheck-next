@@ -111,3 +111,22 @@
   color: t.$text-surface-alt;
   padding: 10px 14px;
 }
+
+/* Mobile (<768): reflow the 4-column row so odds + Compare stay on screen
+   (no 680px horizontal scroll). Teams + status on top, odds and Compare below. */
+@media (max-width: 767px) {
+  .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "teams meta"
+      "odds  compare";
+    align-items: center;
+    gap: 12px 10px;
+    min-width: 0;
+    padding: 14px 12px;
+  }
+  .teams   { grid-area: teams; min-width: 0; }
+  .meta    { grid-area: meta; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .odds    { grid-area: odds; }
+  .compare { grid-area: compare; }
+}

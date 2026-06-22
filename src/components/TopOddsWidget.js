@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Crest from "./Crest";
-import { oddsTriple, statusOf, statusLabel, kickoffTime } from "@/lib/format";
+import { oddsTriple, statusOf, statusLabel, kickoffLabel } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
+import { getViewerTimeZone } from "@/lib/timezone";
 
-function PreviewRow({ match }) {
+function PreviewRow({ match, tz }) {
   const c = match.competitors || {};
   const bucket = statusOf(match);
   // Finished matches keep stale pre-match odds in the feed — never show them.
@@ -34,9 +35,9 @@ function PreviewRow({ match }) {
           <Crest name={c.atn} id={c.atid} />
         </div>
         {live ? (
-          <span className="chip chip-live" style={{ fontSize: 10, flexShrink: 0, whiteSpace: "nowrap" }}>LIVE {statusLabel(match)}</span>
+          <span className="chip chip-live" style={{ fontSize: 10, flexShrink: 0, whiteSpace: "nowrap" }}>LIVE {statusLabel(match, tz)}</span>
         ) : (
-          <span className="mute" style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}>{kickoffTime(match.dt)}</span>
+          <span className="mute" style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}>{kickoffLabel(match.dt, tz)}</span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
@@ -67,7 +68,8 @@ function PreviewRow({ match }) {
  * is the best price across bookmakers for that outcome (no client-side favourite
  * highlight — that isn't a backend value).
  */
-export default function TopOddsWidget({ matches, limit = 3 }) {
+export default async function TopOddsWidget({ matches, limit = 3 }) {
+  const tz = await getViewerTimeZone();
   // Exclude finished matches — their feed odds are stale pre-match prices.
   const withOdds = matches.filter((m) => statusOf(m) !== "finished" && oddsTriple(m));
   const live = withOdds.filter((m) => statusOf(m) === "live");
@@ -87,7 +89,7 @@ export default function TopOddsWidget({ matches, limit = 3 }) {
       </div>
 
       {ordered.length ? (
-        ordered.map((m) => <PreviewRow key={m.id} match={m} />)
+        ordered.map((m) => <PreviewRow key={m.id} match={m} tz={tz} />)
       ) : (
         <div style={{ color: "var(--text-dim)", fontSize: 13, padding: "8px 0" }}>
           No priced matches right now — check back closer to kickoff.

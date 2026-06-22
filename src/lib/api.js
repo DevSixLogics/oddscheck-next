@@ -5,6 +5,7 @@
 // See .claude/instructions/*-data-coverage-map.html for the gap analysis.
 
 import sample from "./data/football-new-matches.sample.json";
+import { localDay, tzOffsetMinutes } from "./format";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
@@ -79,6 +80,56 @@ export function getFootballMatches(date = todayISO()) {
   return getMatches("football", date);
 }
 
+/** Add `n` days to a YYYY-MM-DD string (UTC-safe). */
+function shiftISO(date, n) {
+  const [y, m, d] = String(date).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Matches for a sport on the viewer's LOCAL calendar day `localDate` (YYYY-MM-DD)
+ * in zone `tz`. The feed buckets by UTC date and a local day overlaps two UTC
+ * days, so we fetch the one relevant adjacent UTC feed, merge the league groups,
+ * and keep only matches whose LOCAL day == localDate. Same shape as getMatches.
+ */
+export async function getMatchesByLocalDate(sport, localDate, tz, { fresh = false } = {}) {
+  // East-of-UTC (offset>0): local day = UTC [day-1, day]. West: [day, day+1].
+  const offset = tzOffsetMinutes(tz, localDate);
+  const utcDates =
+    offset > 0 ? [shiftISO(localDate, -1), localDate]
+    : offset < 0 ? [localDate, shiftISO(localDate, 1)]
+    : [localDate];
+
+  // Only the UTC day containing "now" carries live-changing data, so only it
+  // needs the uncached `fresh` fetch; the adjacent (past/future) day stays cached.
+  const utcToday = todayISO();
+  const feeds = await Promise.all(
+    utcDates.map((d) => fetchMatches(sport, d, fresh && d === utcToday).catch(() => []))
+  );
+
+  // Merge league groups across the fetched UTC days; keep only local-day matches.
+  const byGroup = new Map();
+  const seen = new Set();
+  for (const groups of feeds) {
+    for (const g of groups || []) {
+      for (const m of g.matches || []) {
+        if (localDay(m.dt || m.gdt, tz) !== localDate) continue;
+        const mid = String(m.id);
+        if (seen.has(mid)) continue;
+        seen.add(mid);
+        let grp = byGroup.get(g.id);
+        if (!grp) { grp = { ...g, matches: [] }; byGroup.set(g.id, grp); }
+        grp.matches.push(m);
+      }
+    }
+  }
+  const merged = [...byGroup.values()].filter((g) => g.matches.length);
+  for (const g of merged) g.match_count = g.matches.length;
+  return { groups: merged, date: localDate, source: merged.length ? "live" : "empty", sport };
+}
+
 /**
  * Single match detail from /{sport}/match/{id}/detail.
  * Adds team form (htf/atf), nested tournament, and the 1·X·2 odds object.
@@ -118,7 +169,15 @@ export async function getMatchOdds(sport, id, date) {
     const groups = await fetchMatches(sport, date, false);
     for (const g of groups) {
       for (const m of g.matches || []) {
-        if (String(m.id) === String(id)) return Array.isArray(m.odds) ? m.odds : [];
+        if (String(m.id) !== String(id)) continue;
+        const o = m.odds;
+        // The feed sends odds as an ARRAY (multi_odds), a SINGLE market object
+        // (one bookmaker), or null. Normalise to an array so the detail page
+        // shows the same odds the listing has — a single-object payload would
+        // otherwise be dropped and the detail would wrongly show "no odds".
+        if (Array.isArray(o)) return o;
+        if (o && Array.isArray(o.outcomes)) return [o];
+        return [];
       }
     }
   } catch (err) {

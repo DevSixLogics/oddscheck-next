@@ -17,10 +17,13 @@ export function baseUrlFromHeaders(h) {
 }
 
 export async function getBaseUrl() {
+  // Dynamic: derive the origin from the live request host, so the sitemap is
+  // correct on whatever domain serves it — localhost while developing, the real
+  // production domain when deployed. No domain is hardcoded here.
   try {
     return baseUrlFromHeaders(await headers());
   } catch {
-    /* headers() unavailable (e.g. build-time) — fall back to env */
+    /* no request context (e.g. build-time) — fall back to NEXT_PUBLIC_SITE_URL */
     return SITE_URL;
   }
 }

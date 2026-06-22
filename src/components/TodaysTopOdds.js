@@ -7,7 +7,8 @@ import Flag from "./Flag";
 import useSocket from "@/hooks/useSocket";
 import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
-import { oddsTriple, statusOf, statusLabel, kickoffTime, score, formatOdds } from "@/lib/format";
+import { oddsTriple, oddsLineCount, statusOf, statusLabel, kickoffLabel, score, formatOdds } from "@/lib/format";
+import { useTimeZone } from "@/components/TimeZoneProvider";
 import styles from "./TodaysTopOdds.module.scss";
 
 // This section has its OWN odds-format control (the Decimal/Fractional/American
@@ -31,6 +32,7 @@ const SPORT_ICONS = {
 
 function Row({ match, sport, fmt }) {
   const updated = useFlashOnChange(match._updatedAt);
+  const tz = useTimeZone();
   const c = match.competitors || {};
   const bucket = statusOf(match);
   // Finished matches keep stale pre-match odds in the feed — never show them.
@@ -40,6 +42,9 @@ function Row({ match, sport, fmt }) {
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
   const sc = score(match);
+  // Total odds lines available (across all markets) — matches the detail page.
+  // Finished matches carry stale odds we don't show, so report none for them.
+  const books = bucket === "finished" ? 0 : oddsLineCount(match);
 
   return (
     <div className={`${styles.row}${updated ? " match-flash" : ""}`}>
@@ -59,8 +64,8 @@ function Row({ match, sport, fmt }) {
         <div className="flex items-center gap-2"><Flag fid={match.fid} sport={sport} size={14} />{match.league}</div>
         <div className={styles.status}>
           {bucket === "live" ? (
-            <><span className="live-dot" /> <span className={styles.live}>{statusLabel(match)}</span></>
-          ) : bucket === "finished" ? <span>FT</span> : <span>{kickoffTime(match.dt)}</span>}
+            <><span className="live-dot" /> <span className={styles.live}>{statusLabel(match, tz)}</span></>
+          ) : bucket === "finished" ? <span>FT</span> : <span>{kickoffLabel(match.dt, tz)}</span>}
         </div>
       </div>
 
@@ -79,9 +84,9 @@ function Row({ match, sport, fmt }) {
 
       <div className={styles.action} style={{ flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
         <Link className="btn btn-primary btn-sm" href={`/event/${sport}/${match.id}`}>Compare</Link>
-        {t?.books > 0 && (
+        {books > 0 && (
           <Link href={`/event/${sport}/${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
-            {t.books} book{t.books > 1 ? "s" : ""}
+            {books} odds
           </Link>
         )}
       </div>
@@ -101,6 +106,7 @@ function raceIsDone(r) {
 
 // Racing has no 1·X·2 odds in this feed — show course/race/time + a Card link.
 function RaceRow({ race }) {
+  const tz = useTimeZone();
   const live = raceIsLive(race);
   const done = raceIsDone(race);
   return (
@@ -117,7 +123,7 @@ function RaceRow({ race }) {
         <div className={styles.status}>
           {live ? (
             <><span className="live-dot" /> <span className={styles.live}>LIVE</span></>
-          ) : done ? <span>Result</span> : <span>{kickoffTime(race.st)}</span>}
+          ) : done ? <span>Result</span> : <span>{kickoffLabel(race.st, tz)}</span>}
         </div>
       </div>
 

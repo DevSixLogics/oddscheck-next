@@ -3,10 +3,12 @@ import Script from "next/script";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
 import { OddsFormatProvider } from "@/components/OddsFormatProvider";
+import { TimeZoneProvider } from "@/components/TimeZoneProvider";
 import GoalAlerts from "@/components/GoalAlerts";
 import JsonLd from "@/components/JsonLd";
 import WebVitals from "@/components/WebVitals";
 import { getHeaderMenu, getSiteMeta } from "@/lib/api";
+import { getViewerTimeZone } from "@/lib/timezone";
 import { SITE_URL, normalizeUrl } from "@/lib/site";
 
 // All metadata is driven by the CMS /settings API — no static brand strings or
@@ -90,7 +92,7 @@ function buildSiteSchema(meta, base) {
 }
 
 export default async function RootLayout({ children }) {
-  const [menu, meta] = await Promise.all([getHeaderMenu(), getSiteMeta()]);
+  const [menu, meta, tz] = await Promise.all([getHeaderMenu(), getSiteMeta(), getViewerTimeZone()]);
   const baseUrl = normalizeUrl(meta.siteUrl) || SITE_URL;
   const siteSchema = buildSiteSchema(meta, baseUrl);
   return (
@@ -111,14 +113,16 @@ gtag('config', '${meta.gaCode}');`}
           </>
         )}
         <a href="#main" className="skip-link">Skip to content</a>
-        <OddsFormatProvider>
-          <GoalAlerts />
-          <Header menu={menu} logo={meta.headerLogo} />
-          <main id="main" role="main">
-            {children}
-          </main>
-          <SiteFooter logo={meta.footerLogo} />
-        </OddsFormatProvider>
+        <TimeZoneProvider tz={tz}>
+          <OddsFormatProvider>
+            <GoalAlerts />
+            <Header menu={menu} logo={meta.headerLogo} />
+            <main id="main" role="main">
+              {children}
+            </main>
+            <SiteFooter logo={meta.footerLogo} />
+          </OddsFormatProvider>
+        </TimeZoneProvider>
       </body>
     </html>
   );
