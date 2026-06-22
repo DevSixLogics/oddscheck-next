@@ -48,6 +48,17 @@ export function tzOffsetMinutes(tz, dateISO) {
   return Math.round((asUtc - at.getTime()) / 60000);
 }
 
+/**
+ * Whole-hour UTC offset string for the feed's `difference` query param
+ * ("+5" / "-4" / "0") at `dateISO` — the backend uses it to return matches
+ * grouped by the viewer's LOCAL date. The feed accepts whole hours only, so
+ * half-hour zones are truncated toward zero (their date boundary is ~30m off).
+ */
+export function tzDifferenceParam(tz, dateISO) {
+  const h = Math.trunc(tzOffsetMinutes(tz, dateISO) / 60);
+  return h > 0 ? `+${h}` : `${h}`;
+}
+
 /** "2026-05-20 16:45:00" (UTC) -> "16:45" in the viewer's timezone `tz`. */
 export function kickoffTime(dt, tz) {
   if (!dt) return "";

@@ -5,7 +5,7 @@
 // See .claude/instructions/*-data-coverage-map.html for the gap analysis.
 
 import sample from "./data/football-new-matches.sample.json";
-import { localDay, tzOffsetMinutes } from "./format";
+import { tzDifferenceParam } from "./format";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
@@ -24,9 +24,13 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function fetchMatches(sport, date, fresh = false) {
+async function fetchMatches(sport, date, fresh = false, difference = "") {
   // multi_odds=1 → `odds` is an array of per-bookmaker markets (1x2, DC, BTTS…).
-  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1`;
+  // difference (e.g. "+5"/"-4") → the backend returns matches grouped by the
+  // viewer's LOCAL date for that UTC offset (and collapses split tournament
+  // groups). Encode the leading "+" so it isn't read as a space.
+  const diff = difference ? `&difference=${encodeURIComponent(difference)}` : "";
+  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1${diff}`;
   const res = await fetch(url, {
     // `fresh` (live poll) bypasses the data cache so each poll sees current
     // scores/minutes; otherwise re-fetch at most once per REVALIDATE window.
@@ -80,54 +84,22 @@ export function getFootballMatches(date = todayISO()) {
   return getMatches("football", date);
 }
 
-/** Add `n` days to a YYYY-MM-DD string (UTC-safe). */
-function shiftISO(date, n) {
-  const [y, m, d] = String(date).split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + n);
-  return dt.toISOString().slice(0, 10);
-}
-
 /**
  * Matches for a sport on the viewer's LOCAL calendar day `localDate` (YYYY-MM-DD)
- * in zone `tz`. The feed buckets by UTC date and a local day overlaps two UTC
- * days, so we fetch the one relevant adjacent UTC feed, merge the league groups,
- * and keep only matches whose LOCAL day == localDate. Same shape as getMatches.
+ * in zone `tz`. We pass the whole-hour UTC offset as the feed's `difference`
+ * param, so the BACKEND returns the matches that fall on that local day (and
+ * collapses split tournament groups into one). `dt` stays UTC — callers convert
+ * it for display. Same { groups, date, source, sport } shape as getMatches.
  */
 export async function getMatchesByLocalDate(sport, localDate, tz, { fresh = false } = {}) {
-  // East-of-UTC (offset>0): local day = UTC [day-1, day]. West: [day, day+1].
-  const offset = tzOffsetMinutes(tz, localDate);
-  const utcDates =
-    offset > 0 ? [shiftISO(localDate, -1), localDate]
-    : offset < 0 ? [localDate, shiftISO(localDate, 1)]
-    : [localDate];
-
-  // Only the UTC day containing "now" carries live-changing data, so only it
-  // needs the uncached `fresh` fetch; the adjacent (past/future) day stays cached.
-  const utcToday = todayISO();
-  const feeds = await Promise.all(
-    utcDates.map((d) => fetchMatches(sport, d, fresh && d === utcToday).catch(() => []))
-  );
-
-  // Merge league groups across the fetched UTC days; keep only local-day matches.
-  const byGroup = new Map();
-  const seen = new Set();
-  for (const groups of feeds) {
-    for (const g of groups || []) {
-      for (const m of g.matches || []) {
-        if (localDay(m.dt || m.gdt, tz) !== localDate) continue;
-        const mid = String(m.id);
-        if (seen.has(mid)) continue;
-        seen.add(mid);
-        let grp = byGroup.get(g.id);
-        if (!grp) { grp = { ...g, matches: [] }; byGroup.set(g.id, grp); }
-        grp.matches.push(m);
-      }
-    }
+  const difference = tzDifferenceParam(tz, localDate);
+  let groups = [];
+  try {
+    groups = await fetchMatches(sport, localDate, fresh, difference);
+  } catch (err) {
+    console.error(`[api] getMatchesByLocalDate(${sport}) failed:`, err.message);
   }
-  const merged = [...byGroup.values()].filter((g) => g.matches.length);
-  for (const g of merged) g.match_count = g.matches.length;
-  return { groups: merged, date: localDate, source: merged.length ? "live" : "empty", sport };
+  return { groups, date: localDate, source: groups.length ? "live" : "empty", sport };
 }
 
 /**
