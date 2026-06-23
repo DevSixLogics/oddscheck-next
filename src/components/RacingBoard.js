@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { kickoffTime } from "@/lib/format";
+import { kickoffLabel } from "@/lib/format";
+import { useTimeZone } from "./TimeZoneProvider";
 
 // Quick filters. Going is meeting-level; the rest are race-level (read from the
 // race name / distance). Multiple active filters combine with AND.
@@ -38,6 +39,7 @@ function statusChip(status, isPast) {
 }
 
 export default function RacingBoard({ meetings, date, isPast = false, children }) {
+  const tz = useTimeZone();
   const [active, setActive] = useState(() => new Set());
 
   const toggle = (key) =>
@@ -123,7 +125,7 @@ export default function RacingBoard({ meetings, date, isPast = false, children }
                 <tbody>
                   {(m.races || []).map((r) => (
                     <tr key={r.id}>
-                      <td className="num"><b style={{ color: "var(--accent)" }}>{kickoffTime(r.st)}</b></td>
+                      <td className="num"><b style={{ color: "var(--accent)" }}>{kickoffLabel(r.st, tz)}</b></td>
                       <td><div style={{ fontWeight: 600, fontSize: 13 }}>{r.nm}</div></td>
                       <td className="text-center num">{r.dis || "–"}</td>
                       <td className="text-center num">{r.nor || "–"}</td>

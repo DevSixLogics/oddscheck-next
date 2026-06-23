@@ -4,8 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
+import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
-import { statusOf, statusLabel, score, kickoffTime } from "@/lib/format";
+import { statusOf, statusLabel, score, kickoffLabel } from "@/lib/format";
+import { useTimeZone } from "./TimeZoneProvider";
 import styles from "./ScoresResults.module.scss";
 
 const SHOW = 3; // rows per column before "View all"
@@ -18,12 +20,14 @@ const goalsFor = (m) => {
 };
 
 function MatchRow({ match, bucket, flash }) {
+  const tz = useTimeZone();
+  const updated = useFlashOnChange(match._updatedAt);
   const c = match.competitors || {};
   const sc = score(match);
   const homeScored = flash === "home" || flash === "both";
   const awayScored = flash === "away" || flash === "both";
   return (
-    <div className={styles.match}>
+    <div className={`${styles.match}${updated ? " match-flash" : ""}`}>
       <div className={styles.teams}>
         <div className={styles.crests}>
           <Crest name={c.htn} id={c.htid} sport={match.sport} />
@@ -49,11 +53,11 @@ function MatchRow({ match, bucket, flash }) {
           </span>
         )}
         {bucket === "live" ? (
-          <span className={styles.badge}>{statusLabel(match)}</span>
+          <span className={styles.badge}>{statusLabel(match, tz)}</span>
         ) : bucket === "finished" ? (
           <span className={styles.kickoff}>FT</span>
         ) : (
-          <span className={styles.kickoff}>{kickoffTime(match.dt || match.gdt)}</span>
+          <span className={styles.kickoff}>{kickoffLabel(match.dt || match.gdt, tz)}</span>
         )}
       </div>
     </div>

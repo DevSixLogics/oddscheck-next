@@ -34,6 +34,9 @@ const ICONS = {
       <path d="m12 5 4 3-1.5 5h-5L8 8l4-3Zm0 0v-2m4.5 10 4 1m-13-1-4 1m6 6-2 2m6-2 2 2" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
     </>
   ),
+  racing: I(
+    <path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+  ),
   tennis: I(
     <>
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" />
@@ -51,9 +54,6 @@ const ICONS = {
       <path d="m4 20 8-8 6-6-3-3-6 6-8 8 3 3Zm10-10 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
       <circle cx="18" cy="6" r="2" stroke="currentColor" strokeWidth="1.4" />
     </>
-  ),
-  racing: I(
-    <path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
   ),
   nfl: I(
     <>
@@ -150,7 +150,6 @@ export default function Header({ menu, logo }) {
             <span className="kbd" aria-hidden="true">⌘K</span>
           </form>
           <div className="topnav-actions">
-            <Link className="btn btn-primary btn-sm" href="/signup" title="Static page — no live auth" style={{ borderColor: "rgba(255,77,103,0.6)", boxShadow: "0 0 0 1px rgba(255,77,103,0.15)" }}>Join free</Link>
             <button
               type="button"
               className="nav-toggle"
@@ -302,14 +301,6 @@ export default function Header({ menu, logo }) {
               <Link key={s.label} href={s.href} onClick={() => setOpen(false)}>{s.label}</Link>
             ))}
           </nav>
-          <div className="drawer-section-h">Account</div>
-          <nav className="drawer-nav">
-            <Link href="/dashboard" onClick={() => setOpen(false)}>Dashboard</Link>
-            <Link href="/signup" onClick={() => setOpen(false)}>Join free</Link>
-          </nav>
-          <Link className="btn btn-primary btn-block btn-lg" href="/signup" style={{ marginTop: 16 }} onClick={() => setOpen(false)}>
-            Get started — free
-          </Link>
         </div>
       </aside>
     </>

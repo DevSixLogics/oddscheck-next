@@ -805,6 +805,17 @@ select.input {
   color: #2ECC71; letter-spacing: 0.06em; animation: goalPulse 3s ease-out;
 }
 
+/* General live-update highlight — any socket/poll change to a match briefly
+   pulses the card/row in the brand accent, then reverts to the normal design.
+   Box-shadow/background follow the element's own border-radius. Reduced-motion
+   users get no animation. */
+@keyframes matchUpdatePulse {
+  0%   { background: rgba(255,142,0,0.20); box-shadow: 0 0 0 2px rgba(255,142,0,0.55), 0 0 26px rgba(255,142,0,0.22); }
+  100% { background: transparent; box-shadow: none; }
+}
+.match-flash { animation: matchUpdatePulse 2.5s ease-out; }
+@media (prefers-reduced-motion: reduce) { .match-flash { animation: none; } }
+
 /* Static-content flag — red border + soft glow around hardcoded/placeholder
    sections (offers, tips, tools, learn, hero stats — no live API source). */
 .static-flag {
@@ -1065,6 +1076,17 @@ select.input {
   margin-bottom: 8px;
 }
 
+/* Event header (featured event + match detail): two teams flank a centre
+   VS/score block on desktop. Defined as a CLASS (not inline) so the mobile
+   rule below can collapse it to a single column — an inline grid-template
+   would override the media query and break the responsive layout. */
+.event-head-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 
 /* Tablet (768-1023) */
@@ -1114,6 +1136,12 @@ select.input {
   /* Tables that need horizontal scroll on mobile */
   .table-scroll { overflow-x: auto; }
   .table-scroll > .dt, .table-scroll > .card { min-width: 700px; }
+
+  /* When the split layouts collapse to one column, their grid children default
+     to min-width:auto and stretch to fit any wide child (e.g. the 600px odds
+     comparison table), pushing the page wider than the viewport. min-width:0
+     lets the column shrink so the inner .table-scroll handles the scroll. */
+  .layout-split > *, .layout-split-wide > * { min-width: 0; }
 
   /* Mobile drawer — left-side sliding panel (React `open` class toggles it) */
   .drawer-backdrop {

@@ -6,6 +6,7 @@ import Crest from "./Crest";
 import LiveClock from "./LiveClock";
 import { oddsTriple, statusOf, kickoffTime, kickoffDate, score } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
+import { useTimeZone } from "./TimeZoneProvider";
 
 const isTop = (m) => m.is_top === 1 || m.is_top === true;
 const scoreTotals = (m) => {
@@ -34,6 +35,7 @@ function pickFeatured(matches) {
  * flashes the team that scores. Football only (1·X·2 tiles).
  */
 export default function FeaturedEvent({ matches }) {
+  const tz = useTimeZone();
   const [m, setM] = useState(() => pickFeatured(matches));
   const prevScore = useRef(m ? scoreTotals(m) : null);
   const [flash, setFlash] = useState(null); // "home" | "away" | "both"
@@ -110,7 +112,7 @@ export default function FeaturedEvent({ matches }) {
             <div className="eyebrow">Match of the day</div>
             <h2>Featured event</h2>
           </div>
-          <Link className="btn btn-outline btn-sm" href={`/event?id=${m.id}`}>Full breakdown →</Link>
+          <Link className="btn btn-outline btn-sm" href={`/event/football/${m.id}`}>Full breakdown →</Link>
         </div>
 
         <article className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -139,14 +141,14 @@ export default function FeaturedEvent({ matches }) {
                 ) : bucket === "finished" ? (
                   <span>Finished · {m.cfs || m.ft}</span>
                 ) : (
-                  <span>{kickoffDate(m.dt)} · {kickoffTime(m.dt)}</span>
+                  <span>{kickoffDate(m.dt, tz)} · {kickoffTime(m.dt, tz)}</span>
                 )}
               </div>
             </div>
 
             <div
               className="event-head-grid"
-              style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 24, marginTop: 28, position: "relative" }}
+              style={{ marginTop: 28, position: "relative" }}
             >
               <div className="flex items-center gap-4" style={{ justifyContent: "flex-end" }}>
                 <div style={{ textAlign: "right" }}>
@@ -159,7 +161,7 @@ export default function FeaturedEvent({ matches }) {
                   {bucket !== "upcoming" && (m.cfs || m.ft) ? (m.cfs || m.ft) : "vs"}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 4, letterSpacing: "0.08em" }}>
-                  {kickoffDate(m.dt)} · {kickoffTime(m.dt)}
+                  {kickoffDate(m.dt, tz)} · {kickoffTime(m.dt, tz)}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -207,7 +209,7 @@ export default function FeaturedEvent({ matches }) {
           )}
 
           <div style={{ padding: "0 28px 28px" }}>
-            <Link className="btn btn-primary btn-block btn-lg" href={`/event?id=${m.id}`}>
+            <Link className="btn btn-primary btn-block btn-lg" href={`/event/football/${m.id}`}>
               View full comparison →
             </Link>
           </div>

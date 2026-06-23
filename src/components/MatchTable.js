@@ -1,14 +1,14 @@
 import Link from "next/link";
 import Crest from "./Crest";
 import Flag from "./Flag";
-import { kickoffTime, statusOf, statusLabel, score, oddsTriple } from "@/lib/format";
+import { kickoffLabel, statusOf, statusLabel, score, oddsTriple, oddsLineCount } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import styles from "./MatchTable.module.scss";
 
-function Odds({ match }) {
-  // The feed carries a single pre-match 1·X·2 market (one bookmaker) on upcoming
-  // games, and null on finished ones. Render real prices when present, "—" when not.
-  const t = oddsTriple(match);
+function Odds({ match, finished }) {
+  // Pre-match odds are meaningless once a game is over (and the feed prunes them
+  // for old finished matches), so finished matches render "—", never stale prices.
+  const t = finished ? null : oddsTriple(match);
   // 2-way market (tennis/basketball moneyline) → 1 / 2; otherwise 1 / X / 2.
   const twoWay = t?.twoWay;
   const cells = twoWay
@@ -32,13 +32,16 @@ function Odds({ match }) {
   );
 }
 
-function Row({ match, sport, isPast }) {
+function Row({ match, sport, isPast, tz }) {
   const c = match.competitors || {};
   // Past day → results only, regardless of stale "live" flags in the feed.
   const bucket = isPast ? "finished" : statusOf(match);
   const sc = score(match);
   const showScore = bucket !== "upcoming" && sc.raw;
-  const books = oddsTriple(match)?.books || 0;
+  const finished = bucket === "finished";
+  // Total odds lines available (across all markets) — matches the detail page.
+  // Suppressed for finished matches (their odds are stale / pruned upstream).
+  const books = finished ? 0 : oddsLineCount(match);
 
   return (
     <div className={styles.row}>
@@ -63,25 +66,25 @@ function Row({ match, sport, isPast }) {
         <div className={styles.status}>
           {bucket === "live" ? (
             <>
-              <span className="live-dot" /> <span className={styles.live}>{statusLabel(match)}</span>
+              <span className="live-dot" /> <span className={styles.live}>{statusLabel(match, tz)}</span>
             </>
           ) : bucket === "finished" ? (
             <span>FT</span>
           ) : (
-            <span>{kickoffTime(match.dt)}</span>
+            <span>{kickoffLabel(match.dt, tz)}</span>
           )}
         </div>
       </div>
 
-      <Odds match={match} />
+      <Odds match={match} finished={finished} />
 
       <div className={styles.compare} style={{ flexDirection: "column", gap: 6, alignItems: "center", justifyContent: "center" }}>
-        <Link className="btn btn-primary btn-sm" href={`/event?sport=${sport}&id=${match.id}`}>
+        <Link className="btn btn-primary btn-sm" href={`/event/${sport}/${match.id}`}>
           Compare
         </Link>
         {books > 0 && (
-          <Link href={`/event?sport=${sport}&id=${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
-            {books} book{books > 1 ? "s" : ""}
+          <Link href={`/event/${sport}/${match.id}`} className="mute" style={{ fontSize: 11, whiteSpace: "nowrap" }}>
+            {books} odds
           </Link>
         )}
       </div>
@@ -89,7 +92,7 @@ function Row({ match, sport, isPast }) {
   );
 }
 
-export default function MatchTable({ groups, sport = "football", isPast = false }) {
+export default function MatchTable({ groups, sport = "football", isPast = false, tz }) {
   if (!groups?.length) {
     return <div className={styles.note}>No matches found for this date.</div>;
   }
@@ -107,7 +110,7 @@ export default function MatchTable({ groups, sport = "football", isPast = false 
           </div>
           <div style={{ overflowX: "auto" }}>
             {(g.matches || []).map((m) => (
-              <Row key={m.id} sport={sport} isPast={isPast} match={{ ...m, league: g.name || g.nm }} />
+              <Row key={m.id} sport={sport} isPast={isPast} tz={tz} match={{ ...m, league: g.name || g.nm }} />
             ))}
           </div>
         </div>

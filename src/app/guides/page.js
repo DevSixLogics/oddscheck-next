@@ -41,7 +41,7 @@ function TopicCard({ topic }) {
       {articles.length ? (
         <ul className="flex-col gap-2" style={{ listStyle: "none", padding: 0 }}>
           {articles.slice(0, 4).map((a) => (
-            <li key={a.id || a.slug}><Link href={`/article?slug=${a.slug}`} style={{ fontSize: 13 }}>→ {a.headline}</Link></li>
+            <li key={a.id || a.slug}><Link href={`/article/${a.slug}`} style={{ fontSize: 13 }}>→ {a.headline}</Link></li>
           ))}
         </ul>
       ) : (
@@ -125,7 +125,7 @@ export default async function GuidesPage() {
               </div>
               <div className="grid grid-4">
                 {popular.map((g, idx) => (
-                  <Link key={g.slug} className="card" href={`/article?slug=${g.slug}`} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, minHeight: 160 }}>
+                  <Link key={g.slug} className="card" href={`/article/${g.slug}`} style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12, minHeight: 160 }}>
                     <div className="flex justify-between items-start gap-2">
                       <span style={{ width: 38, height: 38, borderRadius: 10, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)", fontSize: 16, fontWeight: 700, color: "var(--accent)" }}>{idx + 1}</span>
                       <span className="flex flex-wrap gap-1" style={{ justifyContent: "flex-end" }}>

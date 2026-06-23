@@ -45,12 +45,12 @@ export default function ArticleCard({ a }) {
         {chip && <span className="chip chip-best" style={{ fontSize: 10, padding: "2px 8px" }}>{chip}</span>}
       </div>
       <h3 style={{ fontSize: 18, lineHeight: 1.3 }}>
-        <Link href={`/article?slug=${a.slug}`}>{a.headline}</Link>
+        <Link href={`/article/${a.slug}`}>{a.headline}</Link>
       </h3>
       {a.strapline && <p className="muted" style={{ fontSize: 13, lineHeight: 1.5, flex: 1 }}>{a.strapline}</p>}
       <div className="flex justify-between items-center mute" style={{ fontSize: 12, marginTop: 2 }}>
         <span>{fmtDate(a.start_date)}{a.categoryName ? ` · ${a.categoryName}` : ""}</span>
-        <Link href={`/article?slug=${a.slug}`} style={{ color: "var(--accent)", fontWeight: 600 }}>Read article →</Link>
+        <Link href={`/article/${a.slug}`} style={{ color: "var(--accent)", fontWeight: 600 }}>Read article →</Link>
       </div>
     </article>
   );

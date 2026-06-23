@@ -1,34 +1,75 @@
-import { NextResponse } from "next/server";
+import { NextResponse, userAgent } from "next/server";
 
-// Simple site-wide gate (HTTP Basic Auth) — not a real user system, just a
-// single shared username/password so the preview isn't open to everyone.
-// PREVIEW ONLY: the literal fallbacks below must NOT be relied on in production —
-// set BASIC_AUTH_USER / BASIC_AUTH_PASS in the environment, or remove this gate
-// entirely once a real auth/session layer exists (see PRODUCTION-READINESS.md).
-const USER = process.env.BASIC_AUTH_USER || "oddscheck";
-const PASS = process.env.BASIC_AUTH_PASS || "preview2026";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
+const ONE_YEAR = 60 * 60 * 24 * 365;
 
-export function proxy(request) {
-  const header = request.headers.get("authorization");
-  if (header?.startsWith("Basic ")) {
-    try {
-      const decoded = atob(header.slice(6));
-      const i = decoded.indexOf(":");
-      const user = decoded.slice(0, i);
-      const pass = decoded.slice(i + 1);
-      if (user === USER && pass === PASS) return NextResponse.next();
-    } catch {
-      // fall through to the 401 challenge
-    }
-  }
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="OddsCheck preview", charset="UTF-8"' },
-  });
+// 308-redirect the legacy query-string content URLs to their clean path routes so
+// old indexed/bookmarked links keep working.
+function legacyRedirect(pathname, sp) {
+  if (pathname === "/article" && sp.get("slug")) return `/article/${sp.get("slug")}`;
+  if (pathname === "/race" && sp.get("id")) return `/race/${sp.get("id")}`;
+  if (pathname === "/review" && sp.get("author")) return `/review/${sp.get("author")}`;
+  if (pathname === "/event" && sp.get("sport") && sp.get("id")) return `/event/${sp.get("sport")}/${sp.get("id")}`;
+  return null;
 }
 
-// Gate every route except Next internals and public assets (so the login
-// challenge itself and the logo/favicon can still load).
+function clientIp(request) {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    ""
+  );
+}
+
+export async function proxy(request) {
+  // 1) Legacy query-string → clean-path redirects.
+  const dest = legacyRedirect(request.nextUrl.pathname, request.nextUrl.searchParams);
+  if (dest) {
+    const url = request.nextUrl.clone();
+    url.pathname = dest;
+    url.search = "";
+    return NextResponse.redirect(url, 308);
+  }
+
+  // 2) Resolve the viewer's timezone from their IP (CMS /timezone?ip=) the first
+  //    time we see them, cache it in cookies, and forward it to THIS render via
+  //    the x-timezone request header so even the first page is rendered in the
+  //    right zone (no flash). No fixed default — unresolved → pages fall back to
+  //    UTC. Bots are skipped (they'd get UTC; avoids a CMS call on every crawl).
+  let tz = request.cookies.get("timezone")?.value;
+  let offset = request.cookies.get("difference")?.value;
+  let country = request.cookies.get("locinfo")?.value;
+
+  if (!tz && !userAgent(request).isBot) {
+    try {
+      const ip = clientIp(request);
+      const res = await fetch(`${API_BASE}/timezone${ip ? `?ip=${encodeURIComponent(ip)}` : ""}`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) {
+        const data = (await res.json())?.data;
+        tz = data?.timezone || tz;
+        offset = data?.utc_offset || offset;
+        country = data?.country_code || country;
+      }
+    } catch {
+      /* CMS unreachable — leave tz unset; pages fall back to UTC */
+    }
+  }
+
+  const requestHeaders = new Headers(request.headers);
+  if (tz) requestHeaders.set("x-timezone", tz);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  if (tz) response.cookies.set("timezone", tz, { maxAge: ONE_YEAR, path: "/" });
+  if (offset) response.cookies.set("difference", offset, { maxAge: ONE_YEAR, path: "/" });
+  if (country) response.cookies.set("locinfo", country, { maxAge: ONE_YEAR, path: "/" });
+  return response;
+}
+
+// Run on all page routes (to set/forward the timezone), excluding api, Next
+// internals, and any path with a file extension (sitemap*.xml, robots.txt, …).
+// The legacy content paths match this too, so their 308 redirects still fire.
 export const config = {
-  matcher: ["/((?!_next/|favicon|oddscheck\\.png|fav_icon\\.ico|og-default\\.svg|robots\\.txt|sitemap\\.xml|goal\\.mp3|crowd-cheers\\.mp3).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

@@ -6,9 +6,9 @@ const COLUMNS = [
     title: "Sports",
     links: [
       ["Football Odds", "/football"],
+      ["Horse Racing Odds", "/racing"],
       ["Tennis Odds", "/tennis"],
       ["Basketball Odds", "/basketball"],
-      ["Cricket Odds", "/cricket"],
     ],
   },
   {
@@ -59,8 +59,8 @@ export default function SiteFooter({ logo }) {
           <div className="footer-intro">
             <Logo src={logo} height={56} />
             <p>
-              Live odds comparison and betting intelligence across football, tennis,
-              basketball, cricket and baseball. Built for serious sports fans.
+              Live odds comparison and betting intelligence across football, racing, tennis,
+              basketball and 30+ sports. Built for serious sports fans.
             </p>
           </div>
           {COLUMNS.map((col) => (

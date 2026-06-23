@@ -62,7 +62,7 @@ export function sportListJsonLd({ slug, matches = [], name = "", limit = 50 }) {
       const c = m.competitors || {};
       const evName = c.htn && c.atn ? `${c.htn} v ${c.atn}` : m.nm || m.league || "";
       if (!evName) return null;
-      const item = { "@type": "SportsEvent", name: evName, url: `${SITE_URL}/event?sport=${String(slug).toLowerCase()}&id=${m.id}` };
+      const item = { "@type": "SportsEvent", name: evName, url: `${SITE_URL}/event/${String(slug).toLowerCase()}/${m.id}` };
       const start = m.dt || m.gdt;
       if (start) item.startDate = String(start).replace(" ", "T");
       return { "@type": "ListItem", position: i + 1, item };
@@ -228,7 +228,7 @@ export async function matchListingSeo(sport, { type = "all" } = {}) {
  * CollectionPage + ItemList(NewsArticle) JSON-LD for an article-listing page
  * (news, offers, guides, a category, …). Mirrors the CMS theme's buildArticlesJsonLd.
  * `name`/`description` should come from the CMS (omitted when empty); each article
- * becomes a NewsArticle item. Articles link to the real /article?slug= URL.
+ * becomes a NewsArticle item, linked by its clean /article/{slug} canonical URL.
  */
 export function articleListJsonLd({ name, description, path = "/", articles = [], limit = 50 }) {
   const url = `${SITE_URL}${path}`;
@@ -239,7 +239,7 @@ export function articleListJsonLd({ name, description, path = "/", articles = []
       const item = {
         "@type": "NewsArticle",
         headline: a.headline,
-        url: a.slug ? `${SITE_URL}/article?slug=${a.slug}` : url,
+        url: a.slug ? `${SITE_URL}/article/${a.slug}` : url,
       };
       const d = a.start_date ? new Date(String(a.start_date).replace(" ", "T")) : null;
       if (d && !isNaN(d)) { item.datePublished = d.toISOString(); item.dateModified = d.toISOString(); }
@@ -307,5 +307,42 @@ export function breadcrumbJsonLd(crumbs = []) {
       name: c.name,
       ...(c.path ? { item: `${SITE_URL}${c.path}` } : {}),
     })),
+  };
+}
+
+/**
+ * FAQPage JSON-LD from visible question/answer pairs. `faqs` = [{ q, a }];
+ * entries missing either side are dropped. Only call this when the Q&A is
+ * actually rendered on the page — answer engines (and Google's FAQ guidelines)
+ * expect the answer text to be visible to the user, not schema-only.
+ */
+export function faqJsonLd(faqs = []) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: (faqs || [])
+      .filter((f) => f?.q && f?.a)
+      .map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+  };
+}
+
+/**
+ * HowTo JSON-LD for a procedural guide. `steps` = [{ name, text }] in order;
+ * empty steps are dropped. `name`/`description` describe the overall task and
+ * are omitted when absent. As with FAQ, the steps should be visible on the page.
+ */
+export function howToJsonLd({ name, description, steps = [] } = {}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    ...(name ? { name } : {}),
+    ...(description ? { description } : {}),
+    step: (steps || [])
+      .filter((s) => s?.name && s?.text)
+      .map((s, i) => ({ "@type": "HowToStep", position: i + 1, name: s.name, text: s.text })),
   };
 }

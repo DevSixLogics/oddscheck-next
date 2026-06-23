@@ -79,7 +79,7 @@ export default async function NewsPage({ searchParams }) {
                     </div>
                     <div style={{ position: "absolute", bottom: 24, left: 28, right: 28, maxWidth: 620 }}>
                       <h2 style={{ color: "#fff", fontSize: "clamp(20px, 3vw, 28px)", lineHeight: 1.2 }}>
-                        <Link href={`/article?slug=${featured.slug}`} style={{ color: "#fff" }}>{featured.headline}</Link>
+                        <Link href={`/article/${featured.slug}`} style={{ color: "#fff" }}>{featured.headline}</Link>
                       </h2>
                     </div>
                   </div>
@@ -93,7 +93,7 @@ export default async function NewsPage({ searchParams }) {
                           <div className="mute" style={{ fontSize: 11 }}>{timeAgo(featured.start_date)}</div>
                         </div>
                       </div>
-                      <Link className="btn btn-primary btn-sm" href={`/article?slug=${featured.slug}`}>Read article →</Link>
+                      <Link className="btn btn-primary btn-sm" href={`/article/${featured.slug}`}>Read article →</Link>
                     </div>
                   </div>
                 </article>
@@ -111,7 +111,7 @@ export default async function NewsPage({ searchParams }) {
                       </div>
                       <div style={{ padding: 18 }}>
                         <span className="chip chip-muted" style={{ fontSize: 10, padding: "2px 7px" }}>{a.categoryName}</span>
-                        <h3 style={{ fontSize: 15, lineHeight: 1.4, margin: "10px 0" }}><Link href={`/article?slug=${a.slug}`}>{a.headline}</Link></h3>
+                        <h3 style={{ fontSize: 15, lineHeight: 1.4, margin: "10px 0" }}><Link href={`/article/${a.slug}`}>{a.headline}</Link></h3>
                         <div className="flex justify-between items-center mt-2 mute" style={{ fontSize: 11 }}><span>{a.authorName}</span><span>{timeAgo(a.start_date)}</span></div>
                       </div>
                     </article>
@@ -138,7 +138,7 @@ export default async function NewsPage({ searchParams }) {
             <div className="card" style={{ padding: 20 }}>
               <h4 style={{ fontSize: 14, marginBottom: 14 }}>Most read · 24h</h4>
               {mostRead.map((a, i) => (
-                <Link key={a.id} href={`/article?slug=${a.slug}`} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: i === mostRead.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
+                <Link key={a.id} href={`/article/${a.slug}`} style={{ display: "flex", gap: 12, padding: "10px 0", borderBottom: i === mostRead.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
                   <span className="num" style={{ color: "var(--accent)", fontWeight: 700, flexShrink: 0 }}>{String(i + 1).padStart(2, "0")}</span>
                   <span style={{ fontSize: 13, lineHeight: 1.4 }}>{a.headline}</span>
                 </Link>

@@ -5,11 +5,13 @@ import { outcomeLabel } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 
 // Sum of implied probabilities (%) across a row's prices for the given outcomes.
+// Includes any positive price (even a sub-1.0 one) so the overround faithfully
+// reflects the raw feed — a broken leg therefore shows an inflated %.
 function overround(prices, outcomes) {
   let s = 0, n = 0;
   for (const oc of outcomes) {
     const p = prices[oc];
-    if (p > 1) { s += 100 / p; n += 1; }
+    if (p > 0) { s += 100 / p; n += 1; }
   }
   return n >= 2 ? s : null;
 }
@@ -18,13 +20,15 @@ function overround(prices, outcomes) {
  * Interactive market comparison. `markets` = output of oddsMarkets(match); the
  * tabs switch the active market and the table re-renders for it.
  */
-export default function OddsMarkets({ markets = [], home, away }) {
+export default function OddsMarkets({ markets = [], home, away, finished = false }) {
   const [active, setActive] = useState(0);
 
   if (!markets.length) {
     return (
       <div className="card" style={{ padding: 22, color: "var(--text-dim)", fontSize: 13 }}>
-        Odds aren&apos;t published for this match yet — check back closer to kickoff.
+        {finished
+          ? "This match has finished — pre-match odds are no longer shown."
+          : "Odds aren't published for this match yet — check back closer to kickoff."}
       </div>
     );
   }

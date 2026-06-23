@@ -7,16 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "check:urls": "node scripts/check-urls.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "isomorphic-dompurify": "^2.16.0",
+    "@sentry/nextjs": "^10.58.0",
     "laravel-echo": "^1.19.0",
     "next": "^16.2.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "sanitize-html": "^2.17.5",
     "socket.io-client": "^2.5.0"
   },
   "devDependencies": {

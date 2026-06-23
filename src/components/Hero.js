@@ -35,7 +35,7 @@ export default function Hero({ matches, liveCount }) {
               Compare live odds<br />from <span className="hero-gradient-text">top bookmakers.</span>
             </h1>
             <p className="lede">
-              Find the best price across football, tennis, basketball, cricket and
+              Find the best price across football, racing, tennis, basketball, cricket and
               more — with expert tips, odds movement and smart tools, all in one place.
             </p>
             <HeroSearch />

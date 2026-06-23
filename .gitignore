@@ -1,6 +1,7 @@
 /node_modules
 /.next
 /out
+/audit-reports
 /build
 .DS_Store
 *.log

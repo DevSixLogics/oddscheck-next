@@ -12,7 +12,7 @@ export async function generateMetadata({ searchParams }) {
   return {
     title: isBrand ? `${name} review 2026 — offers & verdict` : `${name} — author profile & articles`,
     description: detail?.bio || undefined,
-    alternates: { canonical: `/review?author=${slug}` },
+    alternates: { canonical: `/review/${slug}` },
   };
 }
 
@@ -170,7 +170,7 @@ export default async function ReviewPage({ searchParams }) {
                 <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.6 }}>{intro}</p>
               )}
               <div className="flex gap-2 mt-4 flex-wrap">
-                {primary && <Link className="btn btn-primary" href={`/article?slug=${primary.slug}`}>Read latest article</Link>}
+                {primary && <Link className="btn btn-primary" href={`/article/${primary.slug}`}>Read latest article</Link>}
                 <Link className="btn btn-ghost" href="/experts">All authors</Link>
               </div>
             </div>
@@ -178,7 +178,7 @@ export default async function ReviewPage({ searchParams }) {
             <aside className="card" style={{ padding: 24 }}>
               <div className="mute" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: 8 }}>Latest article</div>
               <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, lineHeight: 1.3 }}>{primary?.headline || "No articles yet"}</div>
-              {primary && <Link className="btn btn-primary btn-block" href={`/article?slug=${primary.slug}`}>Read article</Link>}
+              {primary && <Link className="btn btn-primary btn-block" href={`/article/${primary.slug}`}>Read article</Link>}
               <hr className="divider" style={{ margin: "16px 0" }} />
               <div className="flex justify-between" style={{ fontSize: 13 }}>
                 <span className="mute">Articles</span><b className="num">{detail?.post_count ?? articles.length}</b>
@@ -198,7 +198,7 @@ export default async function ReviewPage({ searchParams }) {
                 {articles.length ? (
                   <div className="flex-col gap-3">
                     {articles.map((a) => (
-                      <Link key={a.id || a.slug} href={`/article?slug=${a.slug}`} className="flex justify-between items-center gap-3" style={{ padding: "12px 0", borderBottom: "1px solid var(--border-soft)" }}>
+                      <Link key={a.id || a.slug} href={`/article/${a.slug}`} className="flex justify-between items-center gap-3" style={{ padding: "12px 0", borderBottom: "1px solid var(--border-soft)" }}>
                         <span>
                           <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{a.headline}</span>
                           {a.strapline && <span className="mute" style={{ fontSize: 12 }}>{a.strapline}</span>}
@@ -297,7 +297,7 @@ export default async function ReviewPage({ searchParams }) {
                 {compareList.map((c, i) => {
                   const k = c.slug.replace(/-/g, "");
                   return (
-                    <Link key={c.slug} href={`/review?author=${c.slug}`} className="flex items-center justify-between" style={{ padding: "10px 0", borderBottom: i === compareList.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
+                    <Link key={c.slug} href={`/review/${c.slug}`} className="flex items-center justify-between" style={{ padding: "10px 0", borderBottom: i === compareList.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
                       <span className="flex items-center gap-2"><span className={`bm bm-${k}`}>{codeFor(c.name)}</span><span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span></span>
                       <span className="num muted" style={{ fontSize: 12 }}>{c.postCount ?? 0} article{c.postCount === 1 ? "" : "s"}</span>
                     </Link>
@@ -310,7 +310,7 @@ export default async function ReviewPage({ searchParams }) {
                 More from {name}{detail?.post_count ? ` · ${detail.post_count} article${detail.post_count === 1 ? "" : "s"}` : ""}
               </h4>
               {articles.length ? articles.map((a, i) => (
-                <Link key={a.id || a.slug} href={`/article?slug=${a.slug}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i === articles.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
+                <Link key={a.id || a.slug} href={`/article/${a.slug}`} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i === articles.length - 1 ? 0 : "1px solid var(--border-soft)" }}>
                   {isBrand
                     ? <span className={`bm ${brandCls}`}>{brandCode}</span>
                     : <span style={{ width: 26, height: 26, borderRadius: "50%", display: "grid", placeItems: "center", background: "rgba(255,142,0,0.12)", color: "var(--accent)", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{name.charAt(0).toUpperCase()}</span>}

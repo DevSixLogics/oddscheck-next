@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Crest from "./Crest";
-import { oddsTriple, statusOf, statusLabel, kickoffTime } from "@/lib/format";
+import { oddsTriple, statusOf, statusLabel, kickoffLabel } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
+import { getViewerTimeZone } from "@/lib/timezone";
 
-function PreviewRow({ match }) {
+function PreviewRow({ match, tz }) {
   const c = match.competitors || {};
   const bucket = statusOf(match);
   // Finished matches keep stale pre-match odds in the feed — never show them.
@@ -13,9 +14,6 @@ function PreviewRow({ match }) {
     { sym: "X", price: t?.draw },
     { sym: "2", price: t?.away },
   ];
-  // Favourite = shortest (lowest) price across outcomes — highlighted in green.
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null;
   const live = bucket === "live";
 
   return (
@@ -37,20 +35,20 @@ function PreviewRow({ match }) {
           <Crest name={c.atn} id={c.atid} />
         </div>
         {live ? (
-          <span className="chip chip-live" style={{ fontSize: 10, flexShrink: 0, whiteSpace: "nowrap" }}>LIVE {statusLabel(match)}</span>
+          <span className="chip chip-live" style={{ fontSize: 10, flexShrink: 0, whiteSpace: "nowrap" }}>LIVE {statusLabel(match, tz)}</span>
         ) : (
-          <span className="mute" style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}>{kickoffTime(match.dt)}</span>
+          <span className="mute" style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}>{kickoffLabel(match.dt, tz)}</span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
-          const isFav = has && x.price === fav;
+          const isBest = false; // favourite/best highlight removed — not a backend value (re-enable when the feed flags a best price)
           return (
             <button
               type="button"
               key={x.sym}
-              className={`odds-cell${isFav ? " best" : ""}`}
+              className={`odds-cell${isBest ? " best" : ""}`}
             >
               <span className="flex justify-between items-center" style={{ gap: 4 }}>
                 <span className="meta">{x.sym}</span>
@@ -66,10 +64,12 @@ function PreviewRow({ match }) {
 
 /**
  * Hero "Live odds preview" widget — DATA-DRIVEN, styled to match the original
- * index.html hero-right card. Shows matches that carry a 1·X·2 market, favourite
- * (shortest price) highlighted via `.odds-cell.best`.
+ * index.html hero-right card. Shows matches that carry a 1·X·2 market; each cell
+ * is the best price across bookmakers for that outcome (no client-side favourite
+ * highlight — that isn't a backend value).
  */
-export default function TopOddsWidget({ matches, limit = 3 }) {
+export default async function TopOddsWidget({ matches, limit = 3 }) {
+  const tz = await getViewerTimeZone();
   // Exclude finished matches — their feed odds are stale pre-match prices.
   const withOdds = matches.filter((m) => statusOf(m) !== "finished" && oddsTriple(m));
   const live = withOdds.filter((m) => statusOf(m) === "live");
@@ -89,7 +89,7 @@ export default function TopOddsWidget({ matches, limit = 3 }) {
       </div>
 
       {ordered.length ? (
-        ordered.map((m) => <PreviewRow key={m.id} match={m} />)
+        ordered.map((m) => <PreviewRow key={m.id} match={m} tz={tz} />)
       ) : (
         <div style={{ color: "var(--text-dim)", fontSize: 13, padding: "8px 0" }}>
           No priced matches right now — check back closer to kickoff.
@@ -97,7 +97,7 @@ export default function TopOddsWidget({ matches, limit = 3 }) {
       )}
 
       <div className="flex justify-between items-center" style={{ marginTop: 14, fontSize: 12, color: "var(--text-dim)" }}>
-        <span>Favourite (shortest price) highlighted</span>
+        <span>Best price across bookmakers</span>
         <Link href="/football" style={{ color: "var(--accent)", fontWeight: 600 }}>View all odds →</Link>
       </div>
     </aside>

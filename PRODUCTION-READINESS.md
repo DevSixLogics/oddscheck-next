@@ -19,7 +19,7 @@ any time with the **`/production-audit`** slash command (see
 | **Canonical** | `metadataBase` + per-page `alternates.canonical` on home, article, event, news, experts, experts/[slug], guides, and the dynamic `[slug]` routes. Query-string URLs are used as canonical **for now** (clean-URL migration deferred — see below). |
 | **Security headers** | [`next.config.mjs`](next.config.mjs) `headers()`: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy. |
 | **HTML sanitization** | The only `dangerouslySetInnerHTML` (article body) is sanitized with `isomorphic-dompurify`; CSP is the second layer. |
-| **Auth honesty** | Login/Signup forms no longer fake a session redirect — they show a "preview — accounts not enabled" notice. The preview itself is gated by HTTP Basic Auth ([`proxy.js`](src/proxy.js)). |
+| **Auth honesty** | Login/Signup forms no longer fake a session redirect — they show a "preview — accounts not enabled" notice. The site is publicly accessible (the preview HTTP Basic Auth gate has been removed). |
 | **Accessibility** | Removed all `href="#"` dead links; real `alt` text on content images; replaced fake disabled news tabs with a non-interactive label. Skip-link, focus-visible and `not-found.js` already existed. |
 | **Resilience** | Global [`error.js`](src/app/error.js) and [`loading.js`](src/app/loading.js) route boundaries. |
 | **Observability hook** | [`WebVitals.js`](src/components/WebVitals.js) (Core Web Vitals) — logs in dev, single hook point for an analytics/Sentry sink. |
@@ -33,10 +33,9 @@ These are out of scope for the front-end repo. Each needs an owner and a decisio
 (implement / accept-risk-with-waiver) before go-live.
 
 ### 1. Secrets & auth
-- [ ] **Rotate / remove the preview Basic-Auth credentials.** [`proxy.js`](src/proxy.js)
-      falls back to `oddscheck` / `preview2026` if `BASIC_AUTH_USER` / `BASIC_AUTH_PASS`
-      are unset. These are **preview-only** and must never reach production. Either set
-      strong env values or remove the gate once real auth exists.
+- [x] **Preview Basic-Auth gate removed.** The site-wide HTTP Basic Auth proxy
+      (`src/proxy.js`) and its `BASIC_AUTH_USER` / `BASIC_AUTH_PASS` env vars have been
+      removed — all pages are now publicly accessible.
 - [ ] **Real authentication / sessions.** Login & Signup are non-functional placeholders.
       A real backend session layer (and `/dashboard` protection) is required before
       advertising accounts.

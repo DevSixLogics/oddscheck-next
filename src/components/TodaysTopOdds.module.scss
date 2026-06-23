@@ -45,3 +45,26 @@
 .action { display: flex; justify-content: flex-end; }
 .scroll { overflow-x: auto; }
 .foot { padding: 14px; text-align: center; }
+
+/* Mobile (<768): the 4-column table doesn't fit a phone, so the odds + Compare
+   button were scrolled off-screen. Reflow each row into a compact stack — teams
+   + status on top, odds and Compare beneath — and drop the 640px min-width so no
+   horizontal scrolling is needed. */
+@media (max-width: 767px) {
+  .headRow { display: none; }
+
+  .row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "teams meta"
+      "odds  action";
+    align-items: center;
+    gap: 12px 10px;
+    min-width: 0;
+    padding: 14px 12px;
+  }
+  .teams  { grid-area: teams; min-width: 0; }
+  .meta   { grid-area: meta; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+  .odds   { grid-area: odds; }
+  .action { grid-area: action; }
+}
