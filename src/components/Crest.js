@@ -16,10 +16,12 @@ function hueFor(seed = "") {
 export default function Crest({ name, id, sport = "football", size }) {
   const [failed, setFailed] = useState(false);
   const cls = `crest${size === "xl" ? " crest-xl" : size === "lg" ? " crest-lg" : ""}`;
-  const url = teamImageURL(id, sport);
+  const url = teamImageURL(id, sport, name);
 
-  // No id, the API returns "none", or the image 404'd → initials gradient badge.
-  if (!url || url.includes("/none") || failed) {
+  // No usable id, or the image request errored → local initials gradient badge.
+  // (The service itself renders an initials placeholder when a logo is missing,
+  // so `failed` only fires on a real network/host error.)
+  if (!url || failed) {
     const h = hueFor(id || name);
     return (
       <span

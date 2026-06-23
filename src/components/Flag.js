@@ -3,10 +3,14 @@
 import { useState } from "react";
 import { leagueFlagURL } from "@/lib/images";
 
-/** League / tournament country flag. Renders nothing if missing or it 404s. */
-export default function Flag({ fid, sport = "football", size = 16 }) {
+/**
+ * League / tournament country flag, served from the app's own static assets
+ * (/ip/assets/images/flags/country_{fid}.png). Renders nothing if there's no fid
+ * or the file 404s. Country flags are sport-agnostic, so only `fid` is needed.
+ */
+export default function Flag({ fid, size = 16 }) {
   const [failed, setFailed] = useState(false);
-  const url = leagueFlagURL(fid, sport);
+  const url = leagueFlagURL(fid);
   if (!url || failed) return null;
   return (
     // eslint-disable-next-line @next/next/no-img-element

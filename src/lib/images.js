@@ -1,31 +1,61 @@
-// Entity image URLs — team logos and league/tournament flags — served from the
-// shared stats host. Mirrors the conventions in the entity-images skill.
+// Entity image URLs — team/competitor logos and league country flags.
+//
+// Served by the iPublisher image service on the STORAGE host (not the `cms-` API
+// host), e.g.
+//   https://oddscheck.hneeds.com/v1/sports/{sport}/competitor-logos/{id}.png
+//   ?initials=XX&bg=ffffff&fg=000000
+// The service renders a themed initials placeholder (the initials/bg/fg query)
+// when there's no real logo, so the endpoint NEVER 404s. We resolve the host
+// from config (derived from the API base) instead of hardcoding a themed CDN.
 
-const ORIGIN = (process.env.NEXT_PUBLIC_SITE_ORIGIN || "https://betwayscores-v2.6lgx.com/").replace(/\/?$/, "/");
+import { initials } from "./format";
 
-export const DEFAULT_TEAM_IMG = `${ORIGIN}assets/images/placeholderimages/default-team.png`;
+// Image/storage origin. Prefer an explicit override; otherwise derive it from the
+// API base by dropping the `/api/v1` path and the `cms-` API-subdomain prefix
+// (iPublisher convention: the API lives on cms-<host>, images on the bare <host>).
+function resolveImageBase() {
+  const explicit = process.env.NEXT_PUBLIC_IMAGE_BASE;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  try {
+    const u = new URL(process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1");
+    u.hostname = u.hostname.replace(/^cms-/, "");
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "https://oddscheck.hneeds.com";
+  }
+}
+
+const IMAGE_BASE = resolveImageBase();
+
+// The image service uses canonical sport slugs for a few sports.
+const SPORT_REMAP = { "ice-hockey": "hockey", "rugby-union": "rugby", "rugby-league": "rugby" };
+const apiSport = (sport) => {
+  const s = String(sport || "football").toLowerCase();
+  return SPORT_REMAP[s] || s;
+};
+
+// 2-letter code seeding the backend-rendered initials placeholder.
+const placeholderInitials = (name) => initials(name).slice(0, 2);
 
 /**
- * Team/competitor logo URL (sport-aware), or null when there's no id.
- *  - tennis  → country flag (competitors are players → use their country id)
- *  - cricket → cricket team png (cache-busted)
- *  - others  → /images/{sport}/teams/{id}.png
+ * Team/competitor logo URL (all sports, cricket included). The service renders an
+ * initials placeholder when there's no real logo, so this never 404s — `name`
+ * seeds that placeholder. Returns null only when there's no usable id.
  */
-export function teamImageURL(id, sport = "football") {
-  if (!id && id !== 0) return null;
-  const s = String(sport || "football").toLowerCase();
-  if (s === "tennis") return `${ORIGIN}assets/images/flags/country_${id}.png?version=1.1.0`;
-  if (s === "cricket") return `${ORIGIN}images/cricket/teams/${id}.png?version=1.1.0`;
-  return `${ORIGIN}images/${s}/teams/${id}.png`;
+export function teamImageURL(id, sport = "football", name = "") {
+  if (id == null || id === "" || id === "none") return null;
+  const q = `initials=${encodeURIComponent(placeholderInitials(name))}&bg=ffffff&fg=000000`;
+  return `${IMAGE_BASE}/v1/sports/${apiSport(sport)}/competitor-logos/${id}.png?${q}`;
 }
 
 /**
- * League / tournament flag URL by category id (`fid`). Cricket competitions use
- * their own competition-id flag. Returns null when there's no id.
+ * League / tournament image = its country flag, served from the app's OWN static
+ * assets (public/ip/assets/images/flags/country_{fid}.png), keyed by the league's
+ * category flag id (`fid`) — NOT a remote endpoint. Country flags are the same
+ * file across sports, so `fid` is all that's needed. Returns null when there's no
+ * id; the <Flag> component also renders nothing if the file 404s.
  */
-export function leagueFlagURL(fid, sport = "football") {
-  if (!fid && fid !== 0) return null;
-  const s = String(sport || "football").toLowerCase();
-  if (s === "cricket") return `${ORIGIN}assets/images/cricket/flags/${fid}.png`;
-  return `${ORIGIN}assets/images/flags/country_${fid}.png`;
+export function leagueFlagURL(fid) {
+  if (fid == null || fid === "" || fid === "none") return null;
+  return `/ip/assets/images/flags/country_${fid}.png`;
 }

@@ -4,7 +4,11 @@ import path from "node:path";
 // Content-Security-Policy connect-src so we don't have to open it to the world.
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKETURL || "https://socket.ipublisher.app/";
-const SITE_ORIGIN = process.env.NEXT_PUBLIC_SITE_ORIGIN || "https://betwayscores-v2.6lgx.com/";
+// Image/storage host: the iPublisher image service lives on the bare host, not the
+// `cms-` API host. Prefer the explicit override; else derive from the API base.
+const IMAGE_BASE =
+  process.env.NEXT_PUBLIC_IMAGE_BASE ||
+  API_BASE.replace("://cms-", "://").replace(/\/api\/v1\/?$/, "");
 
 const hostOf = (u) => {
   try { return new URL(u).origin; } catch { return ""; }
@@ -12,7 +16,7 @@ const hostOf = (u) => {
 
 const API_ORIGIN = hostOf(API_BASE);
 const SOCKET_ORIGIN = hostOf(SOCKET_URL);
-const SITE_ORIGIN_URL = hostOf(SITE_ORIGIN);
+const IMAGE_ORIGIN = hostOf(IMAGE_BASE);
 const WS_ORIGIN = SOCKET_ORIGIN.replace(/^http/, "ws");
 
 // Content-Security-Policy. Next's runtime + our inline JSON-LD/inline styles need
@@ -27,7 +31,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ${WS_ORIGIN} ${SITE_ORIGIN_URL}`.trim(),
+  `connect-src 'self' ${API_ORIGIN} ${SOCKET_ORIGIN} ${WS_ORIGIN} ${IMAGE_ORIGIN}`.trim(),
   "media-src 'self'",
   "frame-src 'self'",
 ].join("; ");
@@ -55,14 +59,12 @@ const nextConfig = {
     loadPaths: [path.join(process.cwd(), "src/styles")],
     includePaths: [path.join(process.cwd(), "src/styles")],
   },
-  // Allow remote image hosts so a future <img> → next/image migration is a drop-in.
+  // Allow the iPublisher image host (team/competitor logos) so a future
+  // <img> → next/image migration is a drop-in. League flags are local (public/).
   images: {
     minimumCacheTTL: 86400,
     remotePatterns: [
-      { protocol: "https", hostname: "cms-oddscheck.hneeds.com" },
-      { protocol: "https", hostname: "oddscheck.hneeds.com" },
       { protocol: "https", hostname: "*.hneeds.com" },
-      { protocol: "https", hostname: "*.6lgx.com" },
     ],
   },
   async headers() {

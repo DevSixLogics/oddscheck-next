@@ -566,10 +566,16 @@ export async function getAuthors() {
   const authors = [...map.values()];
   const enriched = await Promise.all(
     authors.map(async (au) => {
-      const { detail } = await getAuthorDetails(au.slug);
+      const { detail, articles } = await getAuthorDetails(au.slug);
       // Use the author's real CMS bio verbatim as the card strapline.
       const bio = detail?.bio?.trim() || null;
-      return { ...au, bio, postCount: detail?.post_count ?? null };
+      // The article LIST feed (/articles) serves a stale `default.png` for some
+      // authors even after a real avatar is uploaded, while the author/details
+      // feed carries the correct path — so backfill the image from there when the
+      // list feed gave us nothing real. (author/details is already fetched here,
+      // so this costs no extra request.)
+      const detailImg = (articles || []).map((x) => realAuthorImage(x.profile_image_path)).find(Boolean) || null;
+      return { ...au, image: au.image || detailImg, bio, postCount: detail?.post_count ?? null };
     })
   );
   return enriched.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));

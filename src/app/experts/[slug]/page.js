@@ -43,7 +43,13 @@ export default async function ExpertProfilePage({ params }) {
   const role = isBrand ? "Bookmaker" : (bio || "Contributor");
   const postCount = detail?.post_count ?? articles.length;
   const primary = articles[0] || null;
-  const img = realAuthorImage(detail?.image || detail?.profile_image_path);
+  // author/details `detail` carries no avatar; the real uploaded image lives on
+  // the author's articles (profile_image_path). The /articles list feed can serve
+  // a stale default.png, so prefer the author/details articles here.
+  const img =
+    realAuthorImage(detail?.image || detail?.profile_image_path) ||
+    (articles || []).map((a) => realAuthorImage(a.profile_image_path)).find(Boolean) ||
+    null;
 
   // ProfilePage + Person/Organization (E-E-A-T): names the author entity, their
   // bio and photo when the CMS supplies them. Fields are omitted when absent.
