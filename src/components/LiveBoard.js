@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
+import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
-import { oddsTriple, statusOf, score, kickoffTime } from "@/lib/format";
+import { oddsTriple, statusOf, score, kickoffLabel } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import LiveClock from "./LiveClock";
+import { useTimeZone } from "./TimeZoneProvider";
 
 // Highlight applied to every in-play card.
 const LIVE_CARD = {
@@ -28,6 +30,35 @@ const PILL_LABELS = {
   baseball: "Baseball", racing: "Horse Racing", golf: "Golf",
 };
 
+// Sports refreshed by the REST poll. Superset of the socket sports — baseball has
+// no live socket event, so the poll is its only live updater.
+const POLL_SPORTS = [...MATCH_SPORTS, { key: "baseball", label: "Baseball" }];
+
+// Merge a fresh batch of a sport's matches into the live board (shared by the
+// socket push AND the REST poll): update existing live cards, drop any that are
+// no longer live, and add newly-live matches. `incoming` may include non-live
+// matches (the REST feed returns all of them) — statusOf() decides what stays.
+function mergeSportInto(prev, sportKey, sportLabel, incoming) {
+  if (!incoming?.length) return prev;
+  const byId = new Map(incoming.map((m) => [String(m.id), m]));
+  // 1) merge updates into existing cards for this sport
+  let next = prev.map((it) =>
+    it.kind === "match" && it.sport === sportKey && byId.has(String(it.id))
+      ? { ...mergeMatch(it, byId.get(String(it.id))), kind: "match", sport: sportKey, sportLabel: it.sportLabel || sportLabel }
+      : it
+  );
+  // 2) drop ones that are no longer live (finished/postponed/etc.)
+  next = next.filter((it) => !(it.kind === "match" && it.sport === sportKey && byId.has(String(it.id)) && statusOf(it) !== "live"));
+  // 3) add newly-live matches not already shown
+  const present = new Set(next.filter((it) => it.kind === "match" && it.sport === sportKey).map((it) => String(it.id)));
+  incoming.forEach((m) => {
+    if (!present.has(String(m.id)) && statusOf(m) === "live") {
+      next = [...next, { ...m, kind: "match", sport: sportKey, sportLabel, league: m.league || m.tournament_name || sportLabel }];
+    }
+  });
+  return next;
+}
+
 function parColor(p) {
   if (typeof p === "string" && p.startsWith("-")) return "var(--accent)";
   if (typeof p === "string" && p.startsWith("+")) return "var(--down)";
@@ -35,6 +66,7 @@ function parColor(p) {
 }
 
 function LiveMatchCard({ m }) {
+  const flash = useFlashOnChange(m._updatedAt);
   const c = m.competitors || {};
   const t = oddsTriple(m);
   const sc = score(m);
@@ -42,10 +74,8 @@ function LiveMatchCard({ m }) {
   const cells = twoWay
     ? [{ sym: "1", price: t?.home }, { sym: "2", price: t?.away }]
     : [{ sym: "1", price: t?.home }, { sym: "X", price: t?.draw }, { sym: "2", price: t?.away }];
-  const prices = cells.map((x) => x.price).filter((p) => typeof p === "number");
-  const fav = prices.length ? Math.min(...prices) : null;
   return (
-    <article className="card" style={LIVE_CARD}>
+    <article className={`card${flash ? " match-flash" : ""}`} style={LIVE_CARD}>
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <span className="chip chip-live" style={{ fontSize: 10 }}><LiveClock match={m} /></span>
@@ -64,8 +94,9 @@ function LiveMatchCard({ m }) {
       <div style={{ display: "grid", gridTemplateColumns: twoWay ? "1fr 1fr" : "1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
         {cells.map((x) => {
           const has = typeof x.price === "number";
+          const isBest = false; // favourite/best highlight removed — not a backend value (re-enable when the feed flags a best price)
           return (
-            <button key={x.sym} className={`odds-cell${has && x.price === fav ? " best" : ""}`}>
+            <button key={x.sym} className={`odds-cell${isBest ? " best" : ""}`}>
               <span className="meta">{x.sym}</span>
               <span className="price">{has ? <OddsValue value={x.price} /> : "—"}</span>
             </button>
@@ -74,18 +105,19 @@ function LiveMatchCard({ m }) {
       </div>
       <div className="flex justify-between items-center mute" style={{ fontSize: 11 }}>
         <span className="flex items-center gap-1"><span className="live-dot" /> Markets open</span>
-        <Link href={`/event?sport=${m.sport}&id=${m.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>All markets →</Link>
+        <Link href={`/event/${m.sport}/${m.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>All markets →</Link>
       </div>
     </article>
   );
 }
 
 function LiveRaceCard({ r }) {
+  const tz = useTimeZone();
   return (
     <article className="card" style={LIVE_CARD}>
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2"><span className="chip chip-live" style={{ fontSize: 10 }}>LIVE</span><span className="chip chip-muted">Horse Racing</span></div>
-        <span className="mute" style={{ fontSize: 11 }}>{kickoffTime(r.st)}</span>
+        <span className="mute" style={{ fontSize: 11 }}>{kickoffLabel(r.st, tz)}</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{r.course}</div>
       <div className="mute" style={{ fontSize: 13, marginBottom: 14 }}>{r.nm}</div>
@@ -128,6 +160,7 @@ export default function LiveBoard({ initialItems = [] }) {
   const [items, setItems] = useState(initialItems);
   const [filter, setFilter] = useState("all"); // selected sport tab
 
+  // Socket push (instant) — Tier 1 per sport. Merges into the live board.
   useEffect(() => {
     if (!socket) return;
     const channel = socket.channel("IPUB");
@@ -138,25 +171,7 @@ export default function LiveBoard({ initialItems = [] }) {
       const handler = (e) => {
         const incoming = flattenSocketLeagues(e?.data);
         if (!incoming.length) return;
-        setItems((prev) => {
-          const byId = new Map(incoming.map((m) => [String(m.id), m]));
-          // 1) merge updates into existing live cards for this sport
-          let next = prev.map((it) =>
-            it.kind === "match" && it.sport === s.key && byId.has(String(it.id))
-              ? { ...mergeMatch(it, byId.get(String(it.id))), kind: "match", sport: s.key, sportLabel: it.sportLabel }
-              : it
-          );
-          // 2) drop ones that just went non-live
-          next = next.filter((it) => !(it.kind === "match" && it.sport === s.key && byId.has(String(it.id)) && statusOf(it) !== "live"));
-          // 3) add newly-live matches not already shown
-          const present = new Set(next.filter((it) => it.kind === "match" && it.sport === s.key).map((it) => String(it.id)));
-          incoming.forEach((m) => {
-            if (!present.has(String(m.id)) && statusOf(m) === "live") {
-              next = [...next, { ...m, kind: "match", sport: s.key, sportLabel: s.label, league: m.league || m.tournament_name || s.label }];
-            }
-          });
-          return next;
-        });
+        setItems((prev) => mergeSportInto(prev, s.key, s.label, incoming));
       };
       channel.listen(ev, handler);
       subs.push([ev, handler]);
@@ -164,6 +179,32 @@ export default function LiveBoard({ initialItems = [] }) {
     // Unsubscribe our listeners only — never disconnect the shared socket.
     return () => subs.forEach(([ev, h]) => channel.stopListening(ev, h));
   }, [socket]);
+
+  // REST poll (reliable) — the socket may not carry every match (different
+  // backend ID space), and a sport can time out on the initial server render.
+  // Polling /api/matches every 20s re-syncs scores/minutes, drops finished
+  // matches, and pulls in any live match the snapshot/socket missed — so the
+  // live list converges to the true set instead of a random snapshot.
+  useEffect(() => {
+    let stop = false;
+    let timer;
+    const poll = async () => {
+      for (const s of POLL_SPORTS) {
+        if (stop) return;
+        try {
+          const res = await fetch(`/api/matches?sport=${s.key}`, { cache: "no-store" });
+          if (!res.ok) continue;
+          const { matches } = await res.json();
+          if (!stop && Array.isArray(matches)) setItems((prev) => mergeSportInto(prev, s.key, s.label, matches));
+        } catch { /* transient — next tick retries */ }
+      }
+      // Schedule the NEXT poll only after this one finishes, so a slow CMS cycle
+      // can't overlap/stack up.
+      if (!stop) timer = setTimeout(poll, 20000);
+    };
+    poll();
+    return () => { stop = true; clearTimeout(timer); };
+  }, []);
 
   const itemKey = (it) => (it.kind === "race" ? "racing" : it.kind === "golf" ? "golf" : it.sport);
   const counts = {};

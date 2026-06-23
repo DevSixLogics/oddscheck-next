@@ -5,6 +5,7 @@
 // See .claude/instructions/*-data-coverage-map.html for the gap analysis.
 
 import sample from "./data/football-new-matches.sample.json";
+import { tzDifferenceParam } from "./format";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
@@ -23,14 +24,21 @@ export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function fetchMatches(sport, date) {
+async function fetchMatches(sport, date, fresh = false, difference = "") {
   // multi_odds=1 → `odds` is an array of per-bookmaker markets (1x2, DC, BTTS…).
-  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1`;
+  // difference (e.g. "+5"/"-4") → the backend returns matches grouped by the
+  // viewer's LOCAL date for that UTC offset (and collapses split tournament
+  // groups). Encode the leading "+" so it isn't read as a space.
+  const diff = difference ? `&difference=${encodeURIComponent(difference)}` : "";
+  const url = `${API_BASE}/${sport}/new-matches?type=all&date=${date}&multi_odds=1${diff}`;
   const res = await fetch(url, {
-    // Treat as live-ish data; re-fetch at most once per REVALIDATE window.
-    next: { revalidate: REVALIDATE },
-    // Don't let a slow/unstable sport feed (e.g. racing) hang the request.
-    signal: AbortSignal.timeout(8000),
+    // `fresh` (live poll) bypasses the data cache so each poll sees current
+    // scores/minutes; otherwise re-fetch at most once per REVALIDATE window.
+    ...(fresh ? { cache: "no-store" } : { next: { revalidate: REVALIDATE } }),
+    // The CMS often takes ~7s; an 8s cap made sports randomly time out, so the
+    // live board showed a different subset each visit. 15s gives real headroom
+    // while still bounding a genuinely hung feed.
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`${sport}/new-matches ${date} -> HTTP ${res.status}`);
   const json = await res.json();
@@ -52,13 +60,13 @@ export async function getMatchCount(sport) {
  * Returns { groups, date, source, sport } where source is
  * "live" | "sample-date" | "fallback" (football only) | "empty".
  */
-export async function getMatches(sport = "football", date = todayISO()) {
+export async function getMatches(sport = "football", date = todayISO(), { fresh = false } = {}) {
   try {
-    let groups = await fetchMatches(sport, date);
+    let groups = await fetchMatches(sport, date, fresh);
     if (groups.length) return { groups, date, source: "live", sport };
 
     if (date !== SAMPLE_DATE) {
-      groups = await fetchMatches(sport, SAMPLE_DATE);
+      groups = await fetchMatches(sport, SAMPLE_DATE, fresh);
       if (groups.length) return { groups, date: SAMPLE_DATE, source: "sample-date", sport };
     }
   } catch (err) {
@@ -77,6 +85,24 @@ export function getFootballMatches(date = todayISO()) {
 }
 
 /**
+ * Matches for a sport on the viewer's LOCAL calendar day `localDate` (YYYY-MM-DD)
+ * in zone `tz`. We pass the whole-hour UTC offset as the feed's `difference`
+ * param, so the BACKEND returns the matches that fall on that local day (and
+ * collapses split tournament groups into one). `dt` stays UTC — callers convert
+ * it for display. Same { groups, date, source, sport } shape as getMatches.
+ */
+export async function getMatchesByLocalDate(sport, localDate, tz, { fresh = false } = {}) {
+  const difference = tzDifferenceParam(tz, localDate);
+  let groups = [];
+  try {
+    groups = await fetchMatches(sport, localDate, fresh, difference);
+  } catch (err) {
+    console.error(`[api] getMatchesByLocalDate(${sport}) failed:`, err.message);
+  }
+  return { groups, date: localDate, source: groups.length ? "live" : "empty", sport };
+}
+
+/**
  * Single match detail from /{sport}/match/{id}/detail.
  * Adds team form (htf/atf), nested tournament, and the 1·X·2 odds object.
  * Returns the data object or null.
@@ -89,9 +115,87 @@ export async function getMatchDetail(sport = "football", id) {
     });
     if (!res.ok) throw new Error(`${sport}/match/${id}/detail -> HTTP ${res.status}`);
     const json = await res.json();
-    return json?.data ?? null;
+    const data = json?.data ?? null;
+    // `odds` and `tabs` are TOP-LEVEL siblings of `data` (not nested) — attach
+    // them so oddsMarkets()/oddsTriple() can read d.odds, and the page can read
+    // d.tabs (the per-match list of available detail tabs, e.g. teams/standings/info).
+    if (data && json.odds != null && data.odds == null) data.odds = json.odds;
+    if (data && Array.isArray(json.tabs) && data.tabs == null) data.tabs = json.tabs;
+    return data;
   } catch (err) {
     console.error("[api] getMatchDetail failed:", err.message);
+    return null;
+  }
+}
+
+/**
+ * Odds for a single match pulled from the LISTING feed (/{sport}/new-matches).
+ * Some sports (notably cricket) expose no `odds` on the match-detail endpoint —
+ * the listing feed is the only odds source — so the detail page backfills from
+ * here. `date` is the match's calendar day (YYYY-MM-DD, from gdt/dt).
+ * Returns the per-bookmaker odds array (possibly []); never throws.
+ */
+export async function getMatchOdds(sport, id, date) {
+  if (!id || !date) return [];
+  try {
+    const groups = await fetchMatches(sport, date, false);
+    for (const g of groups) {
+      for (const m of g.matches || []) {
+        if (String(m.id) !== String(id)) continue;
+        const o = m.odds;
+        // The feed sends odds as an ARRAY (multi_odds), a SINGLE market object
+        // (one bookmaker), or null. Normalise to an array so the detail page
+        // shows the same odds the listing has — a single-object payload would
+        // otherwise be dropped and the detail would wrongly show "no odds".
+        if (Array.isArray(o)) return o;
+        if (o && Array.isArray(o.outcomes)) return [o];
+        return [];
+      }
+    }
+  } catch (err) {
+    console.error("[api] getMatchOdds failed:", err.message);
+  }
+  return [];
+}
+
+/**
+ * Cricket group standings for a match: /cricket/match/{id}/standings.
+ * Returns an array of non-empty groups, each a row[] of
+ * { grp, tnm, tid, pos, mt, wo, lo, dr, pts, nrr, prem }, or [] on error.
+ */
+export async function getMatchStandings(sport = "cricket", id) {
+  if (!id) return [];
+  try {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/standings`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`${sport}/match/${id}/standings -> HTTP ${res.status}`);
+    const json = await res.json();
+    const groups = Array.isArray(json?.data) ? json.data : [];
+    return groups.filter((g) => Array.isArray(g) && g.length);
+  } catch (err) {
+    console.error("[api] getMatchStandings failed:", err.message);
+    return [];
+  }
+}
+
+/**
+ * Generic match-detail TAB fetch: /{sport}/match/{id}/{tab} (teams, standings,
+ * info, scorecard, …). Returns the `data` payload or null.
+ */
+export async function getMatchTab(sport, id, tab) {
+  if (!id || !tab) return null;
+  try {
+    const res = await fetch(`${API_BASE}/${sport}/match/${id}/${tab}`, {
+      next: { revalidate: REVALIDATE },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error(`${sport}/match/${id}/${tab} -> HTTP ${res.status}`);
+    const json = await res.json();
+    return json?.data ?? null;
+  } catch (err) {
+    console.error(`[api] getMatchTab(${tab}) failed:`, err.message);
     return null;
   }
 }
@@ -398,13 +502,25 @@ export async function getHeaderMenu() {
  * the general feed + the offers feed, then look up each author's profile.
  * Returns [{ slug, name, image, bio, postCount }] sorted by post count desc.
  */
+/**
+ * Author/bookmaker avatar URL, or null when the CMS returns its generic
+ * "default.png" placeholder. Returning null lets the UI fall back to a brand
+ * badge or initial circle instead of showing the same default image for every
+ * author until real photos are uploaded in the CMS.
+ */
+export function realAuthorImage(path) {
+  if (!path) return null;
+  const base = String(path).split(/[?#]/)[0].split("/").pop().toLowerCase();
+  return /^default\.(png|jpe?g|webp|svg|gif)$/.test(base) ? null : path;
+}
+
 export async function getAuthors() {
   const map = new Map();
   const collect = (arr) => {
     for (const a of arr || []) {
       const slug = (a.authorSlug || "").toLowerCase();
       if (!slug || map.has(slug)) continue;
-      map.set(slug, { slug, name: a.authorName || slug, image: a.profile_image_path || null });
+      map.set(slug, { slug, name: a.authorName || slug, image: realAuthorImage(a.profile_image_path) });
     }
   };
 

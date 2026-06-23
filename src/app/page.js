@@ -1,5 +1,6 @@
-import { getFootballMatches, getMatches, flattenMatches, getRacingMeetings, getGolfTournaments, getSiteMeta } from "@/lib/api";
-import { statusOf } from "@/lib/format";
+import { getMatchesByLocalDate, flattenMatches, getRacingMeetings, getGolfTournaments, getSiteMeta } from "@/lib/api";
+import { statusOf, todayInZone } from "@/lib/format";
+import { getViewerTimeZone } from "@/lib/timezone";
 import Hero from "@/components/Hero";
 import TodaysTopOdds from "@/components/TodaysTopOdds";
 import BestOffers from "@/components/BestOffers";
@@ -29,13 +30,17 @@ const SPORT_DEFS = [
 ];
 
 export default async function HomePage() {
-  const { groups } = await getFootballMatches();
+  // Match-feed sports are grouped by the viewer's LOCAL today (so a late-UTC
+  // kickoff shows on the right local day), like the sport listing pages.
+  const tz = await getViewerTimeZone();
+  const today = todayInZone(tz);
+  const { groups } = await getMatchesByLocalDate("football", today, tz, { fresh: true });
   const matches = flattenMatches(groups);
 
   // Matches per sport for the switcher.
   const others = await Promise.all(
     SPORT_DEFS.map(async (s) => {
-      const res = await getMatches(s.key);
+      const res = await getMatchesByLocalDate(s.key, today, tz, { fresh: true });
       return { ...s, matches: flattenMatches(res.groups) };
     })
   );
