@@ -23,20 +23,24 @@ export default function DateNav({ date }) {
   const router = useRouter();
   const pathname = usePathname();
   const today = fmt(new Date());
+  // Only today + future are browsable — back dates (finished matches) are hidden.
+  const atToday = date <= today;
   // push to the new ?date, then refresh so the server component re-renders with
   // the new date even if the client Router Cache still holds the old searchParams.
   const go = (d) => {
+    if (d < today) return; // never navigate into the past
     router.push(`${pathname}?date=${d}`);
     router.refresh();
   };
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "nowrap" }}>
-      <button type="button" className="btn btn-ghost btn-sm" onClick={() => go(shift(date, -1))} aria-label="Previous day" style={{ flexShrink: 0 }}>‹</button>
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => go(shift(date, -1))} disabled={atToday} aria-label="Previous day" style={{ flexShrink: 0, opacity: atToday ? 0.4 : 1, cursor: atToday ? "not-allowed" : "pointer" }}>‹</button>
       <input
         className="input input-sm"
         type="date"
         value={date}
+        min={today}
         onChange={(e) => e.target.value && go(e.target.value)}
         aria-label="Pick a date"
         style={{ width: 160, flexShrink: 0, colorScheme: "dark" }}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getMatchesByLocalDate, flattenMatches } from "@/lib/api";
-import { statusOf, todayInZone } from "@/lib/format";
+import { statusOf, todayInZone, oddsTriple } from "@/lib/format";
 import { getViewerTimeZone } from "@/lib/timezone";
 import { sportListJsonLd, sportListingContent } from "@/lib/seo";
 import MatchTable from "@/components/MatchTable";
@@ -22,10 +22,16 @@ export default async function SportPage({ sport, subjectWord = "matches", date: 
   const reqDate = dateProp || today;
   // Today's view fetches fresh so live matches appear immediately; past/future
   // days stay cached.
-  const [{ groups, date }, content] = await Promise.all([
+  const [{ groups: allGroups, date }, content] = await Promise.all([
     getMatchesByLocalDate(sport, reqDate, tz, { fresh: reqDate === today }),
     sportListingContent(sport),
   ]);
+  // Only show matches that actually carry odds (a 1·X·2 / moneyline price) — drop
+  // the empty "—/—/—" rows, and any competition left with no priced matches.
+  const groups = allGroups
+    .map((g) => ({ ...g, matches: (g.matches || []).filter((m) => oddsTriple(m)) }))
+    .filter((g) => g.matches.length)
+    .map((g) => ({ ...g, match_count: g.matches.length }));
   const matches = flattenMatches(groups);
   const { heading: title, lead } = content;
   // A selected day before local-today is fully played — never show "live" on it.

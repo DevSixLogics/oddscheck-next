@@ -5,7 +5,7 @@
 // See .claude/instructions/*-data-coverage-map.html for the gap analysis.
 
 import sample from "./data/football-new-matches.sample.json";
-import { tzDifferenceParam } from "./format";
+import { tzDifferenceParam, statusOf, todayInZone } from "./format";
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://cms-oddscheck.hneeds.com/api/v1";
@@ -99,7 +99,15 @@ export async function getMatchesByLocalDate(sport, localDate, tz, { fresh = fals
   } catch (err) {
     console.error(`[api] getMatchesByLocalDate(${sport}) failed:`, err.message);
   }
-  return { groups, date: localDate, source: groups.length ? "live" : "empty", sport };
+  // Only upcoming/live are shown — never finished matches, and nothing on a past
+  // local day. (Past dates also can't be reached via DateNav.) Empty groups drop.
+  const past = localDate < todayInZone(tz);
+  const visible = [];
+  for (const g of groups) {
+    const ms = past ? [] : (g.matches || []).filter((m) => statusOf(m) !== "finished");
+    if (ms.length) visible.push({ ...g, matches: ms, match_count: ms.length });
+  }
+  return { groups: visible, date: localDate, source: visible.length ? "live" : "empty", sport };
 }
 
 /**
@@ -254,7 +262,13 @@ export async function getGolfTournaments(date = todayISO()) {
  * Returns { meetings, date }. Each meeting: { id, dt, cnm (course), co (country),
  * wea (weather), go (going), nor (#races), races: [{ id, st, nm, nor, dis, status }] }.
  */
+// Finished race states — hidden, like finished matches (OFF = in-running, kept).
+const DONE_RACE = new Set(["RESULT", "INTERIM"]);
+
 export async function getRacingMeetings(date = todayISO()) {
+  // Past dates show nothing (old races keep an empty status, so a date guard is
+  // needed in addition to the finished-race filter below). Matches the listings.
+  if (date < todayISO()) return { meetings: [], date };
   try {
     const res = await fetch(`${API_BASE}/horseracing/meetings?date=${date}`, {
       next: { revalidate: REVALIDATE },
@@ -262,7 +276,15 @@ export async function getRacingMeetings(date = todayISO()) {
     });
     if (!res.ok) throw new Error(`horseracing/meetings -> HTTP ${res.status}`);
     const json = await res.json();
-    return { meetings: Array.isArray(json?.data) ? json.data : [], date };
+    const raw = Array.isArray(json?.data) ? json.data : [];
+    // Only upcoming / in-running races — drop finished ones, then empty meetings.
+    const meetings = raw
+      .map((m) => {
+        const races = (m.races || []).filter((r) => !DONE_RACE.has(String(r.status || "").toUpperCase()));
+        return { ...m, races, nor: races.length };
+      })
+      .filter((m) => m.races.length);
+    return { meetings, date };
   } catch (err) {
     console.error("[api] getRacingMeetings failed:", err.message);
     return { meetings: [], date };

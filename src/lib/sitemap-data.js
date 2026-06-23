@@ -29,22 +29,16 @@ const PAGE_META = {
 };
 const PAGE_DEFAULT = { priority: 0.6, changeFrequency: "weekly" };
 
-// Sport landing pages. The first seven have dedicated fixture routes; the rest
-// resolve (200) via the [slug] catch-all as sport topic pages. All are real,
-// crawlable URLs (verified) — none 404.
+// Sport landing pages — ONLY the sports that carry odds (this is an odds-
+// comparison site). Racing, golf, rugby, etc. have no odds in the feed and are
+// hidden from the UI, so they're excluded from the sitemap too. All listed URLs
+// have dedicated fixture routes and are real, crawlable pages (verified).
 const SPORT_HUBS = [
   { path: "/football", priority: 0.9 },
-  { path: "/horse-racing", priority: 0.9 },
-  { path: "/racing", priority: 0.8 },
   { path: "/tennis", priority: 0.8 },
   { path: "/cricket", priority: 0.8 },
   { path: "/basketball", priority: 0.8 },
   { path: "/baseball", priority: 0.8 },
-  { path: "/golf", priority: 0.8 },
-  { path: "/rugby", priority: 0.8 },
-  { path: "/rugby-union", priority: 0.8 },
-  { path: "/american-football", priority: 0.8 },
-  { path: "/ice-hockey", priority: 0.8 },
 ];
 
 // Content groups → the CMS article categories each one aggregates (merged and

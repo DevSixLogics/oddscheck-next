@@ -1,4 +1,4 @@
-import { getMatchesByLocalDate, flattenMatches, getRacingMeetings, getGolfTournaments, getSiteMeta } from "@/lib/api";
+import { getMatchesByLocalDate, flattenMatches, getSiteMeta } from "@/lib/api";
 import { statusOf, todayInZone } from "@/lib/format";
 import { getViewerTimeZone } from "@/lib/timezone";
 import Hero from "@/components/Hero";
@@ -45,35 +45,19 @@ export default async function HomePage() {
     })
   );
 
-  // Racing: pull today's races from the meetings feed (not new-matches), and
-  // flatten to race rows the switcher can render (no 1·X·2 odds in this feed).
-  const { meetings } = await getRacingMeetings();
-  const races = meetings.flatMap((m) =>
-    (m.races || []).map((r) => ({ ...r, course: m.cnm, going: m.go }))
-  );
-  const racing = { key: "racing", label: "Horse Racing", href: "/racing", kind: "racing", races, matches: [] };
-
-  // Golf: leaderboard feed (not new-matches). Flatten players with their tournament
-  // for the switcher; no outright odds in this feed.
-  const { tournaments } = await getGolfTournaments();
-  const golfPlayers = tournaments.flatMap((t) =>
-    (t.matches || []).map((p) => ({ ...p, tournament: t.nm }))
-  );
-  const golf = { key: "golf", label: "Golf", href: "/golf", kind: "golf", players: golfPlayers, matches: [] };
-
-  // "Live now" count across ALL sports: football + other match feeds + racing
-  // (a race is live only while OFF, i.e. in-running).
+  // "Live now" count across the match-feed sports (football + other match feeds).
   const liveCount =
     matches.filter((m) => statusOf(m) === "live").length +
-    others.reduce((n, s) => n + s.matches.filter((m) => statusOf(m) === "live").length, 0) +
-    races.filter((r) => (r.status || "").toUpperCase() === "OFF").length;
+    others.reduce((n, s) => n + s.matches.filter((m) => statusOf(m) === "live").length, 0);
 
-  // Show every sport as a pill (matching the reference). Racing sits second.
+  // Sport pills. Racing & golf carry no odds in the feed, so their tabs are shown
+  // (kept in the switcher + nav) but have no priced rows — they render the "no
+  // data" empty state, like any sport with no odds-carrying matches right now.
   const sportsData = [
     { key: "football", label: "Football", href: "/football", matches },
-    racing,
+    { key: "racing", label: "Horse Racing", href: "/racing", matches: [] },
     ...others,
-    golf,
+    { key: "golf", label: "Golf", href: "/golf", matches: [] },
   ];
 
   // Scores & results draws from ALL match-feed sports (not just football),

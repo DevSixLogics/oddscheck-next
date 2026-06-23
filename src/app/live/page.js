@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getMatches, flattenMatches, getRacingMeetings, getGolfTournaments } from "@/lib/api";
+import { getMatches, flattenMatches } from "@/lib/api";
 import { statusOf } from "@/lib/format";
 import LiveBoard from "@/components/LiveBoard";
 
@@ -20,20 +20,14 @@ const MATCH_SPORTS = [
   { key: "baseball", label: "Baseball" },
 ];
 
-const golfIsLive = (t) =>
-  (t.matches || []).some((p) => {
-    const thru = parseInt(p.thru, 10);
-    return thru >= 1 && thru <= 17;
-  });
-
 export default async function LivePage() {
   // Initial snapshot (server). The socket then live-merges on the client.
-  const [matchFeeds, racing, golf] = await Promise.all([
+  // Only the odds match-feed sports — racing & golf carry no odds, so they're
+  // excluded from this odds-comparison live board.
+  const matchFeeds = await Promise.all(
     // fresh: bypass the 60s data cache so the snapshot is current on every load.
-    Promise.all(MATCH_SPORTS.map((s) => getMatches(s.key, undefined, { fresh: true }))),
-    getRacingMeetings(),
-    getGolfTournaments(),
-  ]);
+    MATCH_SPORTS.map((s) => getMatches(s.key, undefined, { fresh: true }))
+  );
 
   const items = [];
   MATCH_SPORTS.forEach((s, i) => {
@@ -41,12 +35,6 @@ export default async function LivePage() {
       .filter((m) => statusOf(m) === "live")
       .forEach((m) => items.push({ kind: "match", sport: s.key, sportLabel: s.label, ...m }));
   });
-  (racing.meetings || []).forEach((mt) =>
-    (mt.races || [])
-      .filter((r) => (r.status || "").toUpperCase() === "OFF")
-      .forEach((r) => items.push({ kind: "race", course: mt.cnm, ...r }))
-  );
-  (golf.tournaments || []).filter(golfIsLive).forEach((t) => items.push({ kind: "golf", ...t }));
 
   return (
     <>
@@ -64,7 +52,7 @@ export default async function LivePage() {
               <span className="chip chip-live mb-3">LIVE NOW</span>
               <h1 style={{ fontSize: "clamp(28px, 4vw, 44px)", margin: "8px 0" }}>Live odds &amp; in-play markets</h1>
               <p style={{ fontSize: 16, color: "var(--text-2)", maxWidth: 640, lineHeight: 1.55 }}>
-                Real-time scores across football, tennis, basketball, cricket, racing and golf —
+                Real-time scores across football, tennis, basketball, cricket and baseball —
                 pushed live over the socket. Best in-play price highlighted where the feed provides it.
               </p>
             </div>

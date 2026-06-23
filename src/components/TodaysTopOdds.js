@@ -25,7 +25,6 @@ const SPORT_ICONS = {
   basketball: ic(<><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" /><path d="M3 12h18M12 3v18M5 5c3 3 4 11 0 14m14-14c-3 3-4 11 0 14" stroke="currentColor" strokeWidth="1.2" /></>),
   cricket: ic(<><path d="m4 20 8-8 6-6-3-3-6 6-8 8 3 3Zm10-10 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><circle cx="18" cy="6" r="2" stroke="currentColor" strokeWidth="1.4" /></>),
   racing: ic(<path d="M5 20c0-4 2-7 5-8l-1-3 4-4 3 2 2-2v3l-1 2 2 1c2 3 2 9 2 9h-3v-5l-3 1v4h-3v-5l-3 1v4H5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />),
-  nfl: ic(<><ellipse cx="12" cy="12" rx="9" ry="5" stroke="currentColor" strokeWidth="1.4" transform="rotate(-30 12 12)" /><path d="M10 12h4M11 10v4M13 10v4" stroke="currentColor" strokeWidth="1.2" /></>),
   baseball: ic(<><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.4" /><path d="M6 6c3 3 3 9 0 12M18 6c-3 3-3 9 0 12" stroke="currentColor" strokeWidth="1.2" /></>),
   golf: ic(<><path d="M10 4v12M10 4l6 2-6 2" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" /><ellipse cx="10" cy="19" rx="6" ry="2" stroke="currentColor" strokeWidth="1.4" /></>),
 };
@@ -94,91 +93,12 @@ function Row({ match, sport, fmt }) {
   );
 }
 
-// A race is "live" only while it's OFF (in-running). INTERIM is a provisional
-// result after the race has been run, so it counts as finished, not live.
-function raceIsLive(r) {
-  return (r.status || "").toUpperCase() === "OFF";
-}
-function raceIsDone(r) {
-  const s = (r.status || "").toUpperCase();
-  return s === "RESULT" || s === "INTERIM";
-}
-
-// Racing has no 1·X·2 odds in this feed — show course/race/time + a Card link.
-function RaceRow({ race }) {
-  const tz = useTimeZone();
-  const live = raceIsLive(race);
-  const done = raceIsDone(race);
-  return (
-    <div className={styles.row}>
-      <div className={styles.teams}>
-        <div className={styles.names}>
-          <div style={{ fontWeight: 600 }}>{race.course}</div>
-          <div className="mute" style={{ fontSize: 12 }}>{race.nm}</div>
-        </div>
-      </div>
-
-      <div className={styles.meta}>
-        <div>{[race.dis, race.nor && `${race.nor} runners`].filter(Boolean).join(" · ")}</div>
-        <div className={styles.status}>
-          {live ? (
-            <><span className="live-dot" /> <span className={styles.live}>LIVE</span></>
-          ) : done ? <span>Result</span> : <span>{kickoffLabel(race.st, tz)}</span>}
-        </div>
-      </div>
-
-      <div className={styles.odds} style={{ gridTemplateColumns: "1fr" }}>
-        <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "6px 10px", fontSize: 13, justifySelf: "start" }}>—</span>
-      </div>
-
-      <div className={styles.action}>
-        <Link className="btn btn-primary btn-xs" href={`/race?id=${race.id}`}>Card</Link>
-      </div>
-    </div>
-  );
-}
-
-// To-par colour: under par = accent, over par = down, level = default.
-function parColor(p) {
-  if (typeof p === "string" && p.startsWith("-")) return "var(--accent)";
-  if (typeof p === "string" && p.startsWith("+")) return "var(--down)";
-  return "var(--text)";
-}
-
-// Golf is a leaderboard (no outright odds) — show pos / player / to-par + a Leaderboard link.
-function GolfRow({ player }) {
-  return (
-    <div className={styles.row}>
-      <div className={styles.teams}>
-        <div className={styles.names}>
-          <div style={{ fontWeight: 600 }}>
-            <span className="num mute" style={{ marginRight: 8 }}>{player.pos || "–"}</span>{player.nm}
-          </div>
-          <div className="mute" style={{ fontSize: 12 }}>{player.tournament}</div>
-        </div>
-      </div>
-
-      <div className={styles.meta}>
-        <div>{player.cnm || ""}</div>
-        <div className={styles.status}><span className="num" style={{ fontWeight: 700, color: parColor(player.par) }}>{player.par ?? "–"}</span></div>
-      </div>
-
-      <div className={styles.odds} style={{ gridTemplateColumns: "1fr" }}>
-        <span title="Odds not available" className="num" style={{ color: "var(--text-mute)", fontWeight: 700, border: "1px dashed var(--border-strong)", borderRadius: 6, padding: "6px 10px", fontSize: 13, justifySelf: "start" }}>—</span>
-      </div>
-
-      <div className={styles.action}>
-        <Link className="btn btn-primary btn-xs" href="/golf">Leaderboard</Link>
-      </div>
-    </div>
-  );
-}
-
 /**
  * Homepage "Today's top odds" — sport pills switch the table BELOW in-place
  * (no navigation). The top subnav tabs are what navigate to a sport page.
- * `sports` = [{ key, label, href, matches }]; racing carries { kind:"racing", races },
- * golf carries { kind:"golf", players }.
+ * `sports` = [{ key, label, href, matches }] — only the odds match-feed sports
+ * (football, tennis, basketball, cricket, baseball). Racing & golf carry no odds
+ * and are not shown on this odds-comparison site.
  */
 export default function TodaysTopOdds({ sports = [], limit = 8 }) {
   const [fmt, setFmt] = useState("Decimal");
@@ -231,25 +151,14 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
   }, [active]);
 
   const current = sportsState.find((s) => s.key === active) || sportsState[0];
-  const isRacing = current?.kind === "racing";
-  const isGolf = current?.kind === "golf";
   const matches = current?.matches || [];
+  const count = matches.length;
 
-  // Racing → race rows (live/off first). Golf → leaderboard rows. Others → priced matches first.
-  const raceItems = (current?.races || [])
-    .slice()
-    .sort((a, b) => (raceIsLive(b) ? 1 : 0) - (raceIsLive(a) ? 1 : 0) || String(a.st || "").localeCompare(String(b.st || "")))
-    .slice(0, limit);
-  const golfItems = (current?.players || []).slice(0, limit);
-  const count = (current?.players ?? current?.races ?? current?.matches ?? []).length;
-  // "Priced" excludes finished matches — their odds are stale pre-match prices, so
-  // they must not float to the top of a "top odds" widget. They still render (in
-  // `rest`, at the bottom) with their odds suppressed by Row.
-  const isPriced = (m) => statusOf(m) !== "finished" && !!oddsTriple(m);
-  const priced = matches.filter(isPriced);
+  // Only matches that are upcoming/live AND carry odds — finished matches and
+  // matches without a 1·X·2 price are not shown (live first).
+  const priced = matches.filter((m) => statusOf(m) !== "finished" && !!oddsTriple(m));
   const liveP = priced.filter((m) => statusOf(m) === "live");
-  const rest = matches.filter((m) => !isPriced(m));
-  const ordered = [...liveP, ...priced.filter((m) => statusOf(m) !== "live"), ...rest].slice(0, limit);
+  const ordered = [...liveP, ...priced.filter((m) => statusOf(m) !== "live")].slice(0, limit);
 
   return (
     <section className="section" style={{ background: "linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%)" }}>
@@ -281,40 +190,24 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
               aria-pressed={s.key === active}
             >
               {SPORT_ICONS[s.key]}
-              {s.label} <span style={{ fontSize: 11, opacity: 0.7 }}>{(s.players ?? s.races ?? s.matches).length}</span>
+              {s.label} <span style={{ fontSize: 11, opacity: 0.7 }}>{(s.matches || []).length}</span>
             </button>
           ))}
         </div>
 
         <div className="card table-scroll" style={{ padding: 0, overflow: "hidden" }}>
           <div className={styles.headRow}>
-            <div>{isRacing ? "Race" : isGolf ? "Pos · Player" : "Event"}</div>
-            <div>{isRacing ? "Distance · Off" : isGolf ? "Country · To par" : "Competition · Time"}</div>
-            <div>{isRacing || isGolf ? "Best odds" : "Best odds · 1 / X / 2"}</div>
+            <div>Event</div>
+            <div>Competition · Time</div>
+            <div>Best odds · 1 / X / 2</div>
             <div />
           </div>
           <div className={styles.scroll}>
-            {isGolf ? (
-              golfItems.length ? (
-                golfItems.map((p) => <GolfRow key={p.id} player={p} />)
-              ) : (
-                <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
-                  No golf tournaments in play — leaderboards appear during tournament weeks.
-                </div>
-              )
-            ) : isRacing ? (
-              raceItems.length ? (
-                raceItems.map((r) => <RaceRow key={r.id} race={r} />)
-              ) : (
-                <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
-                  No races today — check back closer to the first off.
-                </div>
-              )
-            ) : ordered.length ? (
+            {ordered.length ? (
               ordered.map((m) => <Row key={m.id} match={m} sport={current.key} fmt={fmt} />)
             ) : (
               <div style={{ padding: 18, color: "var(--text-dim)", fontSize: 13 }}>
-                No {current?.label} matches right now — check back closer to kickoff.
+                No odds available for {current?.label} right now — there&apos;s no data to show.
               </div>
             )}
           </div>
@@ -323,11 +216,11 @@ export default function TodaysTopOdds({ sports = [], limit = 8 }) {
         {current && (
           <div className="flex justify-between items-center mt-4 flex-wrap gap-3" style={{ fontSize: 13, color: "var(--text-dim)" }}>
             <div className="flex gap-4 flex-wrap">
-              <span>Each price is the best across {isRacing || isGolf ? "—" : "all bookmakers"}</span>
+              <span>Each price is the best across all bookmakers</span>
               <span className="flex items-center gap-2"><span className="live-dot" /> Live</span>
             </div>
             <Link href={current.href} style={{ color: "var(--accent)", fontWeight: 600 }}>
-              See all {count} {current.label} {isRacing ? "races" : isGolf ? "players" : "matches"} →
+              See all {count} {current.label} matches →
             </Link>
           </div>
         )}

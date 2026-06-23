@@ -6,10 +6,9 @@ import Crest from "./Crest";
 import useSocket from "@/hooks/useSocket";
 import useFlashOnChange from "@/hooks/useFlashOnChange";
 import { SOCKET_URL, getSocketSportEvent, flattenSocketLeagues, mergeMatch } from "@/lib/socket";
-import { oddsTriple, statusOf, score, kickoffLabel } from "@/lib/format";
+import { oddsTriple, statusOf, score } from "@/lib/format";
 import { OddsValue } from "./OddsFormatProvider";
 import LiveClock from "./LiveClock";
-import { useTimeZone } from "./TimeZoneProvider";
 
 // Highlight applied to every in-play card.
 const LIVE_CARD = {
@@ -27,7 +26,7 @@ const MATCH_SPORTS = [
 ];
 const PILL_LABELS = {
   football: "Football", tennis: "Tennis", basketball: "Basketball", cricket: "Cricket",
-  baseball: "Baseball", racing: "Horse Racing", golf: "Golf",
+  baseball: "Baseball",
 };
 
 // Sports refreshed by the REST poll. Superset of the socket sports — baseball has
@@ -57,12 +56,6 @@ function mergeSportInto(prev, sportKey, sportLabel, incoming) {
     }
   });
   return next;
-}
-
-function parColor(p) {
-  if (typeof p === "string" && p.startsWith("-")) return "var(--accent)";
-  if (typeof p === "string" && p.startsWith("+")) return "var(--down)";
-  return "var(--text)";
 }
 
 function LiveMatchCard({ m }) {
@@ -106,50 +99,6 @@ function LiveMatchCard({ m }) {
       <div className="flex justify-between items-center mute" style={{ fontSize: 11 }}>
         <span className="flex items-center gap-1"><span className="live-dot" /> Markets open</span>
         <Link href={`/event/${m.sport}/${m.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>All markets →</Link>
-      </div>
-    </article>
-  );
-}
-
-function LiveRaceCard({ r }) {
-  const tz = useTimeZone();
-  return (
-    <article className="card" style={LIVE_CARD}>
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2"><span className="chip chip-live" style={{ fontSize: 10 }}>LIVE</span><span className="chip chip-muted">Horse Racing</span></div>
-        <span className="mute" style={{ fontSize: 11 }}>{kickoffLabel(r.st, tz)}</span>
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{r.course}</div>
-      <div className="mute" style={{ fontSize: 13, marginBottom: 14 }}>{r.nm}</div>
-      <div className="flex gap-3 mb-4" style={{ fontSize: 12, color: "var(--text-2)" }}>
-        {r.dis && <span>{r.dis}</span>}{r.nor && <span>{r.nor} runners</span>}
-      </div>
-      <div className="flex justify-between items-center mute" style={{ fontSize: 11 }}>
-        <span className="flex items-center gap-1"><span className="live-dot" /> Off &amp; running</span>
-        <Link href={`/race?id=${r.id}`} style={{ color: "var(--accent)", fontWeight: 600 }}>Racecard →</Link>
-      </div>
-    </article>
-  );
-}
-
-function LiveGolfCard({ t }) {
-  const leader = (t.matches || []).find((p) => p.pos === "1") || (t.matches || [])[0];
-  return (
-    <article className="card" style={LIVE_CARD}>
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2"><span className="chip chip-live" style={{ fontSize: 10 }}>LIVE</span><span className="chip chip-muted">Golf</span></div>
-        <span className="mute" style={{ fontSize: 11 }}>Round in play</span>
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{t.nm}</div>
-      {leader && (
-        <div className="flex justify-between items-center mb-4" style={{ fontSize: 13 }}>
-          <span className="mute">Leader</span>
-          <span><b>{leader.nm}</b> <span className="num" style={{ color: parColor(leader.par), fontWeight: 700 }}>{leader.par}</span></span>
-        </div>
-      )}
-      <div className="flex justify-between items-center mute" style={{ fontSize: 11 }}>
-        <span className="flex items-center gap-1"><span className="live-dot" /> {(t.matches || []).length} players</span>
-        <Link href="/golf" style={{ color: "var(--accent)", fontWeight: 600 }}>Leaderboard →</Link>
       </div>
     </article>
   );
@@ -206,15 +155,13 @@ export default function LiveBoard({ initialItems = [] }) {
     return () => { stop = true; clearTimeout(timer); };
   }, []);
 
-  const itemKey = (it) => (it.kind === "race" ? "racing" : it.kind === "golf" ? "golf" : it.sport);
   const counts = {};
   items.forEach((it) => {
-    const key = itemKey(it);
-    counts[key] = (counts[key] || 0) + 1;
+    counts[it.sport] = (counts[it.sport] || 0) + 1;
   });
   const total = items.length;
-  const PILLS = [...MATCH_SPORTS.map((s) => s.key), "baseball", "racing", "golf"];
-  const shown = filter === "all" ? items : items.filter((it) => itemKey(it) === filter);
+  const PILLS = [...MATCH_SPORTS.map((s) => s.key), "baseball"];
+  const shown = filter === "all" ? items : items.filter((it) => it.sport === filter);
 
   return (
     <>
@@ -231,17 +178,13 @@ export default function LiveBoard({ initialItems = [] }) {
 
       {shown.length ? (
         <div className="grid grid-3">
-          {shown.map((it) =>
-            it.kind === "race" ? <LiveRaceCard key={`race-${it.id}`} r={it} />
-            : it.kind === "golf" ? <LiveGolfCard key={`golf-${it.id}`} t={it} />
-            : <LiveMatchCard key={`${it.sport}-${it.id}`} m={it} />
-          )}
+          {shown.map((it) => <LiveMatchCard key={`${it.sport}-${it.id}`} m={it} />)}
         </div>
       ) : (
         <div className="card" style={{ padding: 40, textAlign: "center" }}>
           <span className="chip chip-muted mb-3">Nothing live right now</span>
           <h3 style={{ fontSize: 20, margin: "8px 0" }}>No events in play</h3>
-          <p className="sub" style={{ marginBottom: 20 }}>Live scores appear here automatically the moment a match or race goes in-play.</p>
+          <p className="sub" style={{ marginBottom: 20 }}>Live scores appear here automatically the moment a match goes in-play.</p>
           <Link className="btn btn-primary btn-lg" href="/football">Browse today&apos;s fixtures</Link>
         </div>
       )}
